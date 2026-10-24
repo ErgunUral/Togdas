@@ -1,13 +1,81 @@
 import SwiftUI
 
-/// Togg Trumore arayüz renkleri.
+enum ToggThemeStyle: String, CaseIterable, Identifiable, Hashable {
+    case togg, ocean, graphite
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .togg: return "Togg Gece"
+        case .ocean: return "Okyanus"
+        case .graphite: return "Grafit / Amber"
+        }
+    }
+
+    var backgroundColor: Color {
+        switch self {
+        case .togg: return Color(hex: 0x0B121E)
+        case .ocean: return Color(hex: 0x071725)
+        case .graphite: return Color(hex: 0x111416)
+        }
+    }
+
+    var surfaceColor: Color {
+        switch self {
+        case .togg: return Color(hex: 0x131C2E)
+        case .ocean: return Color(hex: 0x102638)
+        case .graphite: return Color(hex: 0x1B2023)
+        }
+    }
+
+    var surfaceVariantColor: Color {
+        switch self {
+        case .togg: return Color(hex: 0x1C273C)
+        case .ocean: return Color(hex: 0x18384D)
+        case .graphite: return Color(hex: 0x282F33)
+        }
+    }
+
+    var outlineColor: Color {
+        switch self {
+        case .togg: return Color(hex: 0x2E3D58)
+        case .ocean: return Color(hex: 0x2C536A)
+        case .graphite: return Color(hex: 0x41494D)
+        }
+    }
+
+    var accentColor: Color {
+        switch self {
+        case .togg: return Color(hex: 0x00D2C8)
+        case .ocean: return Color(hex: 0x42D5F5)
+        case .graphite: return Color(hex: 0xFFB547)
+        }
+    }
+
+    var accentContainerColor: Color {
+        switch self {
+        case .togg: return Color(hex: 0x004F4D)
+        case .ocean: return Color(hex: 0x124A5B)
+        case .graphite: return Color(hex: 0x5B3E16)
+        }
+    }
+}
+
+/// Tema paletleri koyu tutulur; kartlardaki beyaz metinlerin kontrastı korunur.
 enum ToggTheme {
-    static let background = Color(hex: 0x0B121E)
-    static let surface = Color(hex: 0x131C2E)
-    static let surfaceVariant = Color(hex: 0x1C273C)
-    static let outline = Color(hex: 0x2E3D58)
-    static let teal = Color(hex: 0x00D2C8)
-    static let tealContainer = Color(hex: 0x004F4D)
+    private static var selected: ToggThemeStyle {
+        guard let raw = UserDefaults.standard.string(forKey: "toqdas.theme"),
+              let style = ToggThemeStyle(rawValue: raw) else { return .togg }
+        return style
+    }
+
+    static var background: Color { selected.backgroundColor }
+    static var surface: Color { selected.surfaceColor }
+    static var surfaceVariant: Color { selected.surfaceVariantColor }
+    static var outline: Color { selected.outlineColor }
+    static var teal: Color { selected.accentColor }
+    static var tealContainer: Color { selected.accentContainerColor }
     static let blue = Color(hex: 0x00A3FF)
     static let green = Color(hex: 0x00E676)
     static let orange = Color(hex: 0xFF9100)
@@ -15,7 +83,13 @@ enum ToggTheme {
     static let pink = Color(hex: 0xFF5252)
     static let cyan = Color(hex: 0x00E5FF)
     static let yellow = Color(hex: 0xFFD600)
-    static let muted = Color(hex: 0x9AA7BD)
+    static var muted: Color {
+        switch selected {
+        case .togg: return Color(hex: 0x9AA7BD)
+        case .ocean: return Color(hex: 0x9AB7C9)
+        case .graphite: return Color(hex: 0xB1B9BC)
+        }
+    }
 }
 
 extension Color {

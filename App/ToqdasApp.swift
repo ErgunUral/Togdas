@@ -88,6 +88,7 @@ struct ToqdasApp: App {
 
 struct GarageView: View {
     @ObservedObject var model: GarageModel
+    @AppStorage("toqdas.theme") private var themeName = ToggThemeStyle.togg.rawValue
 
     var body: some View {
         NavigationStack {
@@ -100,7 +101,7 @@ struct GarageView: View {
                     emptyGarage
                 }
             }
-            .background(ToggTheme.background.ignoresSafeArea())
+            .background((ToggThemeStyle(rawValue: themeName)?.backgroundColor ?? ToggTheme.background).ignoresSafeArea())
             .task {
                 if model.signedIn && model.vehicles.isEmpty { await model.refresh() }
             }

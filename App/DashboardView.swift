@@ -54,6 +54,7 @@ private enum DashboardCommand: String, Identifiable {
 struct DashboardView: View {
     @ObservedObject var model: GarageModel
     let vehicle: Vehicle
+    @AppStorage("toqdas.theme") private var themeName = ToggThemeStyle.togg.rawValue
 
     @EnvironmentObject private var ble: BleConnection
 
@@ -183,7 +184,8 @@ struct DashboardView: View {
                         onOpenAccount: { showAccount = true },
                         onOpenDetail: { showDetail = true },
                         onOpenDiscovery: { showDiscovery = true },
-                        onLogout: { model.logout() }
+                        onLogout: { model.logout() },
+                        themeName: $themeName
                     )
 
                     VehicleVisualCard(
@@ -1621,6 +1623,7 @@ private struct DashboardHeader: View {
     let onOpenDetail: () -> Void
     let onOpenDiscovery: () -> Void
     let onLogout: () -> Void
+    @Binding var themeName: String
 
     private var telemetryIsFresh: Bool {
         guard let updatedAt else { return false }
@@ -1719,6 +1722,11 @@ private struct DashboardHeader: View {
                         Button("Bildirimler & destek", systemImage: "bell.badge") { onOpenAccount() }
                         Button("Bluetooth komutları", systemImage: "key.horizontal") { onOpenCommands() }
                         Button("Bluetooth taraması", systemImage: "dot.radiowaves.left.and.right") { onOpenDiscovery() }
+                        Picker("Renk teması", selection: $themeName) {
+                            ForEach(ToggThemeStyle.allCases) { style in
+                                Text(style.title).tag(style.rawValue)
+                            }
+                        }
                         Divider()
                         Button("Çıkış yap", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) { onLogout() }
                     } label: {

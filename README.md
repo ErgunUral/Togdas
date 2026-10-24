@@ -24,6 +24,8 @@ It overwrites project settings; preserve manual project changes before running i
 - Togg Trumore tarzı koyu tema dashboard: başlık, canlı telemetri şeridi, batarya/menzil
   kartı, alt sekmeler (Genel Bakış, İklimlendirme, Trugo Şarj, Araç Durumu), hızlı işlemler,
   konfor/güvenlik kartları, şarj limiti ve sağlık kartı.
+- iPhone dashboard color themes: Togg Gece, Okyanus and Grafit/Amber; the choice is stored
+  locally. All palettes remain dark to preserve contrast across existing white card text.
 - Çoklu araç desteği: garajdaki araçlar arasında geçiş; seçim `UserDefaults` ile kalıcıdır.
 - Sürüş & şarj analizi: `DriveExperience` uçlarından son 30 gün, önceki dönem,
   önceki takvim ayı ve tüm zamanlar özeti; topluluk karşılaştırması; son yolculuk ve
