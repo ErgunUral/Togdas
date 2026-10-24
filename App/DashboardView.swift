@@ -445,11 +445,7 @@ struct DashboardView: View {
     private var healthTab: some View {
         VehicleHealthCard(
             auxiliaryBattery: telemetry?.auxiliaryBatteryPercent,
-            range: telemetry.map { _ in range },
-            battery: telemetry.map { _ in battery },
             tires: telemetry?.tires ?? [],
-            odometer: telemetry?.odometerKM,
-            outsideTemperature: telemetry?.outsideTemperatureC,
             insideTemperature: telemetry?.insideTemperatureC,
             brakeWarning: telemetry?.brakeWarning,
             engineWarning: telemetry?.engineWarning,
@@ -2255,11 +2251,7 @@ private struct ClimateCard: View {
 
 private struct VehicleHealthCard: View {
     let auxiliaryBattery: Double?
-    let range: Int?
-    let battery: Int?
     let tires: [TireReading]
-    let odometer: Double?
-    let outsideTemperature: Double?
     let insideTemperature: Double?
     let brakeWarning: Bool?
     let engineWarning: Bool?
@@ -2295,26 +2287,10 @@ private struct VehicleHealthCard: View {
             }
 
             HStack(spacing: 12) {
-                statBox(title: "Batarya", value: battery.map { "%\($0)" } ?? "—",
-                        icon: "bolt.fill", color: ToggTheme.green)
                 statBox(title: "12 V Akü", value: auxiliaryBattery.map { "%\(Int($0.rounded()))" } ?? "—",
                         icon: "car.battery", color: ToggTheme.teal)
-            }
-
-            HStack(spacing: 12) {
-                statBox(title: "Tahmini Menzil", value: range.map { "\($0) km" } ?? "—",
-                        icon: "road.lanes", color: ToggTheme.teal)
                 statBox(title: "Şarj Durumu", value: chargingState,
                         icon: "bolt.circle", color: ToggTheme.cyan)
-            }
-
-            HStack(spacing: 12) {
-                statBox(title: "Kilometre",
-                        value: odometer.map { "\($0.formatted(.number.precision(.fractionLength(0)))) km" } ?? "—",
-                        icon: "gauge", color: ToggTheme.orange)
-                statBox(title: "Dış Sıcaklık",
-                        value: outsideTemperature.map { "\(Int($0.rounded()))°C" } ?? "—",
-                        icon: "thermometer.medium", color: ToggTheme.cyan)
             }
 
             HStack(spacing: 12) {
@@ -2332,7 +2308,7 @@ private struct VehicleHealthCard: View {
                 }
             }
 
-            Text("Batarya, menzil, 12 V akü, kilometre, iç/dış sıcaklık, sürüş modu, fren/motor uyarıları ve lastik basınç/sıcaklıkları 30 saniyede bir VehicleInfo API'sinden yenilenir. Lastik basıncı kPa'dan PSI'ye çevrilir; uyarı alanları yalnızca API'de dolu geldiğinde gösterilir.")
+            Text("Lastik basınç/sıcaklıkları, 12 V akü, şarj durumu, iç sıcaklık, sürüş modu ve fren/motor uyarıları VehicleInfo API'sinden gösterilir. Lastik basıncı kPa'dan PSI'ye çevrilir; uyarı alanları yalnızca API'de dolu geldiğinde gösterilir. Batarya, menzil, kilometre ve dış sıcaklık üst araç kartındadır.")
                 .font(.caption2).foregroundStyle(ToggTheme.muted)
         }
         .padding(20)
