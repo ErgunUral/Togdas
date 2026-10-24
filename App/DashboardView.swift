@@ -210,11 +210,6 @@ struct DashboardView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    Text("Kilit, bagaj ve sürüş komutları Bluetooth dijital anahtar ekranından; klima komutu Togg uzaktan kontrol servisinden gönderilir. Diğer kontroller önizlemedir.")
-                        .font(.caption2)
-                        .foregroundStyle(ToggTheme.muted)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 8)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
