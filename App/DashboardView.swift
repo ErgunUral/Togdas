@@ -384,9 +384,10 @@ struct DashboardView: View {
         let layout = DashboardLayoutStyle(rawValue: layoutName) ?? .classic
         return VStack(spacing: 16) {
             bleSecurityBanner
-            bleCard
-            if layout != .minimal { proximityCard }
             if layout == .sport { quickActions }
+            bleCard
+            if layout == .technical { technicalOverview }
+            if layout != .minimal && layout != .sport { proximityCard }
             if layout != .minimal {
                 PremiumControlsSection(
                     sentryMode: $sentryMode,
@@ -396,6 +397,7 @@ struct DashboardView: View {
                     onWindowCommand: requestWindowCommand
                 )
             }
+            if layout == .sport { proximityCard }
             if layout != .sport { quickActions }
             chargingOverviewLink
         }
@@ -726,6 +728,40 @@ struct DashboardView: View {
         }
         .padding(18)
         .toggCardBackground()
+    }
+
+    private var technicalOverview: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack {
+                Label("Canlı BLE Tanısı", systemImage: "waveform.path.ecg")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(ToggTheme.teal)
+                Spacer()
+                Text(ble.state.description)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(ToggTheme.muted)
+            }
+            HStack(spacing: 12) {
+                technicalMetric("RSSI", ble.rssi.map { "\($0) dBm" } ?? "—")
+                technicalMetric("Kanallar", "\(ble.channels.count)")
+                technicalMetric("Kayıt", "\(ble.diagnosticEvents.count)")
+            }
+            if let telemetry = ble.telemetry {
+                Text("İmzalı telemetri · \(telemetry.receivedAt.formatted(date: .omitted, time: .standard))")
+                    .font(.system(size: 10))
+                    .foregroundStyle(ToggTheme.muted)
+            }
+        }
+        .padding(14)
+        .toggCardBackground(18)
+    }
+
+    private func technicalMetric(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title).font(.system(size: 9, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+            Text(value).font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(.white)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
