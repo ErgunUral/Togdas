@@ -107,9 +107,6 @@ struct DashboardView: View {
     @State private var climateNote: String?
     @State private var climatePending: Bool?
     @State private var targetTemperature = 22.0
-    @State private var chargeLimit = 80
-    @State private var charging = false
-    @State private var chargePortOpen = false
     @State private var chargeStartPercent = 20.0
     @State private var chargeTargetPercent = 80.0
     @State private var chargeStartInitialized = false
@@ -1224,29 +1221,6 @@ struct DashboardView: View {
                         showCommands = true
                     }
                 }
-                QuickActionButton(title: "Kapalı", subtitle: "Ön Bagaj", icon: "car.side.front.open",
-                                  active: false, activeColor: ToggTheme.teal) {
-                    alert = .notice("Ön bagaj (frunk) komutu bu araç için tanımlı değil.")
-                }
-            }
-
-            HStack(spacing: 12) {
-                QuickActionButton(title: charging ? "Şarjda" : "Hazır", subtitle: "Trugo Şarj",
-                                  icon: "bolt.fill", active: charging, activeColor: ToggTheme.green) {
-                    alert = .notice("Şarj başlatma/durdurma henüz bağlı değil.")
-                }
-                QuickActionButton(title: chargePortOpen ? "Açık" : "Kapalı", subtitle: "Soket Kapağı",
-                                  icon: "bolt.circle", active: chargePortOpen, activeColor: ToggTheme.teal) {
-                    alert = .notice("Şarj soketi kapağı komutu henüz bağlı değil.")
-                }
-                QuickActionButton(title: "Farlar", subtitle: "Sinyal Yak", icon: "headlight.high.beam.fill",
-                                  active: false, activeColor: ToggTheme.yellow) {
-                    alert = .notice("Far selamı komutu henüz bağlı değil.")
-                }
-                QuickActionButton(title: "Korna", subtitle: "Çal", icon: "speaker.wave.2.fill",
-                                  active: false, activeColor: ToggTheme.orange) {
-                    alert = .notice("Korna komutu henüz bağlı değil.")
-                }
             }
         }
     }
@@ -1263,64 +1237,13 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Trugo Akıllı Şarj Yönetimi")
                         .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
-                    Text(charging ? "Hızlı şarj yapılıyor" : "Şarj durumu araçtan okunmuyor")
+                    Text(chargingLabel == "—" ? "Şarj durumu bilinmiyor" : chargingLabel)
                         .font(.system(size: 12)).foregroundStyle(ToggTheme.muted)
                 }
                 Spacer()
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Hedef Şarj Limiti")
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(ToggTheme.muted)
-                HStack(spacing: 8) {
-                    ForEach([70, 80, 90, 100], id: \.self) { limit in
-                        Button { chargeLimit = limit } label: {
-                            Text("%\(limit)")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(chargeLimit == limit ? .black : .white)
-                                .frame(maxWidth: .infinity).frame(height: 42)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(chargeLimit == limit ? ToggTheme.teal : ToggTheme.surfaceVariant)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-
-            HStack(spacing: 12) {
-                Button {
-                    charging.toggle()
-                } label: {
-                    Label(charging ? "Şarjı Durdur" : "Şarjı Başlat",
-                          systemImage: charging ? "stop.fill" : "play.fill")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.black)
-                        .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(charging ? ToggTheme.red : ToggTheme.green)
-                        )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    chargePortOpen.toggle()
-                } label: {
-                    Label(chargePortOpen ? "Portu Kapat" : "Portu Aç", systemImage: "bolt.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(ToggTheme.surfaceVariant)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-
-            Text("Önizleme: şarj kontrolleri henüz araca gönderilmiyor.")
+            Text("Şarj başlatma/durdurma ve limit değiştirme araca bağlı değil. Enerji/ücret tahmini aşağıdaki hesaplayıcıdadır.")
                 .font(.caption2).foregroundStyle(ToggTheme.muted)
         }
         .padding(20)
