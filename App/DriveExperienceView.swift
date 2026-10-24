@@ -1,0 +1,918 @@
+import SwiftUI
+
+private struct ExperienceDetailTarget: Identifiable {
+    let id: String
+    let kind: ExperienceKind
+    let detailID: String
+
+    init(kind: ExperienceKind, detailID: String) {
+        self.kind = kind
+        self.detailID = detailID
+        self.id = kind.rawValue + ":" + detailID
+    }
+}
+
+/// Togg Drive Experience: dönem özeti, topluluk karşılaştırması,
+/// yolculuk ve şarj geçmişi ile kayıt ayrıntıları.
+struct DriveExperienceView: View {
+    let vehicle: Vehicle
+    let api: ToggAPI
+
+    @State private var kind = ExperienceKind.journeys
+    @State private var period = "Monthly"
+    @State private var dashboard: ExperienceDashboard?
+    @State private var selectedSummaryID: String?
+    @State private var metrics: [ExperienceMetric] = []
+    @State private var bars: [ExperienceBar] = []
+    @State private var records: [ExperienceRecord] = []
+    @State private var offset = 0
+    @State private var hasMore = false
+    @State private var busy = false
+    @State private var summaryBusy = false
+    @State private var error: String?
+    @State private var summaryError: String?
+    @State private var loadedSummary = false
+    @State private var raw = ""
+    @State private var rawSummary = ""
+    @State private var detailTarget: ExperienceDetailTarget?
+    @State private var requestGeneration = 0
+    @State private var summaryGeneration = 0
+
+    private let periods: [(String, String)] = [
+        ("Weekly", "Haftalık"), ("Monthly", "Aylık"), ("Annual", "Yıllık")
+    ]
+
+    var body: some View {
+        ZStack {
+            ToggTheme.background.ignoresSafeArea()
+            ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 16) {
+                    titleCard
+
+                    if summaryBusy && dashboard == nil {
+                        ProgressView().tint(ToggTheme.teal).padding(24)
+                    }
+                    if let summaryError {
+                        errorBanner(summaryError)
+                    }
+                    if let dashboard {
+                        summaryView(dashboard)
+                    }
+
+                    selector
+
+                    if let error {
+                        errorBanner(error)
+                    }
+
+                    if !metrics.isEmpty {
+                        periodMetricsCard
+                    }
+                    if !bars.isEmpty {
+                        chartCard
+                    }
+
+                    if busy && records.isEmpty {
+                        ProgressView().tint(ToggTheme.teal).padding(28)
+                    }
+                    if records.isEmpty && !busy {
+                        Text("Bu dönem için kayıt bulunamadı.")
+                            .font(.footnote).foregroundStyle(ToggTheme.muted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    Color.clear.frame(height: 1).id("records")
+
+                    if !records.isEmpty {
+                        HStack {
+                            Text("Kayıtlar")
+                                .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                            Spacer()
+                            Text("\(records.count)")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(ToggTheme.muted)
+                        }
+                    }
+
+                    ForEach(records) { record in
+                        recordCard(record)
+                    }
+
+                    if hasMore {
+                        Button { Task { await load(reset: false) } } label: {
+                            Label("Daha fazla yükle", systemImage: "arrow.down.circle")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(.black)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.teal))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(busy)
+                    }
+
+                    technicalResponse
+
+                    Text("Veriler Togg Drive Experience servisinden alınır. Topluluk karşılaştırması, maliyet ve konum alanları yalnız sunucu değer döndürdüğünde gösterilir; eksik değerler tahmin edilmez.")
+                        .font(.caption2).foregroundStyle(ToggTheme.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(20)
+            }
+            .refreshable {
+                await loadSummary()
+                await load(reset: true)
+            }
+            #if DEBUG
+            .onChange(of: records.count) { count in
+                guard count > 0 else { return }
+                if ProcessInfo.processInfo.arguments.contains("-scrollDriveRecords") {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        proxy.scrollTo("records", anchor: .top)
+                    }
+                }
+                if ProcessInfo.processInfo.arguments.contains("-openDriveDetail"),
+                   let first = records.first(where: { $0.detailID != nil }),
+                   let detailID = first.detailID {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        detailTarget = ExperienceDetailTarget(kind: first.kind, detailID: detailID)
+                    }
+                }
+            }
+            #endif
+            }
+        }
+        .navigationTitle("Sürüş & Şarj")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    Task {
+                        await loadSummary()
+                        await load(reset: true)
+                    }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .disabled(busy || summaryBusy)
+                .accessibilityLabel("Analizi yenile")
+            }
+        }
+        .task {
+            guard !loadedSummary else { return }
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-openDriveCharges") {
+                kind = .charges
+            }
+            #endif
+            await loadSummary()
+            await load(reset: true)
+        }
+        .sheet(item: $detailTarget) { target in
+            ExperienceDetailSheet(api: api, vin: vehicle.vin, target: target)
+        }
+    }
+
+    // MARK: - Başlık
+
+    private var titleCard: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle().fill(ToggTheme.teal.opacity(0.2)).frame(width: 40, height: 40)
+                Image(systemName: "chart.xyaxis.line")
+                    .font(.system(size: 18)).foregroundStyle(ToggTheme.teal)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Sürüş & Şarj Analizi")
+                    .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                Text(vehicle.title + " • " + (vehicle.plate.isEmpty ? vehicle.vin : vehicle.plate))
+                    .font(.system(size: 12)).foregroundStyle(ToggTheme.muted)
+                    .lineLimit(1)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .toggCardBackground(20)
+    }
+
+    private func errorBanner(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 12)).foregroundStyle(ToggTheme.pink)
+            Text(text).font(.footnote).foregroundStyle(ToggTheme.pink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.pink.opacity(0.08)))
+    }
+
+    // MARK: - Özet
+
+    private func summaryView(_ dashboard: ExperienceDashboard) -> some View {
+        VStack(spacing: 12) {
+            if dashboard.sections.count > 1 {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(dashboard.sections) { section in
+                            Button {
+                                selectedSummaryID = section.id
+                            } label: {
+                                Text(section.title)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(selectedSummaryID == section.id ? .black : .white)
+                                    .padding(.horizontal, 12)
+                                    .frame(height: 32)
+                                    .background(
+                                        Capsule().fill(selectedSummaryID == section.id
+                                                       ? ToggTheme.teal : ToggTheme.surfaceVariant)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if let section = selectedSection(in: dashboard) {
+                summarySectionCard(section)
+            }
+
+            if !dashboard.comparisons.isEmpty {
+                comparisonCard(dashboard.comparisons)
+            }
+
+            if dashboard.lastJourney != nil || dashboard.lastCharge != nil {
+                highlightsRow(dashboard)
+            }
+        }
+    }
+
+    private func selectedSection(in dashboard: ExperienceDashboard) -> ExperienceSummarySection? {
+        if let selectedSummaryID,
+           let section = dashboard.sections.first(where: { $0.id == selectedSummaryID }) {
+            return section
+        }
+        return dashboard.sections.first
+    }
+
+    private func summarySectionCard(_ section: ExperienceSummarySection) -> some View {
+        let hero = hero(for: section)
+        let stats = summaryStats(section, heroLabel: hero?.label)
+        let extras = summaryExtras(section, heroLabel: hero?.label, stats: stats)
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text(section.title)
+                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                Spacer()
+                if let score = section.economyScore {
+                    Text("Verim \(ExperienceFormat.whole(score))/100")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(ToggTheme.teal)
+                }
+            }
+
+            if let hero {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(hero.value)
+                            .font(.system(size: 38, weight: .bold))
+                            .foregroundStyle(.white)
+                            .minimumScaleFactor(0.6)
+                            .lineLimit(1)
+                        Text(hero.unit)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(ToggTheme.muted)
+                    }
+                    Text(hero.label)
+                        .font(.system(size: 11)).foregroundStyle(ToggTheme.muted)
+                }
+            }
+
+            if !stats.isEmpty {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                    ForEach(stats) { metric in
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(metric.label)
+                                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                                .lineLimit(1)
+                            Text(metric.value)
+                                .font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
+                                .lineLimit(1).minimumScaleFactor(0.65)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+
+            if !extras.isEmpty {
+                Divider().overlay(ToggTheme.outline.opacity(0.5))
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                    ForEach(extras) { metric in
+                        HStack(spacing: 6) {
+                            Text(metric.label)
+                                .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                                .lineLimit(1)
+                            Spacer(minLength: 4)
+                            Text(metric.value)
+                                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.white)
+                                .lineLimit(1).minimumScaleFactor(0.7)
+                        }
+                    }
+                }
+            }
+
+            let notes = summaryNotes(section)
+            if !notes.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(notes, id: \.0) { item in
+                        HStack(alignment: .top, spacing: 4) {
+                            Text(item.0 + ":").font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                            Text(item.1).font(.system(size: 10, weight: .semibold)).foregroundStyle(.white)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(18)
+        .toggCardBackground(22)
+    }
+
+    private func hero(for section: ExperienceSummarySection) -> (value: String, unit: String, label: String)? {
+        if let distance = section.distanceKM {
+            return (ExperienceFormat.oneDecimal(distance), "km", "Mesafe")
+        }
+        if let added = section.addedEnergyKWh {
+            return (ExperienceFormat.oneDecimal(added), "kWh", "Eklenen enerji")
+        }
+        if let count = section.journeyCount {
+            return (ExperienceFormat.whole(count), "yolculuk", "Yolculuk")
+        }
+        if let count = section.chargeCount {
+            return (ExperienceFormat.whole(count), "şarj", "Şarj")
+        }
+        if let energy = section.totalConsumptionKWh {
+            return (ExperienceFormat.oneDecimal(energy), "kWh", "Tüketim")
+        }
+        return nil
+    }
+
+    private func summaryStats(_ section: ExperienceSummarySection, heroLabel: String?) -> [ExperienceMetric] {
+        var result: [ExperienceMetric] = []
+        func add(_ label: String, _ value: String?) {
+            guard label != heroLabel, let value, result.count < 3,
+                  !result.contains(where: { $0.label == label }) else { return }
+            result.append(ExperienceMetric(label: label, value: value))
+        }
+        add("Mesafe", ExperienceFormat.distance(section.distanceKM))
+        add("Yolculuk", section.journeyCount.map { ExperienceFormat.whole($0) })
+        add("Süre", ExperienceFormat.duration(minutes: section.durationMinutes))
+        add("Ort. tüketim", ExperienceFormat.consumption(section.averageConsumption))
+        add("Tüketim", ExperienceFormat.energy(section.totalConsumptionKWh))
+        add("Ort. hız", section.averageSpeedKMH.map { "\(ExperienceFormat.oneDecimal($0)) km/sa" })
+        add("Şarj", section.chargeCount.map { ExperienceFormat.whole($0) })
+        add("Eklenen enerji", ExperienceFormat.energy(section.addedEnergyKWh))
+        return result
+    }
+
+    private func summaryExtras(_ section: ExperienceSummarySection, heroLabel: String?, stats: [ExperienceMetric]) -> [ExperienceMetric] {
+        let used = Set(stats.map(\.label) + [heroLabel].compactMap { $0 })
+        var result: [ExperienceMetric] = []
+        func add(_ label: String, _ value: String?) {
+            guard !used.contains(label), let value, result.count < 6,
+                  !result.contains(where: { $0.label == label }) else { return }
+            result.append(ExperienceMetric(label: label, value: value))
+        }
+        add("Mesafe", ExperienceFormat.distance(section.distanceKM))
+        add("Yolculuk", section.journeyCount.map { ExperienceFormat.whole($0) })
+        add("Süre", ExperienceFormat.duration(minutes: section.durationMinutes))
+        add("Ort. tüketim", ExperienceFormat.consumption(section.averageConsumption))
+        add("Tüketim", ExperienceFormat.energy(section.totalConsumptionKWh))
+        add("Ort. hız", section.averageSpeedKMH.map { "\(ExperienceFormat.oneDecimal($0)) km/sa" })
+        add("Şarj", section.chargeCount.map { ExperienceFormat.whole($0) })
+        add("Eklenen enerji", ExperienceFormat.energy(section.addedEnergyKWh))
+        return result
+    }
+
+    private func summaryNotes(_ section: ExperienceSummarySection) -> [(String, String)] {
+        var result: [(String, String)] = []
+        if let value = section.preferredMode { result.append(("Tercih edilen sürüş modu", value)) }
+        if let value = section.airCondition { result.append(("Klima kullanımı", value)) }
+        if let value = section.chargingType { result.append(("Şarj türü", value)) }
+        return result
+    }
+
+    private func comparisonCard(_ comparisons: [ExperienceComparison]) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Toplulukla karşılaştırma")
+                .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+            ForEach(comparisons) { comparison in
+                let maximum = max(comparison.you ?? 0, comparison.community ?? 0, 1)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(comparison.label)
+                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                        Spacer()
+                        Text(comparison.unit)
+                            .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                    }
+                    comparisonRow("Sen", value: comparison.you, unit: comparison.unit,
+                                  maximum: maximum, color: ToggTheme.teal)
+                    comparisonRow("Topluluk", value: comparison.community, unit: comparison.unit,
+                                  maximum: maximum, color: ToggTheme.muted)
+                    if comparison.id == "avg_consumption_per_100km",
+                       let you = comparison.you, let community = comparison.community, community > 0 {
+                        let difference = abs(you - community) / community * 100
+                        let text = you < community ? "daha düşük tüketim"
+                            : (you > community ? "daha yüksek tüketim" : "aynı tüketim")
+                        let amount = difference < 1 ? "<1" : ExperienceFormat.whole(difference)
+                        Text("\(amount)% \(text)")
+                            .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                    }
+                }
+            }
+        }
+        .padding(18)
+        .toggCardBackground(22)
+    }
+
+    private func comparisonRow(_ title: String, value: Double?, unit: String,
+                               maximum: Double, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Text(title).font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                Spacer()
+                Text(comparisonValue(value, unit: unit))
+                    .font(.system(size: 10, weight: .semibold)).foregroundStyle(.white)
+            }
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(ToggTheme.outline.opacity(0.35))
+                    Capsule().fill(color)
+                        .frame(width: geometry.size.width * (value.map { min(1, max(0, $0 / maximum)) } ?? 0))
+                }
+            }
+            .frame(height: 6)
+        }
+    }
+
+    private func comparisonValue(_ value: Double?, unit: String) -> String {
+        guard let value else { return "Veri yok" }
+        if unit == "adet" { return ExperienceFormat.whole(value) }
+        return ExperienceFormat.oneDecimal(value)
+    }
+
+    private func highlightsRow(_ dashboard: ExperienceDashboard) -> some View {
+        HStack(spacing: 10) {
+            if let journey = dashboard.lastJourney { highlightCard(journey) }
+            if let charge = dashboard.lastCharge { highlightCard(charge) }
+        }
+    }
+
+    private func highlightCard(_ highlight: ExperienceHighlight) -> some View {
+        Button {
+            if let detailID = highlight.detailID {
+                detailTarget = ExperienceDetailTarget(kind: highlight.kind, detailID: detailID)
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(highlight.title)
+                        .font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
+                    Spacer()
+                    if highlight.detailID != nil {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9, weight: .bold)).foregroundStyle(ToggTheme.muted)
+                    }
+                }
+                if !highlight.dateText.isEmpty {
+                    Text(highlight.dateText)
+                        .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                        .lineLimit(1)
+                }
+                if !highlight.detailText.isEmpty {
+                    Text(highlight.detailText)
+                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(ToggTheme.teal)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                } else {
+                    Text("Ayrıntı için dokun")
+                        .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .toggCardBackground(16)
+        }
+        .buttonStyle(.plain)
+        .disabled(highlight.detailID == nil)
+    }
+
+    // MARK: - Seçim
+
+    private var selector: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                ForEach(ExperienceKind.allCases, id: \.rawValue) { item in
+                    Button {
+                        guard kind != item else { return }
+                        kind = item
+                        Task { await load(reset: true) }
+                    } label: {
+                        Text(item.title)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(kind == item ? .black : .white)
+                            .frame(maxWidth: .infinity).frame(height: 40)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(kind == item ? ToggTheme.teal : ToggTheme.surfaceVariant)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            HStack(spacing: 8) {
+                ForEach(periods, id: \.0) { item in
+                    Button {
+                        guard period != item.0 else { return }
+                        period = item.0
+                        Task { await load(reset: true) }
+                    } label: {
+                        Text(item.1)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(period == item.0 ? .black : .white)
+                            .frame(maxWidth: .infinity).frame(height: 34)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(period == item.0 ? ToggTheme.teal : ToggTheme.surfaceVariant)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var periodMetricsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Dönem Özeti")
+                .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                ForEach(metrics) { metric in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(metric.label)
+                            .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                            .lineLimit(1)
+                        Text(metric.value)
+                            .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                            .lineLimit(1).minimumScaleFactor(0.65)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.surfaceVariant))
+                }
+            }
+        }
+        .padding(16)
+        .toggCardBackground(20)
+    }
+
+    private var chartCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(kind == .journeys ? "Dönem mesafe grafiği" : "Dönem şarj enerjisi grafiği")
+                .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+            ExperienceBarChart(bars: bars)
+            Text("Her çubuk bir dönemi gösterir; yalnız sunucu değeri bulunan dönemler kullanılır.")
+                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+        }
+        .padding(16)
+        .toggCardBackground(20)
+    }
+
+    // MARK: - Kayıtlar
+
+    private func recordCard(_ record: ExperienceRecord) -> some View {
+        Button {
+            if let detailID = record.detailID {
+                detailTarget = ExperienceDetailTarget(kind: record.kind, detailID: detailID)
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Text(record.dateText.isEmpty ? "Tarih belirtilmemiş" : record.dateText)
+                        .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                        .lineLimit(1)
+                    Spacer()
+                    if record.detailID != nil {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .bold)).foregroundStyle(ToggTheme.muted)
+                    }
+                }
+                if !record.subtitle.isEmpty {
+                    Text(record.subtitle)
+                        .font(.system(size: 11)).foregroundStyle(ToggTheme.muted)
+                        .lineLimit(2)
+                }
+                if !record.metrics.isEmpty {
+                    Divider().overlay(ToggTheme.outline.opacity(0.5))
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        ForEach(record.metrics) { field in
+                            HStack(spacing: 4) {
+                                Text(field.label)
+                                    .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                                    .lineLimit(1)
+                                Spacer(minLength: 4)
+                                Text(field.value)
+                                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(.white)
+                                    .lineLimit(1).minimumScaleFactor(0.7)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(16)
+            .toggCardBackground(18)
+        }
+        .buttonStyle(.plain)
+        .disabled(record.detailID == nil)
+    }
+
+    private var technicalResponse: some View {
+        DisclosureGroup("Teknik yanıt") {
+            Text(raw.isEmpty ? rawSummary : raw)
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundStyle(ToggTheme.muted)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.caption)
+        .foregroundStyle(ToggTheme.muted)
+    }
+
+    // MARK: - Veri
+
+    @MainActor
+    private func loadSummary() async {
+        summaryGeneration += 1
+        let token = summaryGeneration
+        summaryBusy = true
+        summaryError = nil
+        defer { if token == summaryGeneration { summaryBusy = false } }
+        do {
+            let data = try await api.driveExperience(vin: vehicle.vin, kind: "summary")
+            guard token == summaryGeneration else { return }
+            rawSummary = String(decoding: data, as: UTF8.self)
+            guard let parsed = ExperienceFormat.dashboard(from: data) else {
+                summaryError = "Analiz özeti beklenen biçimde değil."
+                return
+            }
+            dashboard = parsed
+            loadedSummary = true
+            if selectedSummaryID == nil || !parsed.sections.contains(where: { $0.id == selectedSummaryID }) {
+                selectedSummaryID = parsed.sections.first?.id
+            }
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-driveSummaryAllTime"),
+               parsed.sections.contains(where: { $0.id == "all_time" }) {
+                selectedSummaryID = "all_time"
+            }
+            #endif
+        } catch {
+            guard token == summaryGeneration else { return }
+            summaryError = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func load(reset: Bool) async {
+        requestGeneration += 1
+        let token = requestGeneration
+        busy = true
+        error = nil
+        if reset {
+            offset = 0
+            records = []
+            metrics = []
+            bars = []
+            hasMore = false
+        }
+        defer { if token == requestGeneration { busy = false } }
+        do {
+            let data = try await api.driveExperience(
+                vin: vehicle.vin, kind: kind.rawValue, period: period, offset: offset
+            )
+            guard token == requestGeneration else { return }
+            raw = String(decoding: data, as: UTF8.self)
+            guard let page = ExperienceFormat.period(from: data, kind: kind, offset: offset) else {
+                throw AppError.message("Analiz yanıtı beklenen biçimde değil.")
+            }
+            metrics = page.metrics
+            bars = page.bars
+            if reset {
+                records = page.records
+            } else {
+                let existing = Set(records.map(\.id))
+                records += page.records.filter { !existing.contains($0.id) }
+            }
+            offset = max(page.nextOffset, offset)
+            hasMore = page.hasMore && page.receivedCount > 0
+        } catch {
+            guard token == requestGeneration else { return }
+            self.error = error.localizedDescription
+            if reset { hasMore = false }
+        }
+    }
+}
+
+// MARK: - Grafik
+
+private struct ExperienceBarChart: View {
+    let bars: [ExperienceBar]
+
+    var body: some View {
+        let maximum = max(bars.map(\.value).max() ?? 0, 1)
+        VStack(spacing: 7) {
+            ForEach(bars) { bar in
+                HStack(spacing: 8) {
+                    Text(bar.label.isEmpty ? "—" : bar.label)
+                        .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                        .frame(width: 62, alignment: .leading).lineLimit(1)
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(ToggTheme.outline.opacity(0.35))
+                            Capsule().fill(ToggTheme.teal)
+                                .frame(width: max(2, geometry.size.width * min(1, bar.value / maximum)))
+                        }
+                    }
+                    .frame(height: 7)
+                    Text("\(ExperienceFormat.oneDecimal(bar.value)) \(bar.unit)")
+                        .font(.system(size: 9, weight: .semibold)).foregroundStyle(.white)
+                        .frame(width: 62, alignment: .trailing).lineLimit(1)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Ayrıntı
+
+private struct ExperienceDetailSheet: View {
+    let api: ToggAPI
+    let vin: String
+    let target: ExperienceDetailTarget
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var detail: ExperienceDetail?
+    @State private var error: String?
+    @State private var busy = false
+    @State private var raw = ""
+    @State private var generation = 0
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                ToggTheme.background.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: 16) {
+                        if busy && detail == nil {
+                            ProgressView().tint(ToggTheme.teal).padding(32)
+                        }
+                        if let error {
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 12)).foregroundStyle(ToggTheme.pink)
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(error).font(.footnote).foregroundStyle(ToggTheme.pink)
+                                    Button("Tekrar dene") { Task { await load() } }
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundStyle(.black)
+                                        .padding(.horizontal, 12).frame(height: 32)
+                                        .background(Capsule().fill(ToggTheme.teal))
+                                }
+                                Spacer()
+                            }
+                            .padding(12)
+                            .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.pink.opacity(0.08)))
+                        }
+                        if let detail {
+                            detailHeader(detail)
+                            if !detail.metrics.isEmpty {
+                                metricsGrid(detail.metrics)
+                            }
+                            if !detail.notes.isEmpty {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    ForEach(detail.notes, id: \.self) { note in
+                                        Text(note).font(.system(size: 11)).foregroundStyle(ToggTheme.muted)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(14)
+                                .background(RoundedRectangle(cornerRadius: 16).fill(ToggTheme.surfaceVariant.opacity(0.6)))
+                            }
+                            ForEach(detail.sections) { section in
+                                detailSection(section)
+                            }
+                        }
+                        if !raw.isEmpty {
+                            DisclosureGroup("Teknik yanıt") {
+                                Text(raw)
+                                    .font(.system(size: 9, design: .monospaced))
+                                    .foregroundStyle(ToggTheme.muted)
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .font(.caption)
+                            .foregroundStyle(ToggTheme.muted)
+                        }
+                    }
+                    .padding(20)
+                }
+            }
+            .navigationTitle(target.kind == .charges ? "Şarj ayrıntısı" : "Yolculuk ayrıntısı")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel("Kapat")
+                }
+            }
+            .task { await load() }
+        }
+    }
+
+    private func detailHeader(_ detail: ExperienceDetail) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(detail.dateText.isEmpty ? "Tarih belirtilmemiş" : detail.dateText)
+                .font(.system(size: 18, weight: .bold)).foregroundStyle(.white)
+            if !detail.subtitle.isEmpty {
+                Text(detail.subtitle)
+                    .font(.system(size: 12)).foregroundStyle(ToggTheme.muted)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .toggCardBackground(20)
+    }
+
+    private func metricsGrid(_ metrics: [ExperienceMetric]) -> some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+            ForEach(metrics) { metric in
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(metric.label)
+                        .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                        .lineLimit(1)
+                    Text(metric.value)
+                        .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                        .lineLimit(1).minimumScaleFactor(0.65)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.surfaceVariant))
+            }
+        }
+    }
+
+    private func detailSection(_ section: ExperienceDetailSection) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(section.title)
+                .font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
+            ForEach(section.metrics) { metric in
+                HStack(spacing: 6) {
+                    Text(metric.label)
+                        .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                    Spacer(minLength: 6)
+                    Text(metric.value)
+                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(.white)
+                }
+            }
+        }
+        .padding(16)
+        .toggCardBackground(18)
+    }
+
+    @MainActor
+    private func load() async {
+        generation += 1
+        let token = generation
+        busy = true
+        error = nil
+        defer { if token == generation { busy = false } }
+        do {
+            let data = try await api.driveExperience(
+                vin: vin, kind: target.kind.detailKind, id: target.detailID
+            )
+            guard token == generation else { return }
+            raw = String(decoding: data, as: UTF8.self)
+            guard let parsed = ExperienceFormat.detail(from: data, kind: target.kind) else {
+                error = "Kayıt ayrıntısı beklenen biçimde değil."
+                return
+            }
+            detail = parsed
+        } catch {
+            guard token == generation else { return }
+            self.error = error.localizedDescription
+        }
+    }
+}
