@@ -413,13 +413,6 @@ struct DashboardView: View {
                 onToggle: { Task { await toggleClimate() } },
                 onApplyTemperature: { Task { await applyClimateTemperature() } }
             )
-            PremiumControlsSection(
-                sentryMode: $sentryMode,
-                valetMode: $valetMode,
-                ambientColor: $ambientColor,
-                sunroofOpen: $sunroofOpen,
-                onWindowCommand: requestWindowCommand
-            )
         }
     }
 
