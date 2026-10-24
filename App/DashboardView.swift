@@ -397,8 +397,7 @@ struct DashboardView: View {
                 sunroofOpen: $sunroofOpen,
                 onWindowCommand: requestWindowCommand
             )
-            chargingCard
-            trugoStations
+            chargingOverviewLink
         }
     }
 
@@ -1330,6 +1329,33 @@ struct DashboardView: View {
         }
         .padding(20)
         .toggCardBackground()
+    }
+
+    private var chargingOverviewLink: some View {
+        Button { tab = .charging } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "bolt.car.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(ToggTheme.green)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Şarj ve istasyonlar")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("Durum: \(chargingLabel) · tahmin ve geçmiş")
+                        .font(.system(size: 10))
+                        .foregroundStyle(ToggTheme.muted)
+                        .lineLimit(1)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(ToggTheme.muted)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .toggCardBackground()
+        }
+        .buttonStyle(.plain)
     }
 
     private var chargingCalculator: some View {
