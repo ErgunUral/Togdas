@@ -199,10 +199,6 @@ struct DashboardView: View {
                         outsideTemperature: telemetry?.outsideTemperatureC
                     )
 
-                    bleSecurityBanner
-                    bleCard
-                    proximityCard
-
                     switch tab {
                     case .overview: overviewTab
                     case .climate: climateTab
@@ -390,6 +386,9 @@ struct DashboardView: View {
 
     private var overviewTab: some View {
         VStack(spacing: 16) {
+            bleSecurityBanner
+            bleCard
+            proximityCard
             quickActions
             PremiumControlsSection(
                 sentryMode: $sentryMode,
