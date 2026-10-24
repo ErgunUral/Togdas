@@ -55,6 +55,7 @@ struct DashboardView: View {
     @ObservedObject var model: GarageModel
     let vehicle: Vehicle
     @AppStorage("toqdas.theme") private var themeName = ToggThemeStyle.togg.rawValue
+    @AppStorage("toqdas.dashboardLayout") private var layoutName = DashboardLayoutStyle.classic.rawValue
 
     @EnvironmentObject private var ble: BleConnection
 
@@ -185,7 +186,8 @@ struct DashboardView: View {
                         onOpenDetail: { showDetail = true },
                         onOpenDiscovery: { showDiscovery = true },
                         onLogout: { model.logout() },
-                        themeName: $themeName
+                        themeName: $themeName,
+                        layoutName: $layoutName
                     )
 
                     VehicleVisualCard(
@@ -379,18 +381,22 @@ struct DashboardView: View {
     // MARK: - Sekmeler
 
     private var overviewTab: some View {
-        VStack(spacing: 16) {
+        let layout = DashboardLayoutStyle(rawValue: layoutName) ?? .classic
+        return VStack(spacing: 16) {
             bleSecurityBanner
             bleCard
-            proximityCard
-            quickActions
-            PremiumControlsSection(
-                sentryMode: $sentryMode,
-                valetMode: $valetMode,
-                ambientColor: $ambientColor,
-                sunroofOpen: $sunroofOpen,
-                onWindowCommand: requestWindowCommand
-            )
+            if layout != .minimal { proximityCard }
+            if layout == .sport { quickActions }
+            if layout != .minimal {
+                PremiumControlsSection(
+                    sentryMode: $sentryMode,
+                    valetMode: $valetMode,
+                    ambientColor: $ambientColor,
+                    sunroofOpen: $sunroofOpen,
+                    onWindowCommand: requestWindowCommand
+                )
+            }
+            if layout != .sport { quickActions }
             chargingOverviewLink
         }
     }
@@ -1624,6 +1630,7 @@ private struct DashboardHeader: View {
     let onOpenDiscovery: () -> Void
     let onLogout: () -> Void
     @Binding var themeName: String
+    @Binding var layoutName: String
 
     private var telemetryIsFresh: Bool {
         guard let updatedAt else { return false }
@@ -1725,6 +1732,11 @@ private struct DashboardHeader: View {
                         Picker("Renk teması", selection: $themeName) {
                             ForEach(ToggThemeStyle.allCases) { style in
                                 Text(style.title).tag(style.rawValue)
+                            }
+                        }
+                        Picker("Dashboard düzeni", selection: $layoutName) {
+                            ForEach(DashboardLayoutStyle.allCases) { layout in
+                                Text("\(layout.title) · \(layout.subtitle)").tag(layout.rawValue)
                             }
                         }
                         Divider()

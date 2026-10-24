@@ -62,6 +62,30 @@ enum ToggThemeStyle: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
+enum DashboardLayoutStyle: String, CaseIterable, Identifiable, Hashable {
+    case classic, minimal, sport, technical
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .classic: return "Klasik"
+        case .minimal: return "Minimal"
+        case .sport: return "Sportif"
+        case .technical: return "Teknik"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .classic: return "Tüm kartlar"
+        case .minimal: return "Özet ve hızlı erişim"
+        case .sport: return "Kontroller önde"
+        case .technical: return "Tanı ve telemetri önde"
+        }
+    }
+}
+
 /// Tema paletleri koyu tutulur; kartlardaki beyaz metinlerin kontrastı korunur.
 enum ToggTheme {
     private static var selected: ToggThemeStyle {

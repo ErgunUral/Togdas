@@ -26,6 +26,8 @@ It overwrites project settings; preserve manual project changes before running i
   konfor/güvenlik kartları, şarj limiti ve sağlık kartı.
 - iPhone dashboard color themes: Togg Gece, Okyanus and Grafit/Amber; the choice is stored
   locally. All palettes remain dark to preserve contrast across existing white card text.
+- Dashboard layouts: Klasik, Minimal, Sportif and Teknik. The selected layout only changes
+  hierarchy and card visibility; it never changes vehicle command behavior.
 - Çoklu araç desteği: garajdaki araçlar arasında geçiş; seçim `UserDefaults` ile kalıcıdır.
 - Sürüş & şarj analizi: `DriveExperience` uçlarından son 30 gün, önceki dönem,
   önceki takvim ayı ve tüm zamanlar özeti; topluluk karşılaştırması; son yolculuk ve
