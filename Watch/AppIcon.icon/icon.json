@@ -1,0 +1,15 @@
+{
+  "fill" : {
+    "automatic-gradient" : "extended-srgb:0.03,0.17,0.31,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        { "image-name" : "T.png", "name" : "T" }
+      ]
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [ "watchOS" ]
+  }
+}

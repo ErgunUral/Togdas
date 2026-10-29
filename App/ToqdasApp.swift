@@ -1,4 +1,7 @@
 import SwiftUI
+import Combine
+import UIKit
+import WidgetKit
 
 @MainActor
 final class GarageModel: ObservableObject {
@@ -6,15 +9,127 @@ final class GarageModel: ObservableObject {
     @Published var signedIn = false
     @Published var busy = false
     @Published var error: String?
+    @Published var linkStatus = ""
+    @Published var silentRecovery = false
     @Published var selectedVin: String? = UserDefaults.standard.string(forKey: "toqdas.selectedVin")
     let api = ToggAPI()
     let loginCoordinator = LoginCoordinator()
     let watch = WatchLink()
     let ble = BleConnection()
+    let proximityMonitor: ProximityDetectionMonitor
+    let link: BleLinkCoordinator
+    let geofence = GeofenceManager()
+    private var watchCancellables = Set<AnyCancellable>()
+    private var cloudBatteryPercent: Double?
+    private var cloudRangeKM: Double?
+    private var cloudOutsideTemperatureC: Double?
+    private var cloudAuxiliaryBatteryPercent: Double?
+    private var cloudOdometerKM: Double?
+    private var cloudChargingState: String?
+    private var cloudUpdatedAt: Date?
+    private var cloudFetchTask: Task<Void, Never>?
+    private var lastWidgetReloadAt = Date.distantPast
 
     init() {
+        proximityMonitor = ProximityDetectionMonitor(ble: ble)
+        link = BleLinkCoordinator(ble: ble, api: api)
         do { signedIn = try api.hasSession() }
         catch { self.error = error.localizedDescription }
+
+        if let selectedVin {
+            // Eski sürümlerden kalan geçici paylaşılan anahtar kayıtlarını temizle.
+            SharedKeyRequestStore.cleanupStaleState(vin: selectedVin)
+            proximityMonitor.configure(vin: selectedVin)
+            link.configure(vin: selectedVin, isShared: false)
+        }
+
+        geofence.onEnterHome = { [weak self] in
+            Task { @MainActor in guard self?.ble.state.isReady == true else { return }; _ = self?.ble.unlock() }
+        }
+        geofence.onExitHome = { [weak self] in
+            Task { @MainActor in guard self?.ble.state.isReady == true else { return }; _ = self?.ble.lock() }
+        }
+
+        // Arka plan yakınlık algısı: yalnızca izleme; komut göndermez.
+        NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.proximityMonitor.appDidEnterBackground() }
+            }
+            .store(in: &watchCancellables)
+        NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.proximityMonitor.appWillEnterForeground()
+                    self?.link.handleForeground()
+                }
+            }
+            .store(in: &watchCancellables)
+        ble.$rssi
+            .sink { [weak self] value in
+                guard let value else { return }
+                Task { @MainActor in self?.proximityMonitor.feed(rssi: value) }
+            }
+            .store(in: &watchCancellables)
+        $selectedVin
+            .sink { [weak self] vin in
+                guard let vin else { return }
+                Task { @MainActor in
+                    self?.proximityMonitor.configure(vin: vin)
+                    SharedKeyRequestStore.cleanupStaleState(vin: vin)
+                    let shared = self?.selectedVehicle?.isShared ?? false
+                    self?.link.configure(vin: vin, isShared: shared)
+                    self?.publishWidgetSnapshot()
+                }
+            }
+            .store(in: &watchCancellables)
+
+        // Bağlantı yaşam döngüsü panorama bağlı değil: kopmada yeniden bağlanma
+        // ve önbellekli sertifikayla otomatik kimlik doğrulama burada yürür.
+        ble.$state
+            .dropFirst()
+            .removeDuplicates(by: { $0.description == $1.description })
+            .sink { [weak self] state in
+                Task { @MainActor in
+                    guard let self else { return }
+                    if state.isReady { LockConfirmationSound.playConnectedTone() }
+                    self.link.handle(state: state)
+                }
+            }
+            .store(in: &watchCancellables)
+        link.$status
+            .sink { [weak self] value in
+                Task { @MainActor in self?.linkStatus = value }
+            }
+            .store(in: &watchCancellables)
+        link.$silentRecovery
+            .sink { [weak self] value in
+                Task { @MainActor in self?.silentRecovery = value }
+            }
+            .store(in: &watchCancellables)
+
+        watch.commandHandler = { [weak self] request, reply in
+            guard let self else {
+                reply(WatchCommandResult(id: request.id, status: "unavailable",
+                                         message: "Uygulama hazır değil.",
+                                         at: Date().timeIntervalSince1970))
+                return
+            }
+            self.handleWatchCommand(request, reply: reply)
+        }
+
+        ble.$telemetry
+            .throttle(for: .seconds(3), scheduler: RunLoop.main, latest: true)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.publishWatchSnapshot() }
+            }
+            .store(in: &watchCancellables)
+
+        ble.$state
+            .removeDuplicates(by: { $0.description == $1.description })
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.publishWatchSnapshot() }
+            }
+            .store(in: &watchCancellables)
     }
 
     func login() async {
@@ -37,8 +152,45 @@ final class GarageModel: ObservableObject {
         } else if selectedVin == nil {
             selectedVin = vehicles.first?.vin
         }
-        if let selectedVin { UserDefaults.standard.set(selectedVin, forKey: "toqdas.selectedVin") }
+        if let selectedVin {
+            UserDefaults.standard.set(selectedVin, forKey: "toqdas.selectedVin")
+            SharedKeyRequestStore.cleanupStaleState(vin: selectedVin)
+            link.configure(vin: selectedVin, isShared: selectedVehicle?.isShared ?? false)
+            link.startIfDesired()
+        }
         watch.publish(names: vehicles.map(\.title))
+        publishWatchSnapshot()
+        refreshCloudIfStale()
+    }
+
+    /// Pano yenilemesi bulut telemetrisini saate de yazar. Eksik alan nil kalır.
+    func noteCloudTelemetry(_ telemetry: VehicleTelemetry) {
+        cloudBatteryPercent = telemetry.batteryPercent
+        cloudRangeKM = telemetry.rangeKM
+        cloudOutsideTemperatureC = telemetry.outsideTemperatureC
+        cloudAuxiliaryBatteryPercent = telemetry.auxiliaryBatteryPercent
+        cloudOdometerKM = telemetry.odometerKM
+        cloudChargingState = telemetry.chargingState
+        cloudUpdatedAt = telemetry.vehicleUpdatedAt ?? Date()
+        publishWatchSnapshot()
+    }
+
+    private func refreshCloudIfStale() {
+        guard signedIn, let vin = selectedVin,
+              let vehicle = vehicles.first(where: { $0.vin == vin }) else { return }
+        if let cloudUpdatedAt, Date().timeIntervalSince(cloudUpdatedAt) < 120 { return }
+        guard cloudFetchTask == nil else { return }
+        cloudFetchTask = Task { [weak self] in
+            defer { Task { @MainActor in self?.cloudFetchTask = nil } }
+            guard let self else { return }
+            do {
+                let response = try await self.api.details(for: vehicle)
+                let parsed = try VehicleTelemetry(data: Data(response.utf8))
+                self.noteCloudTelemetry(parsed)
+            } catch {
+                return
+            }
+        }
     }
 
     var selectedVehicle: Vehicle? {
@@ -48,6 +200,7 @@ final class GarageModel: ObservableObject {
     func select(_ vehicle: Vehicle) {
         selectedVin = vehicle.vin
         UserDefaults.standard.set(vehicle.vin, forKey: "toqdas.selectedVin")
+        link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
     }
 
     func refresh() async {
@@ -65,7 +218,126 @@ final class GarageModel: ObservableObject {
             vehicles = []
             signedIn = false
             watch.publish(names: [])
+            publishWidgetSnapshot()
         } catch { self.error = error.localizedDescription }
+    }
+
+    // MARK: - Saat köprüsü
+
+    /// Saatten gelen kilit isteğini doğrular ve BLE komutuna çevirir.
+    /// Saat "kilitlendi" mesajı almaz; onay yalnızca imzalı telemetriden gelir.
+    private func handleWatchCommand(_ request: WatchCommandRequest,
+                                    reply: @escaping (WatchCommandResult) -> Void) {
+        let now = Date().timeIntervalSince1970
+        func reject(_ message: String) {
+            reply(WatchCommandResult(id: request.id, status: "rejected", message: message, at: now))
+        }
+        guard !request.isExpired,
+              request.createdAt <= now + 1,
+              now - request.createdAt <= 15,
+              request.expiresAt >= request.createdAt,
+              request.expiresAt - request.createdAt <= 15 else {
+            return reject("İstek zaman aşımına uğradı veya geçersiz; yeniden deneyin.")
+        }
+        guard request.vin == selectedVin else {
+            return reject("Seçili araç eşleşmiyor.")
+        }
+        let labels: [String: String] = ["lock": "Kilit", "unlock": "Açma",
+                                       "trunkOpen": "Bagaj açma", "trunkClose": "Bagaj kapama"]
+        guard let label = labels[request.action] else {
+            return reject("Bagaj/cam komutları Watch'tan doğrulanana kadar kapalı.")
+        }
+        guard ble.canSendVehicleCommands else {
+            return reject("READY ve 15 saniyeden yeni, kilit durumu bilinen imzalı telemetri gerekli.")
+        }
+        let accepted: Bool
+        switch request.action {
+        case "lock": accepted = ble.lock()
+        case "unlock": accepted = ble.unlock()
+        case "trunkOpen": accepted = ble.trunkOpen()
+        case "trunkClose": accepted = ble.trunkClose()
+        default: accepted = false
+        }
+        guard accepted else {
+            return reject(ble.lastEvent.isEmpty ? "Komut BLE katmanında reddedildi." : ble.lastEvent)
+        }
+        reply(WatchCommandResult(id: request.id, status: "forwarded",
+                                 message: "\(label) isteği araca iletildi; taze telemetriyle doğrulama bekleniyor.",
+                                 at: now))
+        publishWatchSnapshot()
+    }
+
+    @MainActor
+    func handleShortcutCommand(_ action: String) {
+        guard ble.state.isReady else { return }
+        switch action {
+        case "lock": _ = ble.lock()
+        case "unlock": _ = ble.unlock()
+        case "trunkOpen": _ = ble.trunkOpen()
+        case "trunkClose": _ = ble.trunkClose()
+        default: break
+        }
+    }
+
+    private func publishWatchSnapshot() {
+        publishWidgetSnapshot()
+        guard let vin = selectedVin,
+              let vehicle = vehicles.first(where: { $0.vin == vin }) else { return }
+        let telemetry = ble.telemetry
+        let age = telemetry.map { Date().timeIntervalSince($0.receivedAt) }
+        watch.publish(snapshot: WatchSnapshot(
+            vin: vin,
+            vehicleName: vehicle.title,
+            locked: telemetry?.isLocked,
+            doorCount: telemetry?.doors.count ?? 0,
+            openDoors: telemetry?.doors.filter { $0 != 0 }.count ?? 0,
+            trunkAjar: telemetry.map { $0.trunkAjar != 0 },
+            powerState: telemetry?.powerState,
+            ready: ble.state.isReady,
+            bleState: ble.state.description,
+            updatedAt: Date().timeIntervalSince1970,
+            telemetryAge: age,
+            batteryPercent: cloudBatteryPercent,
+            rangeKM: cloudRangeKM,
+            outsideTemperatureC: cloudOutsideTemperatureC,
+            auxiliaryBatteryPercent: cloudAuxiliaryBatteryPercent,
+            odometerKM: cloudOdometerKM,
+            chargingState: cloudChargingState,
+            proximityEnabled: UserDefaults.standard.bool(forKey: "toqdas.proximity.enabled.\(vin)"),
+            recovering: link.silentRecovery
+        ))
+        refreshCloudIfStale()
+    }
+
+    /// Widget'e yalnızca gösterim için araç adı ve telemetri özeti yazar.
+    /// Kimlik bilgileri ve dijital anahtar verileri App Group'a aktarılmaz.
+    private func publishWidgetSnapshot() {
+        guard let vin = selectedVin,
+              let vehicle = vehicles.first(where: { $0.vin == vin }) else {
+            VehicleWidgetSnapshotStore.clear()
+            reloadWidgetIfNeeded()
+            return
+        }
+
+        VehicleWidgetSnapshotStore.save(VehicleWidgetSnapshot(
+            vehicleName: vehicle.title,
+            locked: ble.telemetry?.isLocked,
+            batteryPercent: cloudBatteryPercent,
+            rangeKM: cloudRangeKM,
+            bleReady: ble.state.isReady,
+            bleUpdatedAt: ble.telemetry?.receivedAt,
+            cloudUpdatedAt: cloudUpdatedAt,
+            savedAt: Date()
+        ))
+        reloadWidgetIfNeeded()
+    }
+
+    /// WidgetKit yenilemelerini uygulama içi BLE telemetrisinden daha seyrek
+    /// ister; iOS yine de kendi pil/yenileme politikasını uygular.
+    private func reloadWidgetIfNeeded() {
+        guard Date().timeIntervalSince(lastWidgetReloadAt) >= 60 else { return }
+        lastWidgetReloadAt = Date()
+        WidgetCenter.shared.reloadTimelines(ofKind: VehicleWidgetSnapshot.widgetKind)
     }
 }
 
@@ -82,7 +354,13 @@ struct ToqdasApp: App {
     }
 
     var body: some Scene {
-        WindowGroup { GarageView(model: model).environmentObject(model.ble) }
+        WindowGroup { GarageView(model: model).environmentObject(model.ble)
+            .onOpenURL { url in
+                guard url.scheme == "toqdas", url.host == "command",
+                      let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                      let action = comps.queryItems?.first(where: { $0.name == "action" })?.value else { return }
+                model.handleShortcutCommand(action)
+            } }
     }
 }
 
@@ -238,6 +516,10 @@ struct DiscoveryView: View {
                     VStack(alignment: .leading) {
                         Text(device.name)
                         Text("Tarama: \(device.rssi) dBm • Bağlanmak için dokun").font(.caption)
+                        if device.name.hasPrefix("My T-SAS") {
+                            Text("My T-SAS adayı; VIN-ad eşleşmesi ve servis UUID'leri yalnızca tanı amaçlıdır.")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
                     }
                 }.disabled(bluetooth.activeDeviceID != nil)
             }
@@ -248,6 +530,11 @@ struct DiscoveryView: View {
                     Button("Sinyali yenile") { bluetooth.refreshRSSI() }.disabled(!bluetooth.discoveryComplete)
                     Button("Bağlantıyı kes", role: .destructive) { bluetooth.disconnect() }
                 }
+            }
+            Section("Tanı") {
+                Text("Bu tarama yalnızca yakın BLE cihazlarını gösterir. My T-SAS adı ve servis UUID'leri sahiplik veya yetkilendirme kanıtı değildir. VIN-ad eşleşmesi, bond durumu ve servis UUID'leri yalnızca tanı amaçlıdır.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Text("Bu tarama yakın cihazları gösterir; sahiplik veya mesafe kanıtı değildir.")
                 .font(.footnote).foregroundStyle(.secondary)

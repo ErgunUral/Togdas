@@ -1,16 +1,40 @@
 import AVFoundation
+import Combine
 import Foundation
 
 @MainActor
 enum LockConfirmationSound {
     private static var player: AVAudioPlayer?
 
-    /// Plays two short, soft tones through the iPhone speaker/audio route.
+    private struct Beep {
+        let start: Double
+        let duration: Double
+        let frequency: Double
+        var secondFrequency: Double? = nil
+        let amplitude: Double
+    }
+
+    /// Dijital anahtar READY olduğunda kilit teyit sesinden farklı tek kısa ses.
+    /// Ambient kategori sessiz anahtara saygı gösterir.
+    static func playConnectedTone() {
+        play(makeWave(duration: 0.20, beeps: [
+            Beep(start: 0, duration: 0.14, frequency: 1_046.5, amplitude: 0.12)
+        ]))
+    }
+
+    /// Plays two short, stronger dual-tone honks through the iPhone speaker/audio route.
     /// The ambient session respects the device's silent switch.
     static func playDoubleBeep() {
+        play(makeWave(duration: 0.48, beeps: [
+            Beep(start: 0, duration: 0.16, frequency: 420, secondFrequency: 520, amplitude: 0.20),
+            Beep(start: 0.26, duration: 0.16, frequency: 420, secondFrequency: 520, amplitude: 0.20)
+        ]))
+    }
+
+    private static func play(_ data: Data) {
         do {
             try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
-            let sound = try AVAudioPlayer(data: makeWave(), fileTypeHint: AVFileType.wav.rawValue)
+            let sound = try AVAudioPlayer(data: data, fileTypeHint: AVFileType.wav.rawValue)
             sound.numberOfLoops = 0
             sound.prepareToPlay()
             player = sound
@@ -20,30 +44,20 @@ enum LockConfirmationSound {
         }
     }
 
-    private static func makeWave() -> Data {
+    private static func makeWave(duration: Double, beeps: [Beep]) -> Data {
         let sampleRate = 22_050
-        let duration = 0.42
         let sampleCount = Int(Double(sampleRate) * duration)
         var pcm = Data(capacity: sampleCount * 2)
-        let beepDuration = 0.09
-        let secondBeepStart = 0.20
-        let frequency = 880.0
 
         for index in 0..<sampleCount {
             let time = Double(index) / Double(sampleRate)
-            let localTime: Double?
-            if time < beepDuration {
-                localTime = time
-            } else if time >= secondBeepStart && time < secondBeepStart + beepDuration {
-                localTime = time - secondBeepStart
-            } else {
-                localTime = nil
-            }
-
             var value = 0.0
-            if let localTime {
-                let fade = min(1, min(localTime / 0.008, (beepDuration - localTime) / 0.008))
-                value = sin(2 * Double.pi * frequency * localTime) * 0.16 * max(0, fade)
+            if let beep = beeps.first(where: { time >= $0.start && time < $0.start + $0.duration }) {
+                let localTime = time - beep.start
+                let fade = min(1, min(localTime / 0.008, (beep.duration - localTime) / 0.008))
+                let first = sin(2 * Double.pi * beep.frequency * localTime)
+                let second = beep.secondFrequency.map { sin(2 * Double.pi * $0 * localTime) } ?? 0
+                value = (first + second) * beep.amplitude * max(0, fade)
             }
             var sample = Int16((value * Double(Int16.max)).rounded()).littleEndian
             withUnsafeBytes(of: &sample) { pcm.append(contentsOf: $0) }
@@ -74,5 +88,29 @@ enum LockConfirmationSound {
     private static func appendLE32(_ value: UInt32, to data: inout Data) {
         var littleEndian = value.littleEndian
         withUnsafeBytes(of: &littleEndian) { data.append(contentsOf: $0) }
+    }
+}
+
+/// Explicit, on-device setup narration. It never opens the microphone or stores audio.
+@MainActor
+final class BLESetupVoiceGuide: ObservableObject {
+    private let synthesizer = AVSpeechSynthesizer()
+
+    func speak(_ text: String) {
+        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        stop()
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        try? session.setActive(true)
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "tr-TR")
+        utterance.rate = 0.47
+        synthesizer.speak(utterance)
+    }
+
+    func stop() {
+        synthesizer.stopSpeaking(at: .immediate)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }

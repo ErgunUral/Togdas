@@ -64,7 +64,6 @@ enum ToggThemeStyle: String, CaseIterable, Identifiable, Hashable {
 
 enum DashboardLayoutStyle: String, CaseIterable, Identifiable, Hashable {
     case classic, minimal, sport, technical
-
     var id: String { rawValue }
 
     var title: String {
@@ -72,8 +71,7 @@ enum DashboardLayoutStyle: String, CaseIterable, Identifiable, Hashable {
         case .classic: return "Klasik"
         case .minimal: return "Minimal"
         case .sport: return "Sportif"
-        case .technical: return "Teknik"
-        }
+        case .technical: return "Teknik"        }
     }
 
     var subtitle: String {
@@ -81,8 +79,7 @@ enum DashboardLayoutStyle: String, CaseIterable, Identifiable, Hashable {
         case .classic: return "Tüm kartlar"
         case .minimal: return "Özet ve hızlı erişim"
         case .sport: return "Kontroller önde"
-        case .technical: return "Tanı ve telemetri önde"
-        }
+        case .technical: return "Tanı ve telemetri önde"        }
     }
 }
 

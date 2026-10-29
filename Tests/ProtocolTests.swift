@@ -25,10 +25,13 @@ final class ProtocolTests: XCTestCase {
     }
 
     func testVehiclesDeduplicateAndAcceptBothResponseForms() throws {
-        let data = Data(#"{"ownedVins":[{"vin":"ABC12345678901234","name":"Aracım"},"DEF12345678901234"],"friendVins":[{"vinNumber":"ABC12345678901234"},"invalid"]}"#.utf8)
+        let data = Data(#"{"ownedVins":[{"vin":"ABC12345678901234","name":"Aracım"},"DEF12345678901234"],"friendVins":[{"vinNumber":"ABC12345678901234"},{"vin":"GHJ12345678901234","name":"Paylaşılan"},"invalid"]}"#.utf8)
         let vehicles = try Vehicle.parse(data)
-        XCTAssertEqual(vehicles.count, 2)
+        XCTAssertEqual(vehicles.count, 3)
         XCTAssertEqual(vehicles.first?.title, "Aracım")
+        XCTAssertEqual(vehicles[0].access, .owner)
+        XCTAssertFalse(vehicles[0].isShared)
+        XCTAssertTrue(vehicles[2].isShared)
         XCTAssertThrowsError(try Vehicle.parse(Data("{}".utf8)))
     }
 

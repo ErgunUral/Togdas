@@ -15,7 +15,7 @@ struct BLEDiagnosticEvent: Identifiable, Codable, Equatable {
 
 private enum BLEDiagnosticStore {
     private static let key = "toqdas.ble.diagnostics.v1"
-    private static let limit = 200
+    private static let limit = 500
 
     static func load() -> [BLEDiagnosticEvent] {
         guard let data = UserDefaults.standard.data(forKey: key),
@@ -119,10 +119,20 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
     @Published private(set) var carPublicKeyHex = ""
     @Published private(set) var telemetry: BleTelemetry?
     @Published private(set) var rssi: Int?
+    @Published private(set) var rssiUpdatedAt: Date?
     @Published private(set) var needsRepair = false
+    /// Araç anahtarı yok: araç ekranından eşleştirme başlatılması gerekiyor.
+    /// Bu durumda yeniden bağlanma döngüsü hızlı geri çekilmeyi bırakır ama
+    /// eşleştirme başlatıldığında anahtarı yakalamak için seyrek denemeye devam eder.
+    @Published private(set) var pairingRequired = false
+    /// Panoda gösterilen tek satır hata özeti. Android 1.0.24.42'deki GATT
+    /// hata gruplarının iOS karşılığı; ayrıntı `diagnosticEvents` içinde.
+    @Published private(set) var failureSummary: String?
     @Published private(set) var lockConfirmationCount = 0
     @Published private(set) var diagnosticEvents = BLEDiagnosticStore.load()
     private var lastLoggedTelemetrySummary: String?
+    private var lastRSSIDiagnosticAt: Date?
+    private var lastRSSIDiagnosticValue: Int?
 
     private var central: CBCentralManager?
     private var peripheral: CBPeripheral?
@@ -146,11 +156,20 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         let action: String
     }
 
+    private var connectedAt: Date?
+
     private var writeQueue: [PendingWrite] = []
     private var writing = false
     private var wantsScan = false
+    /// Kullanıcı "bağlı tut" dediyse radyo kapanıp açıldığında kendiliğinden
+    /// yeniden bağlanılır (Android'deki Bluetooth STATE_ON davranışı).
+    private var shouldStayConnected = false
+    private var radioWasPoweredOff = false
+    private var failureCounter = BleFailureCounter()
     private var discoveryPending = Set<CBUUID>()
     private var targetVIN = ""
+    private var lastPeripheral: CBPeripheral?
+    private var lastPeripheralVIN = ""
     private var scanTimeoutTask: Task<Void, Never>?
 
     // El sıkışma durumu
@@ -190,9 +209,27 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
     private var rssiTimer: Timer?
     private var rssiPollingInterval: TimeInterval = 6
 
+    var hasFreshSignedTelemetry: Bool {
+        guard let telemetry else { return false }
+        let age = Date().timeIntervalSince(telemetry.receivedAt)
+        return age >= 0 && age < BLECommandPolicy.telemetryFreshness
+    }
+
+    /// Common UI gate for lock/unlock and watch commands.
+    var canSendVehicleCommands: Bool {
+        BLECommandPolicy.rejectionReason(code: 2, linkReady: state.isReady, telemetry: telemetry) == nil
+            && commandChar != nil && phoneKey != nil
+    }
+
     override init() {
         super.init()
-        central = CBCentralManager(delegate: self, queue: .main)
+        // Arka planda sistem uygulamayı sonlandırırsa bağlantı bilgisi geri
+        // yüklenir; aksi halde her geri dönüşte sıfırdan tarama gerekiyordu.
+        central = CBCentralManager(
+            delegate: self,
+            queue: .main,
+            options: [CBCentralManagerOptionRestoreIdentifierKey: "com.toqdas.ios.central"]
+        )
     }
 
     func recordDiagnostic(_ message: String) {
@@ -207,6 +244,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
             diagnosticEvents.removeFirst(diagnosticEvents.count - 200)
         }
         BLEDiagnosticStore.save(diagnosticEvents)
+        bleLog("tanı: \(safeMessage)")
     }
 
     func clearDiagnosticEvents() {
@@ -219,20 +257,25 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
     func start(vin: String? = nil) {
         if let vin, !vin.isEmpty { targetVIN = vin.uppercased() }
         wantsScan = true
+        shouldStayConnected = true
         needsRepair = false
+        pairingRequired = false
+        failureSummary = nil
         guard let central else { return }
         switch central.state {
         case .poweredOn:
             state = .connecting
+            // Araç oturumu 60 sn'de kapatıyor; yeniden taramak yerine bilinen
+            // çevrebirime doğrudan bağlanmak kopma boşluğunu ~4 sn kısaltır.
+            if let known = lastPeripheral, known.state == .disconnected, lastPeripheralVIN == targetVIN {
+                lastEvent = "Araç yeniden bağlanıyor…"
+                recordDiagnostic("gatt_direct_reconnect · tarama atlandı")
+                connect(to: known)
+                armConnectWatchdog()
+                return
+            }
             lastEvent = "Araç aranıyor…"
-            recordDiagnostic("Araç taraması başladı")
-            // Android ile aynı: servis filtresi kullanılmaz. Araç reklamında
-            // f0002412 görünmediğinde filtreli tarama cihazı hiç bulamıyor.
-            central.scanForPeripherals(
-                withServices: nil,
-                options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
-            )
-            armScanTimeout()
+            beginScanPhase(0)
         case .poweredOff, .unauthorized, .unsupported:
             lastEvent = "Bluetooth kullanılamıyor"
             state = .failed("Bluetooth kapalı veya izin yok.")
@@ -242,8 +285,10 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         }
     }
 
-    func stop() {
+    func stop(keepTelemetry: Bool = false) {
         wantsScan = false
+        // Beklenmeyen kopmada niyet korunur: radyo geri gelince yeniden bağlanılır.
+        if !keepTelemetry { shouldStayConnected = false }
         cancelScanTimeout()
         writeQueue.removeAll()
         writing = false
@@ -256,18 +301,27 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         frameTwoFallbackTask = nil
         disarmTimeout()
         stopRSSI()
+        connectedAt = nil
         if let peripheral, peripheral.state == .connected {
             central?.cancelPeripheralConnection(peripheral)
         }
         central?.stopScan()
         resetSession()
         state = .disconnected
-        lastEvent = "Bağlantı durduruldu"
+        lastEvent = keepTelemetry ? "Bağlantı yeniden kuruluyor…" : "Bağlantı durduruldu"
         channels = []
-        telemetry = nil
+        // Beklenmeyen kopmada son telemetri korunur: pano boşalıp "koptu"
+        // görüntüsü oluşmasın. Tazelik `receivedAt` ile denetlenir.
+        if !keepTelemetry { telemetry = nil }
     }
 
     func disconnect() { stop() }
+
+    /// Elle bağlantı kesildiğinde doğrudan yeniden bağlanma hedefini unutur.
+    func forgetLastPeripheral() {
+        lastPeripheral = nil
+        lastPeripheralVIN = ""
+    }
 
     private func resetSession() {
         peripheral = nil
@@ -316,6 +370,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         phonePublicKeyHex = ""
         carPublicKeyHex = ""
         rssi = nil
+        rssiUpdatedAt = nil
     }
 
     func connect(to peripheral: CBPeripheral) {
@@ -390,8 +445,8 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         certificateQueued = false
         state = .certificate
         lastEvent = "Sertifika araca sunuluyor…"
-        recordDiagnostic("Dijital anahtar sertifika sunumu başladı; sunucu araç anahtarı \(trustedCarKey == nil ? "yok" : "var")")
-        print("[BLE] presenting certificate vin=\(vin) frames=\(certificateFrames.count) firstTime=\(trustedCarKey == nil) initialRequestSeen=\(initialKeyRequestSeen)")
+        recordDiagnostic("cert_present · sertifika sunumu başladı; sunucu araç anahtarı \(trustedCarKey == nil ? "yok" : "var")")
+        print("[BLE] presenting certificate vin=…\(vin.suffix(4)) frames=\(certificateFrames.count) firstTime=\(trustedCarKey == nil) initialRequestSeen=\(initialKeyRequestSeen)")
 
         // Resmî akış: araç önce 1000000001000000 ile sertifika isteğini gönderir,
         // ardından iki sertifika çerçevesi sırayla yazılır ve her çerçevenin
@@ -482,10 +537,25 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         lastEvent = "Sertifika sunuldu; araç doğrulama anahtarı isteniyor"
         print("[BLE] vehicle key request (force=\(force))")
         enqueue(BLEProtocol.vehicleKeyRequest, to: commandChar)
-        armTimeout(
-            10,
-            "Araç doğrulama anahtarını göndermedi. İlk kurulumda araç ekranından dijital anahtar eşleştirmesini başlatıp iPhone'da çıkan Bluetooth isteğini onaylayın."
-        )
+        armPairingTimeout(10)
+    }
+
+    /// Araç anahtarı gelmezse bunu "eşleştirme gerekiyor" olarak işaretler.
+    /// Android uygulaması da aynı durumu `vehicleKeyMissing` olarak saklayıp
+    /// eşleştirme tamamlanınca akışı kaldığı yerden sürdürür.
+    private func armPairingTimeout(_ seconds: Double) {
+        disarmTimeout()
+        timeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            guard !Task.isCancelled, let self else { return }
+            await MainActor.run {
+                guard !self.state.isReady else { return }
+                self.pairingRequired = true
+                self.state = .failed("Araç eşleştirmesi gerekiyor")
+                self.lastEvent = "Araç doğrulama anahtarı yok. Araç ekranından dijital anahtar eşleştirmesini başlatın."
+                self.recordDiagnostic("vehicleKeyMissing · araç doğrulama anahtarı gönderilmedi")
+            }
+        }
     }
 
     /// Sertifika yerine yalnızca aracın açık anahtarını bekler (tanılama).
@@ -496,23 +566,27 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
 
     // MARK: - Komutlar
 
-    func lock() {
+    @discardableResult
+    func lock() -> Bool {
         lockAfterWindowsClose = true
         if !sendCommand(code: 7, action: "Kapı kilidinden önce camları kapat") {
             lockAfterWindowsClose = false
+            return false
         }
+        return true
     }
-    func unlock() { sendCommand(code: 2, action: "Kilidi aç") }
-    func trunkOpen() { sendCommand(code: 4, action: "Bagajı aç") }
-    func trunkClose() { sendCommand(code: 5, action: "Bagajı kapat") }
-    func windowsOpen() { sendCommand(code: 6, action: "Yan camları aç") }
-    func windowsClose() { sendCommand(code: 7, action: "Yan camları kapat") }
-    func driveAuthorize() { sendCommand(code: 14, action: "Sürüş yetkilendir") }
+    @discardableResult func unlock() -> Bool { sendCommand(code: 2, action: "Kilidi aç") }
+    @discardableResult func trunkOpen() -> Bool { sendCommand(code: 4, action: "Bagajı aç") }
+    @discardableResult func trunkClose() -> Bool { sendCommand(code: 5, action: "Bagajı kapat") }
+    @discardableResult func windowsOpen() -> Bool { sendCommand(code: 6, action: "Yan camları aç") }
+    @discardableResult func windowsClose() -> Bool { sendCommand(code: 7, action: "Yan camları kapat") }
+    @discardableResult func driveAuthorize() -> Bool { sendCommand(code: 14, action: "Sürüş yetkilendir") }
 
     @discardableResult
     private func sendCommand(code: UInt8, action: String) -> Bool {
-        guard state.isReady else {
-            lastEvent = "Komut için önce kimlik doğrulama gerekli."
+        if let reason = BLECommandPolicy.rejectionReason(code: code, linkReady: state.isReady, telemetry: telemetry) {
+            lastEvent = reason
+            recordDiagnostic("command_gate_rejected · \(action): \(reason)")
             return false
         }
         guard commandChar != nil else {
@@ -557,7 +631,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         lastEvent = "Araçtan tek kullanımlık komut sorusu isteniyor"
         print("[BLE] command nonce request 1300000001000000")
         enqueue(BLEProtocol.commandNonce, to: commandChar)
-        recordDiagnostic("Komut için tek kullanımlık nonce istendi")
+        recordDiagnostic("nonce_requested · tek kullanımlık komut sorusu")
         armCommandTimeout(8, "Araç tek kullanımlık komut sorusu göndermedi.")
     }
 
@@ -582,7 +656,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
                 signature: signature
             )
             print("[BLE] signed command action=\(pendingCommand.action) code=\(pendingCommand.code) len=\(packet.count)")
-            recordDiagnostic("İmzalı komut gönderildi: \(pendingCommand.action)")
+            recordDiagnostic("nonce_packet_prepared · imzalı komut gönderildi: \(pendingCommand.action)")
             lastEvent = "İmzalı \(pendingCommand.action.lowercased()) komutu gönderiliyor"
             enqueue(packet, to: commandChar)
             armCommandTimeout(8, "Araç komut yanıtı göndermedi.")
@@ -612,7 +686,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         waitingForCommandTime = false
         waitingForCommandNonce = false
         lastEvent = error
-        recordDiagnostic("Komut sonucu: \(error)")
+        recordDiagnostic("protocol_response_timeout · \(error)")
     }
 
     private func acceptCommandAck() {
@@ -627,7 +701,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
             return
         }
         pendingCommand = nil
-        recordDiagnostic("Araç komutu onayladı: \(command.action)")
+        recordDiagnostic("command_ack · \(command.action)")
         if command.code == 7, lockAfterWindowsClose {
             lockAfterWindowsClose = false
             lastEvent = "Cam kapatma komutu alındı; cam konumu doğrulanmıyor. Kapılar kilitleniyor."
@@ -669,7 +743,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
                 self.pendingLockVerification = nil
                 self.commandVerificationTask = nil
                 self.lastEvent = "Araç komutu onayladı ancak kilit değişikliği doğrulanamadı."
-                self.recordDiagnostic("Kilit durumu komut sonrasında doğrulanamadı")
+                self.recordDiagnostic("automatic_command_failed · kilit durumu komut sonrasında doğrulanamadı")
             }
         }
     }
@@ -727,18 +801,46 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
 
     // MARK: - CBCentralManagerDelegate
 
+    func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
+        guard let restored = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral],
+              let peripheral = restored.first else { return }
+        lastPeripheral = peripheral
+        lastPeripheralVIN = targetVIN
+        print("[BLE] state restored peripherals=\(restored.count)")
+        recordDiagnostic("gatt_restore · BLE durumu geri yüklendi (\(restored.count) çevrebirim)")
+    }
+
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         bleLog("merkezi bluetooth durumu=\(central.state.rawValue)")
         switch central.state {
         case .poweredOn:
             lastEvent = "Bluetooth hazır"
+            if radioWasPoweredOff {
+                // Android 1.0.24.42 "Bluetooth radyo değişimi / STATE_ON":
+                // eski çevrebirim tanıtıcıları geçersiz, tarama sıfırdan kurulur.
+                radioWasPoweredOff = false
+                lastPeripheral = nil
+                lastPeripheralVIN = ""
+                recordDiagnostic("radio_on · Bluetooth yeniden açıldı; tarama sıfırlandı")
+                if shouldStayConnected {
+                    recordDiagnostic("radio_on_reconnect · bağlantı yeniden kurulacak")
+                    start()
+                    return
+                }
+            }
             if wantsScan { start() }
         case .poweredOff:
-            lastEvent = "Bluetooth kapalı"
-            state = .disconnected
+            lastEvent = "Bluetooth kapalı — açılınca yeniden bağlanacak"
+            radioWasPoweredOff = true
+            wantsScan = false
+            cancelScanTimeout()
+            central.stopScan()
+            state = .failed("Bluetooth kapalı")
+            noteFailure(.radioOff)
         case .unauthorized:
             lastEvent = "Bluetooth izni yok"
-            state = .disconnected
+            state = .failed("Bluetooth izni yok")
+            noteFailure(.radioOff)
         default:
             break
         }
@@ -752,6 +854,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         guard matchesTarget(name) else { return }
         print("[BLE] found \(name) rssi=\(RSSI) id=\(peripheral.identifier)")
         recordDiagnostic("Araç bulundu; RSSI \(RSSI) dBm")
+        failureSummary = nil
         lastEvent = "Araç bulundu: \(name) (\(RSSI))"
         central.stopScan()
         connect(to: peripheral)
@@ -767,19 +870,53 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         return candidates.contains { name == "MY T-SAS \($0)" }
     }
 
-    private func armScanTimeout() {
+    /// Taramayı evreli yürütür: ilk evre normal tarama, sonuçsuz kalırsa ikinci
+    /// evre ısrarlı (yinelenen reklamlı) tarama. Android 1.0.24.42'nin
+    /// "PI → normal devir" davranışının iOS karşılığı; tek seferlik taramanın
+    /// kaçırdığı reklamı ikinci evre yakalar.
+    private func beginScanPhase(_ index: Int) {
+        guard let central, central.state == .poweredOn else { return }
         cancelScanTimeout()
+        let phase = BleScanPolicy.phases[index]
+        central.stopScan()
+        recordDiagnostic("gatt_scan_start · \(phase.name) tarama \(Int(phase.seconds)) sn")
+        // Android ile aynı: servis filtresi kullanılmaz. Araç reklamında
+        // f0002412 görünmediğinde filtreli tarama cihazı hiç bulamıyor.
+        central.scanForPeripherals(
+            withServices: nil,
+            options: [CBCentralManagerScanOptionAllowDuplicatesKey: phase.allowDuplicates]
+        )
         scanTimeoutTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 18_000_000_000)
+            try? await Task.sleep(nanoseconds: UInt64(phase.seconds * 1_000_000_000))
             guard !Task.isCancelled, let self else { return }
             await MainActor.run {
-                guard self.wantsScan, !self.state.isReady else { return }
+                guard self.wantsScan, !self.state.isReady, self.state.isConnecting else { return }
+                if index + 1 < BleScanPolicy.phases.count {
+                    let next = BleScanPolicy.phases[index + 1]
+                    self.recordDiagnostic("scan_rotate · \(phase.name) tarama sonuçsuz; \(next.name) taramaya geçildi")
+                    self.beginScanPhase(index + 1)
+                    return
+                }
                 self.central?.stopScan()
                 self.wantsScan = false
                 self.state = .failed("Araç bulunamadı")
+                self.failureSummary = "Araç bulunamadı · araç yakında mı?"
                 self.lastEvent = "Araç bulunamadı. Araç ve iPhone Bluetooth'unun açık olduğundan, aracın yakınında olduğundan emin olup yeniden dene."
+                self.recordDiagnostic("scan_exhausted · iki evre de sonuçsuz")
             }
         }
+    }
+
+    /// Radyo kullanılabilir mi? (Bluetooth kapalıyken yeniden bağlanma
+    /// denemeleri deneme sayacını tüketmemeli.)
+    var isRadioAvailable: Bool { central?.state == .poweredOn }
+
+    private func noteFailure(_ kind: BleFailureKind) {
+        let count = failureCounter.record(kind)
+        failureSummary = count >= 3
+            ? "\(kind.summary) · son 1 dk'da \(count) kopma"
+            : kind.summary
+        recordDiagnostic("failure_kind · \(kind.detail)")
     }
 
     private func cancelScanTimeout() {
@@ -787,8 +924,29 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         scanTimeoutTask = nil
     }
 
+    /// Doğrudan (taramasız) bağlanma denemesi yanıt vermezse temiz bir hata üretir;
+    /// bir sonraki deneme taramaya döner.
+    private func armConnectWatchdog() {
+        cancelScanTimeout()
+        scanTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard !Task.isCancelled, let self else { return }
+            await MainActor.run {
+                guard self.state.isConnecting else { return }
+                self.lastPeripheral = nil
+                self.lastPeripheralVIN = ""
+                self.state = .failed("Araç bağlantısı zaman aşımı")
+                self.lastEvent = "Araç bağlantısı kurulamadı; yeniden taranacak"
+                self.recordDiagnostic("gatt_timeout_connect · doğrudan bağlanma zaman aşımı")
+            }
+        }
+    }
+
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         guard peripheral === self.peripheral else { return }
+        connectedAt = Date()
+        lastPeripheral = peripheral
+        lastPeripheralVIN = targetVIN
         state = .discovering
         lastEvent = "Bağlandı, servisler keşfediliyor"
         print("[BLE] connected; discovering services")
@@ -798,35 +956,62 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         guard peripheral === self.peripheral else { return }
+        if lastPeripheral === peripheral {
+            lastPeripheral = nil
+            lastPeripheralVIN = ""
+        }
         if let error = error as NSError? {
             print("[BLE] connect failed \(error.domain) code=\(error.code) \(error.localizedDescription)")
         }
         if let guidance = pairingGuidance(error) {
             needsRepair = true
+            noteFailure(.pairingLost)
             state = .failed("Eşleşme hatası")
             lastEvent = guidance
             return
         }
+        noteFailure(BleFailureClassifier.classify(error))
         state = .failed("Bağlantı hatası: \(error?.localizedDescription ?? "bilinmiyor")")
         lastEvent = state.description
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         guard peripheral === self.peripheral else { return }
+        let elapsed = connectedAt.map { Date().timeIntervalSince($0) } ?? 0
+        connectedAt = nil
+        let reason = Self.disconnectReason(error)
         if let error = error as NSError? {
             print("[BLE] disconnected \(error.domain) code=\(error.code) \(error.localizedDescription)")
-            recordDiagnostic("BLE bağlantısı kesildi (\(error.domain) \(error.code))")
-        } else {
-            recordDiagnostic("BLE bağlantısı kesildi")
         }
-        stop()
+        recordDiagnostic("BLEDisconnected · \(reason); süre \(Int(elapsed.rounded())) sn, son RSSI \(rssi.map { "\($0) dBm" } ?? "—")")
+        noteFailure(BleFailureClassifier.classify(error))
+        stop(keepTelemetry: true)
         if let guidance = pairingGuidance(error) {
             needsRepair = true
             state = .failed("Eşleşme hatası")
             lastEvent = guidance
             return
         }
-        lastEvent = "Araç bağlantısı kesildi"
+        lastEvent = "Araç bağlantısı kesildi (\(reason))"
+    }
+
+    /// Kopma nedenini kullanıcıya anlaşılır biçimde eşler.
+    /// Kod 6 = bağlantı zaman aşımı: sinyal çok zayıf ya da araç yanıt vermiyor.
+    private static func disconnectReason(_ error: Error?) -> String {
+        guard let error = error as NSError? else { return "bağlantı kapatıldı" }
+        guard error.domain == CBErrorDomain else { return "\(error.domain) \(error.code)" }
+        switch error.code {
+        case CBError.Code.connectionTimeout.rawValue:
+            return "bağlantı zaman aşımı (sinyal zayıf veya araç yanıt vermiyor)"
+        case CBError.Code.peripheralDisconnected.rawValue:
+            return "araç bağlantıyı kapattı"
+        case CBError.Code.connectionLimitReached.rawValue:
+            return "bağlantı sınırına ulaşıldı"
+        case CBError.Code.encryptionTimedOut.rawValue:
+            return "şifreli bağlantı zaman aşımı"
+        default:
+            return "CBError \(error.code)"
+        }
     }
 
     /// Araç sistemdeki eşleşme bilgisini sildiğinde iOS yeni bağlantıyı şifreleyemez.
@@ -854,7 +1039,10 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         guard peripheral === self.peripheral else { return }
         guard error == nil, let services = peripheral.services else {
             print("[BLE] service discovery error: \(String(describing: error))")
-            state = .failed("Servis keşif hatası"); return
+            noteFailure(.serviceDiscovery)
+            state = .failed("Servis keşif hatası")
+            lastEvent = "Araç servisleri bulunamadı; yeniden denenecek"
+            return
         }
         print("[BLE] services: \(services.map { $0.uuid.uuidString })")
         discoveryPending = Set(services.map(\.uuid))
@@ -952,16 +1140,23 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
 
     func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
         guard peripheral === self.peripheral, error == nil else { return }
+        rssiUpdatedAt = Date()
         rssi = RSSI.intValue
         print("[BLE] connected RSSI=\(RSSI.intValue) dBm")
-        recordDiagnostic("Bağlı RSSI: \(RSSI.intValue) dBm")
-        recordDiagnostic("RSSI: \(RSSI.intValue) dBm")
+        let now = Date()
+        let changedMeaningfully = lastRSSIDiagnosticValue.map { abs($0 - RSSI.intValue) >= 5 } ?? true
+        let intervalElapsed = lastRSSIDiagnosticAt.map { now.timeIntervalSince($0) >= 30 } ?? true
+        if changedMeaningfully || intervalElapsed {
+            lastRSSIDiagnosticAt = now
+            lastRSSIDiagnosticValue = RSSI.intValue
+            recordDiagnostic("Bağlı RSSI: \(RSSI.intValue) dBm")
+        }
     }
 
     // MARK: - Gelen paketler
 
     private func handleIncoming(_ data: Data) {
-        print("[BLE] rx \(data.count)B \(data.prefix(8).map { String(format: "%02x", $0) }.joined())")
+        print("[BLE] rx \(data.count)B")
         if data == BLEProtocol.vehicleKeyRequest {
             if certificateFrames.isEmpty, !waitingForInitialKeyRequest {
                 initialKeyRequestSeen = true
@@ -999,7 +1194,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         if data.starts(with: BLEProtocol.certificateAck) {
             lastEvent = "Araç sertifika çerçevesini kabul etti"
             print("[BLE] certificate frame 1 ack")
-            recordDiagnostic("Araç sertifika çerçevesi 1'i onayladı")
+            recordDiagnostic("cert_frame1_ack · sertifika çerçevesi 1 onaylandı")
             frameTwoFallbackTask?.cancel()
             frameTwoFallbackTask = nil
             if certificateFrameIndex < certificateFrames.count {
@@ -1010,7 +1205,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         if data == BLEProtocol.certificateFrame2Ack {
             lastEvent = "Araç sertifikayı kabul etti"
             print("[BLE] certificate frame 2 ack")
-            recordDiagnostic("Araç sertifika çerçevesi 2'yi onayladı")
+            recordDiagnostic("cert_frame2_ack · sertifika çerçevesi 2 onaylandı")
             frameTwoFallbackTask?.cancel()
             frameTwoFallbackTask = nil
             certificateFrame2AckReceived = true
@@ -1050,6 +1245,8 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         }
         if BLEProtocol.isReady(data) {
             disarmTimeout()
+            failureSummary = nil
+            failureCounter.reset()
             state = .ready
             lastEvent = "Araç kimliği doğrulandı; komutlar hazır"
             recordDiagnostic("Araç kimliği doğrulandı; komut kanalı hazır")
@@ -1085,6 +1282,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
                 carKey: carPublicKeyHex
             )
             waitingForVehicleKey = false
+            pairingRequired = false
             lastEvent = "Araç doğrulama anahtarı alındı"
             if certificateWritesFinished { scheduleChallengeRequest() }
         } catch {
@@ -1145,6 +1343,8 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
             try BLEProtocol.verifyCarProof(packet, expectedChallenge: nonce, trustedKey: trustedCarKey)
             if let commandChar { enqueue(BLEProtocol.ready, to: commandChar) }
             disarmTimeout()
+            failureSummary = nil
+            failureCounter.reset()
             state = .ready
             lastEvent = "Araç kimliği doğrulandı; komutlar hazır"
         } catch {
@@ -1158,7 +1358,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         guard let trustedCarKey else { return }
         guard let payload = try? BLEProtocol.verifiedTelemetryPayload(packet, trustedKey: trustedCarKey) else {
             lastEvent = "Araç durum paketi doğrulanamadı"
-            recordDiagnostic("Araç telemetrisi imza/biçim doğrulamasından geçmedi")
+            recordDiagnostic("telemetry_verify_failed · imza/biçim doğrulaması başarısız")
             return
         }
         let b = [UInt8](payload)
@@ -1169,6 +1369,9 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
             receivedAt: Date()
         )
         telemetry = updatedTelemetry
+        // Arka planda zamanlayıcı çalışmaz; telemetri bildirimiyle uyanınca
+        // RSSI örneğini burada alıyoruz (yakınlık algısı buna dayanır).
+        peripheral?.readRSSI()
         let summary = "lock=\(updatedTelemetry.lockText) doors=\(updatedTelemetry.doors) trunk=\(updatedTelemetry.trunkAjar) power=\(updatedTelemetry.powerStateText)"
         if summary != lastLoggedTelemetrySummary {
             lastLoggedTelemetrySummary = summary
@@ -1184,7 +1387,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
                 print("[BLE] lock state confirmed by fresh signed telemetry")
             }
             lastEvent = target ? "Kapılar kilitli; araç durumuyla doğrulandı." : "Kapı kilitleri açık; araç durumuyla doğrulandı."
-            recordDiagnostic("Kilit durumu imzalı telemetriyle doğrulandı: \(target ? "kilitli" : "açık")")
+            recordDiagnostic("lock_verified · kilit durumu imzalı telemetriyle doğrulandı: \(target ? "kilitli" : "açık")")
         }
     }
 

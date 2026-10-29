@@ -62,6 +62,14 @@ enum ProximityProfile: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
+enum ProximityRSSIPolicy {
+    /// Rejects delayed/out-of-order samples using the selected GATT polling cadence.
+    static func isFresh(sampledAt: Date, now: Date, profile: ProximityProfile) -> Bool {
+        let age = now.timeIntervalSince(sampledAt)
+        return age >= 0 && age <= max(1.5, profile.pollInterval * 1.5)
+    }
+}
+
 /// RSSI ölçümlerinden araç başı ve araçtan ayrılma eşikleri türetir.
 struct ProximityCalibration: Equatable {
     let nearSample: Int
@@ -110,6 +118,9 @@ struct ProximityGate: Equatable {
     private var previousRSSI: Int?
     private var kalmanEstimate: Double?
     private var kalmanVariance = 8.0
+    private var requiresFarBeforeApproach = false
+
+    var isAwaitingFarBaseline: Bool { requiresFarBeforeApproach }
 
     init(calibration: ProximityCalibration, profile: ProximityProfile = .balanced) {
         self.calibration = calibration
@@ -124,8 +135,12 @@ struct ProximityGate: Equatable {
         let sample = filteredRSSI(rssi)
 
         if sample >= nearThreshold {
-            nearCount += 1
             farCount = 0
+            guard !requiresFarBeforeApproach else {
+                nearCount = 0
+                return nil
+            }
+            nearCount += 1
             guard nearCount >= profile.requiredSamples, presence != .near else { return nil }
             presence = .near
             return .approached
@@ -137,6 +152,10 @@ struct ProximityGate: Equatable {
             guard farCount >= profile.requiredSamples, presence != .far else { return nil }
             let previous = presence
             presence = .far
+            if requiresFarBeforeApproach {
+                requiresFarBeforeApproach = false
+                return nil
+            }
             // Uygulama etkinleştirildiğinde ilk ölçüm uzaksa durum belirlenir,
             // ancak ayrılma eylemi yalnızca yakında görüldükten sonra tetiklenir.
             return previous == .near ? .departed : nil
@@ -177,5 +196,13 @@ struct ProximityGate: Equatable {
         previousRSSI = nil
         kalmanEstimate = nil
         kalmanVariance = 8.0
+        requiresFarBeforeApproach = false
+    }
+
+    /// New authenticated BLE session must establish a fresh far baseline before
+    /// an approach can trigger automatic unlocking.
+    mutating func requireFreshCycle() {
+        reset()
+        requiresFarBeforeApproach = true
     }
 }

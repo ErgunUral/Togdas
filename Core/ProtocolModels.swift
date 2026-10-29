@@ -81,13 +81,20 @@ struct OAuthAttempt {
     }
 }
 
+enum VehicleAccess: String, Equatable {
+    case owner
+    case shared
+}
+
 struct Vehicle: Identifiable, Equatable {
     let vin: String
     let name: String
     let plate: String
     let model: String
+    let access: VehicleAccess
     var id: String { vin }
     var title: String { !name.isEmpty ? name : (!model.isEmpty ? model : "Togg") }
+    var isShared: Bool { access == .shared }
 
     static func parse(_ data: Data) throws -> [Vehicle] {
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -95,14 +102,19 @@ struct Vehicle: Identifiable, Equatable {
             throw AppError.message("Araç listesi beklenen biçimde değil.")
         }
         var seen = Set<String>()
-        return ["ownedVins", "friendVins"].flatMap { json[$0] as? [Any] ?? [] }.compactMap { item in
-            let fields = item as? [String: Any] ?? ["vin": item]
-            let vin = fields["vin"] as? String ?? fields["vinNumber"] as? String ?? ""
-            guard vin.range(of: "^[A-HJ-NPR-Z0-9]{17}$", options: .regularExpression) != nil,
-                  seen.insert(vin).inserted else { return nil }
-            return Vehicle(vin: vin, name: fields["name"] as? String ?? "",
-                           plate: fields["plateNumber"] as? String ?? "", model: fields["model"] as? String ?? "")
+        var vehicles: [Vehicle] = []
+        for (key, access) in [("ownedVins", VehicleAccess.owner), ("friendVins", .shared)] {
+            for item in json[key] as? [Any] ?? [] {
+                let fields = item as? [String: Any] ?? ["vin": item]
+                let vin = fields["vin"] as? String ?? fields["vinNumber"] as? String ?? ""
+                guard vin.range(of: "^[A-HJ-NPR-Z0-9]{17}$", options: .regularExpression) != nil,
+                      seen.insert(vin).inserted else { continue }
+                vehicles.append(Vehicle(vin: vin, name: fields["name"] as? String ?? "",
+                                        plate: fields["plateNumber"] as? String ?? "",
+                                        model: fields["model"] as? String ?? "", access: access))
+            }
         }
+        return vehicles
     }
 }
 

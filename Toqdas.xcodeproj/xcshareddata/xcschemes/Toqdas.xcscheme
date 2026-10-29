@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "CCE0841C5F2C2D3D97067780"
+               BlueprintIdentifier = "0518DA72115DA8E8C7707B3D"
                BuildableName = "Toqdas.app"
                BlueprintName = "Toqdas"
                ReferencedContainer = "container:Toqdas.xcodeproj">
@@ -30,7 +30,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "CCE0841C5F2C2D3D97067780"
+            BlueprintIdentifier = "0518DA72115DA8E8C7707B3D"
             BuildableName = "Toqdas.app"
             BlueprintName = "Toqdas"
             ReferencedContainer = "container:Toqdas.xcodeproj">
@@ -53,7 +53,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "CCE0841C5F2C2D3D97067780"
+            BlueprintIdentifier = "0518DA72115DA8E8C7707B3D"
             BuildableName = "Toqdas.app"
             BlueprintName = "Toqdas"
             ReferencedContainer = "container:Toqdas.xcodeproj">
@@ -70,7 +70,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "CCE0841C5F2C2D3D97067780"
+            BlueprintIdentifier = "0518DA72115DA8E8C7707B3D"
             BuildableName = "Toqdas.app"
             BlueprintName = "Toqdas"
             ReferencedContainer = "container:Toqdas.xcodeproj">

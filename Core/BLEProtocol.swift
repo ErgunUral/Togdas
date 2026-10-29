@@ -1,5 +1,6 @@
 import Foundation
 import CryptoKit
+import Security
 
 /// Wire-format checks ported from Garajm/BleProtocol.kt.
 /// Bu katman anahtar güvenini kendi başına kurmaz; araç anahtarı ayrıca sabitlenmelidir.
@@ -278,22 +279,26 @@ extension Data {
     }
 }
 
-/// Sunucudan alınan sertifikayı cihazda saklar. Böylece Togg servisi yavaş
-/// veya erişilemezken BLE el sıkışması API beklemeden başlayabilir.
+/// Sunucudan alınan sertifikayı ve aracın açık anahtarını **Keychain**'de saklar.
+///
+/// Keychain seçildi çünkü `UserDefaults` uygulama silinince temizleniyordu; her
+/// yeniden kurulumda araç anahtarı kayboluyor ve araç el sıkışmayı 7 sn sonra
+/// kapatıyordu. Bu önbellek cihazda kalır, iCloud'a taşınmaz.
 enum CertificateCache {
-    private static let prefix = "com.toqdas.ios.certificate.v1."
+    private static let legacyPrefix = "com.toqdas.ios.certificate.v1."
+    private static let service = "com.toqdas.ios.certificate.v2"
 
-    private static func storageKey(_ vin: String) -> String { prefix + vin }
 
-    static func load(vin: String, phonePublicKeyHex: String) -> (certificateBase64: String, carPublicKey: String)? {
-        guard let dictionary = UserDefaults.standard.dictionary(forKey: storageKey(vin)),
-              let certificate = dictionary["certificate"] as? String, !certificate.isEmpty else {
+    static func loadCertificate(vin: String, phonePublicKeyHex: String) -> (certificateBase64: String, carPublicKey: String)? {
+        guard let payload = readPayload(vin: vin) ?? migrateLegacy(vin: vin),
+              let certificate = payload["certificate"] as? String, !certificate.isEmpty else {
             return nil
         }
-        let carPublicKey = dictionary["carPublicKey"] as? String ?? ""
+        let carPublicKey = payload["carPublicKey"] as? String ?? ""
         guard isValid(certificateBase64: certificate, vin: vin, phonePublicKeyHex: phonePublicKeyHex) else {
-            print("[CERT] cached certificate invalid; removing")
-            UserDefaults.standard.removeObject(forKey: storageKey(vin))
+            print("[CERT] cached certificate invalid; removing vin=…\(vin.suffix(4))")
+            deletePayload(vin: vin)
+            UserDefaults.standard.removeObject(forKey: legacyPrefix + vin)
             return nil
         }
         return (certificate, carPublicKey)
@@ -301,22 +306,91 @@ enum CertificateCache {
 
     static func save(certificateBase64: String, carPublicKey: String, vin: String, phonePublicKeyHex: String) {
         guard isValid(certificateBase64: certificateBase64, vin: vin, phonePublicKeyHex: phonePublicKeyHex) else { return }
-        UserDefaults.standard.set([
-            "certificate": certificateBase64,
-            "carPublicKey": carPublicKey
-        ], forKey: storageKey(vin))
-        print("[CERT] certificate cached vin=\(vin) carKeyLen=\(carPublicKey.count)")
+        // Sunucu yanıtlarında araç anahtarı boş gelebiliyor. Boş değerle
+        // yazmak daha önce araçtan alınmış geçerli anahtarı siliyordu; bu yüzden
+        // boş anahtar geldiğinde mevcut anahtar korunur.
+        var resolvedCarKey = carPublicKey
+        if resolvedCarKey.isEmpty,
+           let existing = readPayload(vin: vin),
+           let previous = existing["carPublicKey"] as? String,
+           !previous.isEmpty {
+            resolvedCarKey = previous
+            print("[CERT] empty vehicle key ignored; keeping cached key")
+        }
+        writePayload(["certificate": certificateBase64, "carPublicKey": resolvedCarKey], vin: vin)
+        UserDefaults.standard.removeObject(forKey: legacyPrefix + vin)
+        print("[CERT] certificate cached (keychain) vin=…\(vin.suffix(4)) carKeyPresent=\(!resolvedCarKey.isEmpty)")
     }
 
     static func updateCarKey(vin: String, phonePublicKeyHex: String, carKey: String) {
         guard !carKey.isEmpty,
-              let existing = load(vin: vin, phonePublicKeyHex: phonePublicKeyHex) else { return }
+              let existing = loadCertificate(vin: vin, phonePublicKeyHex: phonePublicKeyHex) else { return }
         save(
             certificateBase64: existing.certificateBase64,
             carPublicKey: carKey,
             vin: vin,
             phonePublicKeyHex: phonePublicKeyHex
         )
+    }
+
+    // MARK: - Keychain
+
+    private static func readPayload(vin: String) -> [String: Any]? {
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: vin,
+            kSecReturnData: true,
+            kSecMatchLimit: kSecMatchLimitOne
+        ]
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
+              let data = item as? Data,
+              let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        return payload
+    }
+
+    private static func writePayload(_ payload: [String: Any], vin: String) {
+        guard let data = try? JSONSerialization.data(withJSONObject: payload) else { return }
+        deletePayload(vin: vin)
+        let attributes: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: vin,
+            kSecValueData: data,
+            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        ]
+        let status = SecItemAdd(attributes as CFDictionary, nil)
+        if status != errSecSuccess {
+            print("[CERT] keychain save failed: \(status)")
+        }
+    }
+
+    private static func deletePayload(vin: String) {
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: vin
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
+
+    /// Eski sürümün `UserDefaults` önbelleğini Keychain'e taşır.
+    private static func migrateLegacy(vin: String) -> [String: Any]? {
+        guard let dictionary = UserDefaults.standard.dictionary(forKey: legacyPrefix + vin),
+              let certificate = dictionary["certificate"] as? String, !certificate.isEmpty else {
+            return nil
+        }
+        let payload: [String: Any] = [
+            "certificate": certificate,
+            "carPublicKey": dictionary["carPublicKey"] as? String ?? ""
+        ]
+        writePayload(payload, vin: vin)
+        UserDefaults.standard.removeObject(forKey: legacyPrefix + vin)
+        print("[CERT] legacy cache migrated to keychain vin=…\(vin.suffix(4))")
+        return payload
     }
 
     /// Hata ayıklama: `-seedCertificate <base64>` ile cihazdaki mevcut
@@ -333,7 +407,7 @@ enum CertificateCache {
             return
         }
         save(certificateBase64: base64, carPublicKey: "", vin: vin, phonePublicKeyHex: phonePublicKeyHex)
-        print("[CERT] seeded certificate for \(vin)")
+        print("[CERT] seeded certificate for vin=…\(vin.suffix(4))")
     }
 
     private static func isValid(certificateBase64: String, vin: String, phonePublicKeyHex: String) -> Bool {

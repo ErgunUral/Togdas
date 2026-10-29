@@ -1,4 +1,6 @@
+import LocalAuthentication
 import SwiftUI
+import UIKit
 
 enum DashboardTab: String, CaseIterable, Identifiable {
     case overview, climate, charging, health
@@ -71,15 +73,20 @@ struct DashboardView: View {
     @State private var showExperience = false
     @State private var showStations = false
     @State private var showAccount = false
+    @State private var showBLESetupGuide = false
     @State private var authBusy = false
+    @State private var showRepairConfirm = false
     @State private var alert: DashboardAlert?
     @State private var autoKeyStarted = false
     @State private var hasAuthenticatedBLE = false
-    @State private var keepBLEConnected = false
+    @AppStorage("toqdas.ble.keepConnected") private var keepBLEConnected = false
     @State private var reconnectAttempts = 0
     @State private var reconnectTask: Task<Void, Never>?
     @State private var stableConnectionTask: Task<Void, Never>?
     @State private var proximityEnabled = false
+    @StateObject private var voice = VoiceAssistant()
+    @State private var showVoice = false
+    @State private var voiceSourcedConfirm = false
     @State private var proximityProfile: ProximityProfile = .balanced
     @State private var proximityNearSample: Int?
     @State private var proximityFarSample: Int?
@@ -100,7 +107,6 @@ struct DashboardView: View {
     // Önizleme durumları (henüz araca bağlı değil)
     @State private var sentryMode = true
     @State private var valetMode = false
-    @State private var ambientColor = ToggTheme.teal
     @State private var sunroofOpen = false
     @State private var climateOn = false
     @State private var climateKnown = false
@@ -114,6 +120,32 @@ struct DashboardView: View {
     @State private var chargeStartInitialized = false
     @AppStorage("toqdas.chargeCapacityKWh") private var chargeCapacityKWh = 88.5
     @AppStorage("toqdas.chargePricePerKWh") private var chargePricePerKWh = 10.0
+
+    private var dashboardHeader: some View {
+        DashboardHeader(
+            email: model.api.accountEmail() ?? "Togg ID",
+            vehicle: vehicle,
+            badge: vehicleBadge,
+            connected: telemetry != nil,
+            updatedAt: updatedAt,
+            location: telemetry?.coordinateText,
+            busy: busy,
+            vehicles: model.vehicles,
+            selectedVin: vehicle.vin,
+            onSelectVehicle: { model.select($0) },
+            onRefresh: { Task { await refresh() } },
+            onOpenVoice: { showVoice = true },
+            onOpenCommands: { showCommands = true },
+            onOpenService: { showService = true },
+            onOpenExperience: { showExperience = true },
+            onOpenAccount: { showAccount = true },
+            onOpenDetail: { showDetail = true },
+            onOpenDiscovery: { showDiscovery = true },
+            onLogout: { model.logout() },
+            themeName: $themeName,
+            layoutName: $layoutName
+        )
+    }
 
     private var battery: Int { Int((telemetry?.batteryPercent ?? 0).rounded()) }
     private var range: Int { Int((telemetry?.rangeKM ?? 0).rounded()) }
@@ -167,29 +199,7 @@ struct DashboardView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: 16) {
-                        DashboardHeader(
-                        email: model.api.accountEmail() ?? "Togg ID",
-                        vehicle: vehicle,
-                        badge: vehicleBadge,
-                        connected: telemetry != nil,
-                        updatedAt: updatedAt,
-                        location: telemetry?.coordinateText,
-                        busy: busy,
-                        vehicles: model.vehicles,
-                        selectedVin: vehicle.vin,
-                        onSelectVehicle: { model.select($0) },
-                        onRefresh: { Task { await refresh() } },
-                        onOpenCommands: { showCommands = true },
-                        onOpenService: { showService = true },
-                        onOpenExperience: { showExperience = true },
-                        onOpenAccount: { showAccount = true },
-                        onOpenDetail: { showDetail = true },
-                        onOpenDiscovery: { showDiscovery = true },
-                        onLogout: { model.logout() },
-                        themeName: $themeName,
-                        layoutName: $layoutName
-                    )
-
+                        dashboardHeader
                     VehicleVisualCard(
                         battery: battery,
                         range: range,
@@ -221,14 +231,11 @@ struct DashboardView: View {
                 .onAppear {
                     #if DEBUG
                     if ProcessInfo.processInfo.arguments.contains("-scrollChargingCalculator") {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                            withAnimation { proxy.scrollTo("chargingCalculator", anchor: .top) }
-                        }
+                        scheduleScrollChargingCalculator(proxy: proxy)
                     }
                     #endif
                 }
             }
-        }
         }
         .safeAreaInset(edge: .bottom) { bottomBar }
         .toolbar(.hidden, for: .navigationBar)
@@ -236,6 +243,7 @@ struct DashboardView: View {
         .task { await climateLoop() }
         .task { await prefetchCertificate() }
         .task { loadProximitySettings() }
+        }
         .onReceive(ble.$state) { state in
             print("[BLE] state -> \(state.description)")
             handleBLEState(state)
@@ -278,7 +286,44 @@ struct DashboardView: View {
             }
             if ProcessInfo.processInfo.arguments.contains("-autoDigitalKey"), ble.state.isDisconnected {
                 keepBLEConnected = true
-                ble.start(vin: vehicle.vin)
+                model.link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
+                model.link.start()
+            }
+            let arguments = ProcessInfo.processInfo.arguments
+            if arguments.contains("-voiceMicTest") {
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    let result = await voice.runMicrophoneDiagnostic()
+                    print("[Voice] mikrofon tanı: \(result)")
+                }
+            }
+            if arguments.contains("-voiceRecorderTest") {
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    let result = await voice.runRecorderTest()
+                    print("[Voice] kayıt testi sonucu: \(result)")
+                }
+            }
+            if let index = arguments.firstIndex(of: "-voiceDemo"), arguments.indices.contains(index + 1) {
+                let text = arguments[index + 1]
+                showVoice = true
+                Task { @MainActor in
+                    let parsed = VoiceCommandParser().parseDetailed(text)
+                    if parsed.command.isAction {
+                        for _ in 0..<36 {
+                            if ble.state.isReady,
+                               let state = ble.telemetry,
+                               Date().timeIntervalSince(state.receivedAt) < 10 {
+                                break
+                            }
+                            try? await Task.sleep(nanoseconds: 500_000_000)
+                        }
+                    } else {
+                        try? await Task.sleep(nanoseconds: 1_200_000_000)
+                    }
+                    try? await Task.sleep(nanoseconds: 300_000_000)
+                    voice.submit(text)
+                }
             }
         }
         #endif
@@ -310,7 +355,7 @@ struct DashboardView: View {
             if value > chargeTargetPercent { chargeTargetPercent = value }
         }
         .onChange(of: chargeTargetPercent) { value in
-            if value < chargeStartPercent { chargeStartPercent = value }
+            updateChargeStartPercentIfNeeded(value)
         }
         .refreshable { await refresh() }
         .alert(item: $alert) { item in
@@ -325,8 +370,8 @@ struct DashboardView: View {
                 return Alert(
                     title: Text("Komut gönderilsin mi?"),
                     message: Text(command.detail),
-                    primaryButton: .destructive(Text("Gönder")) { send(command) },
-                    secondaryButton: .cancel(Text("Vazgeç"))
+                    primaryButton: .destructive(Text("Gönder")) { approve(command) },
+                    secondaryButton: .cancel(Text("Vazgeç")) { voiceSourcedConfirm = false }
                 )
             }
         }
@@ -338,7 +383,15 @@ struct DashboardView: View {
             Button("Etkinleştir", role: .destructive) { setProximityEnabled(true) }
             Button("Vazgeç", role: .cancel) { }
         } message: {
-            Text("Uygulama ekrandayken iki kararlı RSSI ölçümüne göre kilidi otomatik açıp kilitleyebilir. Arka planda çalışması garanti edilmez.")
+            Text("Uygulama ekrandayken yeni yaklaşma algılanırsa kilit açılır. Uzaklaşınca, tüm kapılar kapalı ve araç beklemedeyse önce cam kapatma isteği, araç onayından sonra kilitleme gönderilir. Pencere açıklığı telemetride yok; bu nedenle cam kapatma her kilitlemeden önce denenir. Arka planda araç komutu gönderilmez.")
+        }
+        .sheet(isPresented: $showVoice) {
+            VoiceSheet(voice: voice) { text in
+                handleVoiceUtterance(text)
+            }
+        }
+        .sheet(isPresented: $showBLESetupGuide) {
+            BLESetupGuideSheet(ble: ble)
         }
         .sheet(isPresented: $showCommands) {
             NavigationStack {
@@ -392,12 +445,13 @@ struct DashboardView: View {
                 PremiumControlsSection(
                     sentryMode: $sentryMode,
                     valetMode: $valetMode,
-                    ambientColor: $ambientColor,
+                    
                     sunroofOpen: $sunroofOpen,
                     onWindowCommand: requestWindowCommand
                 )
             }
             if layout == .sport { proximityCard }
+            geofenceCard
             if layout != .sport { quickActions }
             chargingOverviewLink
         }
@@ -470,17 +524,38 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Bluetooth Dijital Anahtar")
                         .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
-                    Text(ble.state.description)
-                        .font(.system(size: 12)).foregroundStyle(ToggTheme.muted)
+                    Text(bleStateTitle)
+                        .font(.system(size: 12))
+                        .foregroundStyle(ble.state.isReady && !model.silentRecovery ? ToggTheme.green : ToggTheme.muted)
                 }
                 Spacer()
                 Circle().fill(bleStatusColor).frame(width: 9, height: 9)
             }
 
-            if !ble.lastEvent.isEmpty {
-                Text(ble.lastEvent)
+            if !model.silentRecovery {
+                if let summary = ble.failureSummary, ble.state.isFailed {
+                    Label(summary, systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(ToggTheme.orange)
+                        .lineLimit(2)
+                } else if !ble.lastEvent.isEmpty {
+                    Text(ble.lastEvent)
+                        .font(.caption2).foregroundStyle(ToggTheme.muted).lineLimit(2)
+                }
+            }
+
+            if !ble.state.isReady, !model.linkStatus.isEmpty, model.linkStatus != ble.state.description {
+                Text(model.linkStatus)
                     .font(.caption2).foregroundStyle(ToggTheme.muted).lineLimit(2)
             }
+
+            Button { showBLESetupGuide = true } label: {
+                Label("Kurulumu adım adım dinle", systemImage: "speaker.wave.2.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(ToggTheme.teal)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
 
             if let rssi = ble.rssi {
                 Text("Bağlantı sinyali: \(rssi) dBm")
@@ -559,6 +634,24 @@ struct DashboardView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!(ble.state.isCertificate || ble.state.isChallenge) || authBusy)
+            }
+
+            if !ble.state.isReady {
+                Button { showRepairConfirm = true } label: {
+                    Label("Dijital anahtarı yeniden eşleştir", systemImage: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(ToggTheme.teal)
+                }
+                .buttonStyle(.plain)
+                .disabled(authBusy)
+                .confirmationDialog("Dijital anahtarı yeniden eşleştir?",
+                                    isPresented: $showRepairConfirm,
+                                    titleVisibility: .visible) {
+                    Button("Eşleştir") { Task { await authenticateBLE(overwriteOwner: true) } }
+                    Button("Vazgeç", role: .cancel) {}
+                } message: {
+                    Text("Araç sahipliği bu telefona taşınır ve araç anahtarı yeniden alınır. Araçta dijital anahtar eşleştirmesi açık olmalı.")
+                }
             }
 
             if !ble.phonePublicKeyHex.isEmpty || !ble.carPublicKeyHex.isEmpty {
@@ -717,7 +810,19 @@ struct DashboardView: View {
                     .foregroundStyle(ToggTheme.muted)
             }
 
-            Text("Yalnızca uygulama ekrandayken çalışır. Kilit komutları için araç bağlantısının ve güncel araç durumunun hazır olması gerekir.")
+            let backgroundLog = ProximityDetectionMonitor.transitionsLog(for: vehicle.vin)
+            if !backgroundLog.isEmpty {
+                Text("Son geçişler (arka plan; yalnızca algılama)")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(ToggTheme.muted)
+                ForEach(backgroundLog.suffix(4).reversed()) { entry in
+                    Text("\(entry.at.formatted(date: .omitted, time: .shortened)) · \(entry.approached ? "Yaklaşma" : "Uzaklaşma") · \(entry.rssi) dBm")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(ToggTheme.muted)
+                }
+            }
+
+            Text("Kilit komutları yalnızca uygulama ekrandayken ve araç bağlantısı ile güncel araç durumu hazırken gönderilir. Arka planda yalnızca algılama yapılır: geçişler günlüğe yazılır, bildirim düşer, araca komut gönderilmez.")
                 .font(.system(size: 10))
                 .foregroundStyle(ToggTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -730,8 +835,32 @@ struct DashboardView: View {
         .toggCardBackground()
     }
 
-    private var technicalOverview: some View {
-        VStack(alignment: .leading, spacing: 9) {
+    private var geofenceCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Geofence (Ev/iş)", systemImage: "location.circle")
+                .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+            Toggle("Geofence aktif", isOn: Binding(
+                get: { model.geofence.enabled },
+                set: { model.geofence.setEnabled($0) }
+            ))
+            .tint(ToggTheme.teal)
+            Button("Ev konumunu şu anki konuma ayarla") {
+                model.geofence.requestAuthorization()
+                model.geofence.setHomeToCurrentLocation()
+            }
+            .font(.caption).buttonStyle(.bordered)
+            if let coord = model.geofence.homeCoordinate {
+                Text("Ev: \(coord.latitude, specifier: "%.5f"), \(coord.longitude, specifier: "%.5f")")
+                    .font(.system(size: 10, design: .monospaced)).foregroundStyle(ToggTheme.muted)
+            }
+            Text("Evde açma, uzakta kilitleme. Arka planda çalışır; komutlar READY koşuluna tabidir.")
+                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+        }
+        .padding(18).toggCardBackground()
+    }
+
+    var technicalOverview: some View {
+        VStack(alignment: .leading, spacing: 11) {
             HStack {
                 Label("Canlı BLE Tanısı", systemImage: "waveform.path.ecg")
                     .font(.system(size: 12, weight: .bold))
@@ -745,18 +874,46 @@ struct DashboardView: View {
                 technicalMetric("RSSI", ble.rssi.map { "\($0) dBm" } ?? "—")
                 technicalMetric("Kanallar", "\(ble.channels.count)")
                 technicalMetric("Kayıt", "\(ble.diagnosticEvents.count)")
+                technicalMetric("Kilit", ble.lockConfirmationCount > 0 ? "Doğrulandı ✓" : "Bekliyor")
             }
             if let telemetry = ble.telemetry {
                 Text("İmzalı telemetri · \(telemetry.receivedAt.formatted(date: .omitted, time: .standard))")
                     .font(.system(size: 10))
                     .foregroundStyle(ToggTheme.muted)
             }
+            if !ble.diagnosticEvents.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Son olaylar").font(.system(size: 9, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                    ForEach(Array(ble.diagnosticEvents.suffix(5).reversed())) { event in
+                        HStack(spacing: 6) {
+                            Text(event.timestamp.formatted(date: .omitted, time: .standard))
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundStyle(ToggTheme.muted)
+                            Text(event.message)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(ToggTheme.surfaceVariant))
+                    }
+                }
+            }
+            if let carProofVerified = ble.telemetry?.isLocked {
+                HStack(spacing: 8) {
+                    Image(systemName: carProofVerified ? "checkmark.seal.fill" : "seal")
+                        .foregroundStyle(carProofVerified ? ToggTheme.green : ToggTheme.orange)
+                    Text(carProofVerified ? "Araç kanıtı doğrulandı" : "Araç kanıtı bekleniyor")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white)
+                }
+            }
         }
         .padding(14)
         .toggCardBackground(18)
     }
 
-    private func technicalMetric(_ title: String, _ value: String) -> some View {
+    func technicalMetric(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title).font(.system(size: 9, weight: .semibold)).foregroundStyle(ToggTheme.muted)
             Text(value).font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(.white)
@@ -793,6 +950,12 @@ struct DashboardView: View {
         if ble.state.isFailed { return ToggTheme.pink }
         if ble.state.isDisconnected { return ToggTheme.muted }
         return ToggTheme.orange
+    }
+
+    private var bleStateTitle: String {
+        if model.silentRecovery { return "Yeniden bağlanıyor…" }
+        if ble.state.isReady { return "Bağlı · Komut hazır" }
+        return ble.state.description
     }
 
     private var connectTitle: String {
@@ -849,14 +1012,15 @@ struct DashboardView: View {
             reconnectAttempts = 0
             autoKeyStarted = false
             keepBLEConnected = true
-            ble.start(vin: vehicle.vin)
+            model.link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
+            model.link.start()
         } else {
             keepBLEConnected = false
             reconnectTask?.cancel()
             reconnectTask = nil
             stableConnectionTask?.cancel()
             stableConnectionTask = nil
-            ble.disconnect()
+            model.link.stop()
         }
     }
 
@@ -909,8 +1073,22 @@ struct DashboardView: View {
             proximityAutoOffStatus = "Sayaç ilk doğrulanmış otomatik kilitlemeden sonra başlar."
         }
         keepBLEConnected = true
+        model.link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
         if ble.state.isDisconnected || ble.state.isFailed {
-            ble.start(vin: vehicle.vin)
+            model.link.start()
+        }
+    }
+
+
+    private func updateChargeStartPercentIfNeeded(_ value: Double) {
+        if value < chargeStartPercent {
+            chargeStartPercent = value
+        }
+    }
+
+    private func scheduleScrollChargingCalculator(proxy: ScrollViewProxy) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            withAnimation { proxy.scrollTo("chargingCalculator", anchor: .top) }
         }
     }
 
@@ -969,6 +1147,7 @@ struct DashboardView: View {
         proximityEnabled = true
         UserDefaults.standard.set(true, forKey: proximityEnabledKey)
         proximityGate = ProximityGate(calibration: calibration, profile: proximityProfile)
+        proximityRSSISamples.removeAll()
         ble.setProximityRSSIPollInterval(proximityProfile.pollInterval)
         proximityAutoOffDeadline = nil
         UserDefaults.standard.removeObject(forKey: proximityAutoOffDeadlineKey)
@@ -982,10 +1161,11 @@ struct DashboardView: View {
         }
         proximityStatus = "Etkin; iki kararlı RSSI ölçümü bekleniyor."
         keepBLEConnected = true
+        model.link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
         if ble.state.isDisconnected || ble.state.isFailed {
             reconnectAttempts = 0
             autoKeyStarted = false
-            ble.start(vin: vehicle.vin)
+            model.link.start()
         } else if ble.state.isCertificate, !authBusy {
             autoKeyStarted = false
             Task { await authenticateBLE() }
@@ -1070,7 +1250,7 @@ struct DashboardView: View {
         keepBLEConnected = false
         reconnectTask?.cancel()
         reconnectTask = nil
-        if !ble.state.isDisconnected { ble.disconnect() }
+        model.link.stop()
         proximityAutoOffStatus = "Süre doldu; otomasyon kapatıldı. Araca komut gönderilmedi."
         proximityStatus = proximityAutoOffStatus
         return true
@@ -1080,6 +1260,13 @@ struct DashboardView: View {
     private func processProximityRSSI(_ rssi: Int) {
         if expireProximityAutoOffIfNeeded() { return }
         guard proximityEnabled, ble.state.isReady, var gate = proximityGate else { return }
+        guard let sampledAt = ble.rssiUpdatedAt,
+              ProximityRSSIPolicy.isFresh(sampledAt: sampledAt, now: Date(), profile: proximityProfile) else {
+            requireFreshProximityCycle(reason: "GATT RSSI ölçümü eski/geçersiz")
+            proximityStatus = "GATT RSSI ölçümü güncel değil; otomatik eylem bekletildi."
+            ble.recordDiagnostic("gatt_rssi_stale · proximity geçişi ve komut iptal edildi")
+            return
+        }
         let transition = gate.update(rssi: rssi)
         proximityGate = gate
         guard let transition else { return }
@@ -1103,9 +1290,13 @@ struct DashboardView: View {
         switch transition {
         case .approached:
             if isLocked {
-                ble.unlock()
-                proximityStatus = "Yakınlık algılandı; imzalı kilit açma komutu gönderildi."
-                ble.recordDiagnostic("Yakınlık otomasyonu kilit açma isteği gönderdi")
+                if ble.unlock() {
+                    proximityStatus = "Yakınlık algılandı; imzalı kilit açma isteği başlatıldı."
+                    ble.recordDiagnostic("Yakınlık otomasyonu kilit açma isteğini başlattı")
+                } else {
+                    proximityStatus = "Yakınlık algılandı; kilit açma gönderilmedi: \(ble.lastEvent)"
+                    ble.recordDiagnostic("Yakınlık otomasyonu kilit açmayı başlatamadı")
+                }
             } else {
                 proximityStatus = "Yakınlık algılandı; kapılar zaten açık."
             }
@@ -1128,9 +1319,16 @@ struct DashboardView: View {
                         ble.recordDiagnostic("Yakınlık kilidi doğrulanmadı; otomatik kapatma sayacı başlamadı")
                     }
                 }
-                ble.lock()
-                proximityStatus = "Uzaklaşma algılandı; cam kapatma ve ardından kapı kilitleme akışı başlatıldı."
-                ble.recordDiagnostic("Yakınlık otomasyonu cam kapatıp kilitleme isteği gönderdi")
+                if ble.lock() {
+                    proximityStatus = "Uzaklaşma algılandı; cam kapatma ve ardından kapı kilitleme akışı başlatıldı."
+                    ble.recordDiagnostic("Yakınlık otomasyonu cam kapatma/kilitleme akışını başlattı")
+                } else {
+                    pendingAutoLockTask?.cancel()
+                    pendingAutoLockTask = nil
+                    awaitingProximityLockConfirmation = false
+                    proximityStatus = "Uzaklaşma algılandı; kilitleme başlatılamadı: \(ble.lastEvent)"
+                    ble.recordDiagnostic("Yakınlık otomasyonu kilitleme akışını başlatamadı")
+                }
             } else {
                 proximityStatus = "Uzaklaşma algılandı; kapılar zaten kilitli."
             }
@@ -1139,16 +1337,12 @@ struct DashboardView: View {
 
     @MainActor
     private func handleBLEState(_ state: BleConnection.State) {
+        if state.isConnecting || state.isDisconnected || state.isFailed {
+            requireFreshProximityCycle(reason: "BLE oturumu değişti: \(state.description)")
+        }
         if state.isReady {
             hasAuthenticatedBLE = true
             if proximityEnabled { proximityStatus = "Bağlı; yakınlık izleniyor (uygulama ekranda kalmalı)." }
-            stableConnectionTask?.cancel()
-            stableConnectionTask = Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 45_000_000_000)
-                guard !Task.isCancelled, ble.state.isReady else { return }
-                reconnectAttempts = 0
-                stableConnectionTask = nil
-            }
             return
         }
 
@@ -1156,36 +1350,19 @@ struct DashboardView: View {
             autoKeyStarted = false
             stableConnectionTask?.cancel()
             stableConnectionTask = nil
-            guard keepBLEConnected, !ble.needsRepair else { return }
-            scheduleBLEReconnect()
-            return
         }
-
-        let debugAutoKey = ProcessInfo.processInfo.arguments.contains("-autoDigitalKey")
-        guard state.isCertificate,
-              hasAuthenticatedBLE || proximityEnabled || debugAutoKey,
-              !autoKeyStarted else { return }
-        autoKeyStarted = true
-        let overwrite = ProcessInfo.processInfo.arguments.contains("-overwriteOwner")
-        print("[BLE] auto-auth triggering overwrite=\(overwrite)")
-        Task { await authenticateBLE(overwriteOwner: overwrite) }
     }
 
     @MainActor
-    private func scheduleBLEReconnect() {
-        guard reconnectTask == nil else { return }
-        reconnectAttempts += 1
-        let exponent = min(reconnectAttempts - 1, 4)
-        let delay = min(pow(2.0, Double(exponent)), 16.0)
-        print("[BLE] reconnect scheduled attempt=\(reconnectAttempts) delay=\(delay)s")
-        reconnectTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            guard !Task.isCancelled else { return }
-            reconnectTask = nil
-            guard keepBLEConnected, !ble.needsRepair,
-                  ble.state.isDisconnected || ble.state.isFailed else { return }
-            ble.start(vin: vehicle.vin)
-        }
+    private func requireFreshProximityCycle(reason: String) {
+        guard proximityEnabled, var gate = proximityGate,
+              !gate.isAwaitingFarBaseline,
+              gate.presence != .unknown || !proximityRSSISamples.isEmpty else { return }
+        gate.requireFreshCycle()
+        proximityGate = gate
+        proximityRSSISamples.removeAll()
+        proximityStatus = "BLE oturumu yenilendi; önce uzak, sonra yeni yaklaşma kanıtı bekleniyor."
+        ble.recordDiagnostic("proximity_fresh_cycle · \(reason)")
     }
 
     @MainActor
@@ -1195,7 +1372,8 @@ struct DashboardView: View {
         error = nil
         defer { authBusy = false }
         do {
-            try await ble.authenticate(vehicle: vehicle, api: model.api, overwriteOwner: overwriteOwner)
+            model.link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
+            try await model.link.authenticateNow(overwriteOwner: overwriteOwner)
         } catch {
             self.error = error.localizedDescription
         }
@@ -1210,6 +1388,231 @@ struct DashboardView: View {
         case .windowsOpen: ble.windowsOpen()
         case .windowsClose: ble.windowsClose()
         }
+    }
+
+    private func approve(_ command: DashboardCommand) {
+        let voiceSourced = voiceSourcedConfirm
+        let requiresOwnerAuthentication = voiceSourced && command == .unlock
+        voiceSourcedConfirm = false
+
+        guard ble.state.isReady else {
+            error = "Araç bağlantısı hazır değil; komut gönderilmedi."
+            return
+        }
+
+        if voiceSourced {
+            guard let state = ble.telemetry,
+                  Date().timeIntervalSince(state.receivedAt) < 15 else {
+                error = "Araç verisi güncel değil; komut gönderilmedi."
+                return
+            }
+        }
+
+        guard requiresOwnerAuthentication else {
+            send(command)
+            return
+        }
+
+        Task { @MainActor in
+            let authenticated = await authenticateVoiceUnlock()
+            if authenticated {
+                send(command)
+            } else {
+                error = "Kilit açma için kimlik doğrulaması yapılmadı; komut gönderilmedi."
+            }
+        }
+    }
+
+    private func authenticateVoiceUnlock() async -> Bool {
+        let context = LAContext()
+        context.localizedCancelTitle = "Vazgeç"
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+            return false
+        }
+        do {
+            return try await context.evaluatePolicy(
+                .deviceOwnerAuthentication,
+                localizedReason: "Sesli komutla kapı kilitlerini açmak için kimliğini doğrula."
+            )
+        } catch {
+            return false
+        }
+    }
+
+    // MARK: - Sesli komutlar
+
+    private func handleVoiceUtterance(_ text: String) -> String {
+        let parsed = VoiceCommandParser().parseDetailed(text)
+        VoiceLog.debug("komut: \(parsed.command) güven: \(parsed.confidence)")
+
+        switch parsed.command {
+        case .status(let topic):
+            return voiceStatusResponse(topic)
+        case .unknown:
+            if let chat = VoiceChat().reply(for: text) {
+                VoiceLog.debug("sohbet: \(chat.topic)")
+                return chat.text
+            }
+            return voiceCommandResponse(parsed.command)
+        default:
+            return voiceCommandResponse(parsed.command)
+        }
+    }
+
+    private var voiceContext: VoiceContext {
+        VoiceContext(
+            linkReady: ble.state.isReady,
+            telemetryAge: ble.telemetry.map { Date().timeIntervalSince($0.receivedAt) },
+            deviceUnlocked: UIApplication.shared.isProtectedDataAvailable,
+            climateServiceAvailable: false,
+            previewActionsEnabled: true
+        )
+    }
+
+    private func voiceCommandResponse(_ command: VoiceCommand) -> String {
+        let decision = VoiceCommandPolicy().decide(command, context: voiceContext)
+
+        switch decision {
+        case .read(let topic):
+            return voiceStatusResponse(topic)
+        case .speak(let text), .reject(let text):
+            return text
+        case .confirm(_, let prompt):
+            guard let dashboardCommand = dashboardCommand(for: command) else {
+                return "Bu komut için onay ekranı yok."
+            }
+            voiceSourcedConfirm = true
+            showVoice = false
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                alert = .confirm(dashboardCommand)
+            }
+            return prompt + " Onay ekranını açıyorum."
+        case .execute(let command):
+            return "\(command.actionLabel ?? "Komut") için onay gerekiyor."
+        case .authenticate(let command, _):
+            return "\(command.actionLabel ?? "Komut") için onay ve Face ID gerekiyor."
+        }
+    }
+
+    private func dashboardCommand(for command: VoiceCommand) -> DashboardCommand? {
+        switch command {
+        case .lock: return .lock
+        case .unlock: return .unlock
+        case .trunk(let open): return open ? .trunkOpen : .trunkClose
+        case .windows(let open): return open ? .windowsOpen : .windowsClose
+        default: return nil
+        }
+    }
+
+    private func voiceStatusResponse(_ topic: VoiceStatusTopic) -> String {
+        switch topic {
+        case .battery:
+            var parts: [String] = []
+            if let percent = telemetry?.batteryPercent, percent.isFinite {
+                parts.append("Batarya yüzde \(Int(percent.rounded()))")
+            } else {
+                parts.append("Batarya bilgisi yok")
+            }
+            if let range = telemetry?.rangeKM, range.isFinite {
+                parts.append("menzil \(Int(range.rounded())) kilometre")
+            }
+            return parts.joined(separator: ", ") + "." + voiceCloudAgeNote()
+
+        case .range:
+            guard let range = telemetry?.rangeKM, range.isFinite else {
+                return "Menzil bilgisi yok."
+            }
+            return "Menzil \(Int(range.rounded())) kilometre." + voiceCloudAgeNote()
+
+        case .locks:
+            guard let state = ble.telemetry else {
+                return "Kapı durumu için araç bağlantısı yok."
+            }
+            guard let locked = state.isLocked else {
+                return "Kilit durumu doğrulanamıyor."
+            }
+            var answer = locked ? "Kapılar kilitli." : "Kapılar kilit açık."
+            if state.openDoorCount > 0 {
+                answer += " \(state.openDoorCount) kapı açık görünüyor."
+            }
+            return answer + " Son araç verisi \(voiceAge(state.receivedAt))."
+
+        case .trunk:
+            guard let state = ble.telemetry else {
+                return "Bagaj durumu için araç bağlantısı yok."
+            }
+            let open = state.trunkAjar == 1
+            return (open ? "Bagaj açık." : "Bagaj kapalı.") + " Son araç verisi \(voiceAge(state.receivedAt))."
+
+        case .windows:
+            return "Cam konumu araç telemetrisinde yok. Açmak veya kapatmak için sesli komut verebilirsin; onay ister."
+
+        case .climate:
+            guard climateKnown, let measuredAt = climateStatusAt else {
+                return "Klima durumu bilinmiyor."
+            }
+            let answer = climateOn ? "Klima açık." : "Klima kapalı."
+            guard Date().timeIntervalSince(measuredAt) >= 300 else { return answer }
+            return answer + " Son veri \(voiceAge(measuredAt))."
+
+        case .charging:
+            let label = chargingLabel
+            return label == "—" ? "Şarj durumu bilinmiyor." : "Şarj durumu: \(label)." + voiceCloudAgeNote()
+
+        case .tirePressure:
+            guard let telemetry, telemetry.tirePressureAvailable, !telemetry.tires.isEmpty else {
+                return "Lastik basıncı verisi yok."
+            }
+            let readings = telemetry.tires.map { tire in
+                "\(tire.position.title) \(tire.pressurePSI.map(voiceDecimal) ?? "—")"
+            }
+            return "Lastik basınçları: " + readings.joined(separator: ", ") + " PSI." + voiceCloudAgeNote()
+
+        case .outsideTemperature:
+            guard let temperature = telemetry?.outsideTemperatureC, temperature.isFinite else {
+                return "Dış sıcaklık bilgisi yok."
+            }
+            return "Dış sıcaklık \(voiceDecimal(temperature)) derece." + voiceCloudAgeNote()
+
+        case .odometer:
+            guard let kilometers = telemetry?.odometerKM, kilometers.isFinite else {
+                return "Odometre bilgisi yok."
+            }
+            return "Odometre \(Int(kilometers.rounded())) kilometre." + voiceCloudAgeNote()
+
+        case .auxiliaryBattery:
+            guard let percent = telemetry?.auxiliaryBatteryPercent, percent.isFinite else {
+                return "12 V akü bilgisi yok."
+            }
+            return "12 V akü yüzde \(Int(percent.rounded()))." + voiceCloudAgeNote()
+        }
+    }
+
+    private func voiceAge(_ date: Date) -> String {
+        let seconds = max(0, Int(Date().timeIntervalSince(date)))
+        if seconds < 2 { return "az önce" }
+        if seconds < 60 { return "\(seconds) saniye önce" }
+        return "\(seconds / 60) dakika önce"
+    }
+
+    /// Bulut telemetrisi 5 dakikadan eskiyse yanıta verinin yaşını ekler.
+    private func voiceCloudAgeNote() -> String {
+        guard let updatedAt else { return "" }
+        let seconds = Date().timeIntervalSince(updatedAt)
+        guard seconds >= 300 else { return "" }
+        if seconds < 3_600 {
+            return " Son veri \(max(1, Int(seconds / 60))) dakika önce."
+        }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "d MMMM HH:mm"
+        return " Son veri \(formatter.string(from: updatedAt))."
+    }
+
+    private func voiceDecimal(_ value: Double) -> String {
+        String(format: "%.1f", value).replacingOccurrences(of: ".", with: ",")
     }
 
     private func requestWindowCommand(_ command: DashboardCommand) {
@@ -1475,7 +1878,7 @@ struct DashboardView: View {
     private func prefetchCertificate() async {
         guard let pair = try? PhoneKeyStore.keyPair(for: vehicle.vin) else { return }
         let hex = pair.publicKey.hexString
-        if CertificateCache.load(vin: vehicle.vin, phonePublicKeyHex: hex) != nil { return }
+        if CertificateCache.loadCertificate(vin: vehicle.vin, phonePublicKeyHex: hex) != nil { return }
         do {
             _ = try await model.api.ensureCertificate(vin: vehicle.vin, phonePublicKeyHex: hex)
             print("[CERT] prefetch complete")
@@ -1511,7 +1914,7 @@ struct DashboardView: View {
         guard !climateBusy else { return }
         climateBusy = true
         defer { climateBusy = false }
-        print("[CLIMATE] status query start vin=\(vehicle.vin)")
+        print("[CLIMATE] status query start vin=…\(vehicle.vin.suffix(4))")
         do {
             let status = try await model.api.climateStatus(vin: vehicle.vin)
             climateOn = status.active
@@ -1636,6 +2039,7 @@ struct DashboardView: View {
             try Task.checkCancellation()
             telemetry = parsed
             updatedAt = parsed.vehicleUpdatedAt ?? Date()
+            model.noteCloudTelemetry(parsed)
         } catch is CancellationError {
             return
         } catch {
@@ -1658,6 +2062,7 @@ private struct DashboardHeader: View {
     let selectedVin: String?
     let onSelectVehicle: (Vehicle) -> Void
     let onRefresh: () -> Void
+    let onOpenVoice: () -> Void
     let onOpenCommands: () -> Void
     let onOpenService: () -> Void
     let onOpenExperience: () -> Void
@@ -1705,6 +2110,15 @@ private struct DashboardHeader: View {
                     .foregroundStyle(ToggTheme.green)
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(RoundedRectangle(cornerRadius: 6).fill(ToggTheme.green.opacity(0.15)))
+
+                Button(action: onOpenVoice) {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(ToggTheme.teal)
+                        .frame(width: 34, height: 30)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(ToggTheme.surfaceVariant))
+                }
+                .accessibilityLabel("Sesli komut")
             }
 
             HStack(alignment: .center) {
@@ -1728,6 +2142,11 @@ private struct DashboardHeader: View {
                             .foregroundStyle(ToggTheme.muted)
                             .lineLimit(1)
                     }
+                    if vehicle.isShared {
+                        Label("Paylaşılan araç · sahip devri yok", systemImage: "person.2.fill")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(ToggTheme.teal)
+                    }
                 }
                 Spacer()
                 HStack(spacing: 8) {
@@ -1750,9 +2169,10 @@ private struct DashboardHeader: View {
                                         onSelectVehicle(item)
                                     } label: {
                                         if item.vin == selectedVin {
-                                            Label(item.title, systemImage: "checkmark")
+                                            Label(item.isShared ? "\(item.title) · Paylaşılan" : item.title,
+                                                  systemImage: item.isShared ? "person.2.fill" : "checkmark")
                                         } else {
-                                            Text(item.title)
+                                            Text(item.isShared ? "\(item.title) · Paylaşılan" : item.title)
                                         }
                                     }
                                 }
@@ -1974,17 +2394,8 @@ private struct QuickActionButton: View {
 private struct PremiumControlsSection: View {
     @Binding var sentryMode: Bool
     @Binding var valetMode: Bool
-    @Binding var ambientColor: Color
     @Binding var sunroofOpen: Bool
     let onWindowCommand: (DashboardCommand) -> Void
-
-    private let palette: [(Color, String)] = [
-        (ToggTheme.teal, "Turkuaz"),
-        (ToggTheme.cyan, "Elektrik"),
-        (Color(hex: 0xFF007A), "Magenta"),
-        (Color(hex: 0x7000FF), "Mor"),
-        (ToggTheme.yellow, "Altın")
-    ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -2003,33 +2414,6 @@ private struct PremiumControlsSection: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
-                    Image(systemName: "paintpalette.fill")
-                        .font(.system(size: 16)).foregroundStyle(ambientColor)
-                    Text("64 Renk Ambiyans Aydınlatma")
-                        .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
-                }
-
-                HStack(spacing: 10) {
-                    ForEach(Array(palette.enumerated()), id: \.offset) { _, item in
-                        Button { ambientColor = item.0 } label: {
-                            Text(item.1)
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(ambientColor == item.0 ? .black : .white)
-                                .frame(maxWidth: .infinity).frame(height: 38)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(item.0.opacity(ambientColor == item.0 ? 0.9 : 0.25))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .stroke(ambientColor == item.0 ? .white : .clear, lineWidth: 2)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
                 HStack(spacing: 10) {
                     windowButton(title: "Yan camları aç", subtitle: "İmzalı BLE komutu",
                                  icon: "rectangle.split.3x3.fill", color: ToggTheme.cyan) {
@@ -2049,7 +2433,7 @@ private struct PremiumControlsSection: View {
             .padding(18)
             .toggCardBackground(24)
 
-            Text("Yan cam komutları onay ister; araç cam konumunu BLE ile doğrulamıyor. Panoramik tavan, ambiyans ve güvenlik ayarları önizlemedir.")
+            Text("Yan cam komutları onay ister; araç cam konumunu BLE ile doğrulamıyor. Panoramik tavan ve güvenlik ayarları önizlemedir.")
                 .font(.caption2).foregroundStyle(ToggTheme.muted)
         }
     }
@@ -2341,6 +2725,119 @@ private struct VehicleHealthCard: View {
 }
 
 // MARK: - Giriş ekranı
+
+private struct BLESetupGuideStep: Identifiable {
+    let number: Int
+    let title: String
+    let narration: String
+    var id: Int { number }
+
+    static let all: [BLESetupGuideStep] = [
+        .init(number: 1, title: "Aracın yanına gel", narration: "Aracın yanında dur. iPhone Bluetooth'unun açık olduğundan emin ol ve Toqdas uygulamasını ekranda açık tut."),
+        .init(number: 2, title: "Bağlantıyı başlat", narration: "Dashboard'daki Bluetooth Dijital Anahtar kartında bağlan düğmesine dokun. Araç bulunup GATT servisleri keşfedilirken telefonu araçtan uzaklaştırma."),
+        .init(number: 3, title: "Eşleştirmeyi araçtan başlat", narration: "Araç ekranı dijital anahtar eşleştirmesi isterse işlemi araç ekranından başlat. iPhone'da bir eşleştirme kodu görünürse kodları karşılaştırıp onayla."),
+        .init(number: 4, title: "Kimlik doğrulamayı bekle", narration: "Sertifika ve imzalı kimlik doğrulaması sürerken uygulama ekranında kal. Araç anahtarı eksik uyarısı görünürse araca komut gönderilmez."),
+        .init(number: 5, title: "Yeşil durumu doğrula", narration: "Bluetooth Dijital Anahtar kartında yeşil Bağlı, Komut hazır yazısını bekle. Komutlar yalnızca bağlantı hazır ve imzalı araç verisi güncelse gönderilebilir. Arka planda araç komutu gönderilmez.")
+    ]
+}
+
+private struct BLESetupGuideSheet: View {
+    @ObservedObject var ble: BleConnection
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var speaker = BLESetupVoiceGuide()
+    @State private var stepIndex = 0
+
+    private var step: BLESetupGuideStep { BLESetupGuideStep.all[stepIndex] }
+
+    private var liveStatus: String {
+        if ble.needsRepair { return "iPhone ve araç eşleşmesi sıfırlanmalı." }
+        if ble.pairingRequired { return "Araç anahtarı eksik; eşleştirmeyi araç ekranından başlat." }
+        if ble.state.isReady { return "Bağlı · Komut hazır" }
+        return ble.state.description
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                ToggTheme.background.ignoresSafeArea()
+                VStack(alignment: .leading, spacing: 18) {
+                    HStack {
+                        Text("ADIM \(step.number) / \(BLESetupGuideStep.all.count)")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(ToggTheme.teal)
+                        Spacer()
+                        Image(systemName: "dot.radiowaves.left.and.right")
+                            .foregroundStyle(ble.state.isReady ? ToggTheme.green : ToggTheme.teal)
+                    }
+
+                    Text(step.title)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text(step.narration)
+                        .font(.system(size: 15))
+                        .foregroundStyle(ToggTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: 8) {
+                        Circle().fill(ble.state.isReady ? ToggTheme.green : ToggTheme.orange)
+                            .frame(width: 8, height: 8)
+                        Text(liveStatus)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(ble.state.isReady ? ToggTheme.green : ToggTheme.orange)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(ToggTheme.surfaceVariant))
+
+                    Button {
+                        speaker.speak(step.narration)
+                    } label: {
+                        Label("Bu adımı seslendir", systemImage: "speaker.wave.2.fill")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity, minHeight: 46)
+                            .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.teal))
+                    }
+                    .buttonStyle(.plain)
+
+                    HStack(spacing: 12) {
+                        Button("Önceki") {
+                            speaker.stop()
+                            stepIndex = max(0, stepIndex - 1)
+                        }
+                        .disabled(stepIndex == 0)
+
+                        Button(stepIndex == BLESetupGuideStep.all.count - 1 ? "Baştan dinle" : "Sonraki · dinle") {
+                            let nextIndex = stepIndex == BLESetupGuideStep.all.count - 1 ? 0 : stepIndex + 1
+                            stepIndex = nextIndex
+                            speaker.speak(BLESetupGuideStep.all[nextIndex].narration)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(ToggTheme.teal)
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+
+                    Text("Ses cihazda üretilir. Mikrofon açılmaz; ses kaydı veya transkript gönderilmez.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(ToggTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Spacer(minLength: 0)
+                }
+                .padding(20)
+            }
+            .navigationTitle("Dijital anahtar kurulumu")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Kapat") { dismiss() }
+                }
+            }
+        }
+        .onDisappear { speaker.stop() }
+    }
+}
 
 struct LoginView: View {
     @ObservedObject var model: GarageModel

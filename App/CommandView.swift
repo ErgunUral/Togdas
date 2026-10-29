@@ -11,6 +11,12 @@ struct CommandView: View {
     @State private var pending: PendingCommand?
     @State private var showChannels = false
     @State private var ownerTransferRequired = false
+    @State private var shareVIN = ""
+    @State private var shareInvitationURL = ""
+    @State private var shareBusy = false
+    @State private var shareStatus = ""
+    @State private var shareError: String?
+    @State private var showShareConfirmation = false
 
     enum PendingCommand: String, Identifiable {
         case unlock, lock, trunkOpen, trunkClose, driveAuthorize
@@ -34,7 +40,8 @@ struct CommandView: View {
     }
 
     private var canAuthenticate: Bool { ble.state.isCertificate || ble.state.isChallenge }
-    private var commandsEnabled: Bool { ble.state.isReady && !busy }
+    private var commandsEnabled: Bool { ble.canSendVehicleCommands && !busy }
+    private var diagnosticReport: BLEDiagnosticReport { BLEDiagnosticReport(events: ble.diagnosticEvents) }
 
     var body: some View {
         List {
@@ -121,6 +128,53 @@ struct CommandView: View {
                 }
             }
 
+            Section("Paylaşılan anahtar daveti") {
+                Text("Trumore'dan aldığın KeySharing bağlantısını ve davetteki VIN'i gir. Bu işlem sahiplik devretmez; araç sahibinin Trumore onayı gerekir.")
+                    .font(.caption).foregroundStyle(.secondary)
+                TextField("VIN (17 karakter)", text: $shareVIN)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .font(.caption.monospaced())
+                    .onChange(of: shareVIN) { shareVIN = String($0.uppercased().filter { $0.isASCII }.prefix(17)) }
+                TextField("https://…/KeySharing?seId=…&no=…", text: $shareInvitationURL)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .font(.caption)
+
+                Button {
+                    showShareConfirmation = true
+                } label: {
+                    Label(shareBusy ? "Davet gönderiliyor…" : "İmzalı davet kabul isteği gönder",
+                          systemImage: "person.2.badge.key.fill")
+                }
+                .disabled(shareBusy || !isValidShareVIN || shareInvitationURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                Button {
+                    Task { await readSharedCertificate() }
+                } label: {
+                    Label(shareBusy ? "Sertifika sorgulanıyor…" : "Onay sonrası sertifikayı oku",
+                          systemImage: "arrow.down.document.fill")
+                }
+                .disabled(shareBusy || !isValidShareVIN)
+
+                if !shareStatus.isEmpty {
+                    Text(shareStatus).font(.caption).foregroundStyle(.secondary)
+                }
+                if let shareError {
+                    Text(shareError).font(.caption).foregroundStyle(.red).textSelection(.enabled)
+                }
+
+                Button(role: .destructive) {
+                    SharedKeyRequestStore.clearSharingState(vin: shareVIN)
+                    shareStatus = "Paylaşım durumu sıfırlandı. Araç sahibi akışına dönüldü."
+                    shareError = nil
+                } label: {
+                    Label("Paylaşım durumunu sıfırla", systemImage: "trash")
+                }
+                .font(.caption)
+            }
+
             Section("Komutlar") {
                 Button("Kilidi aç") { pending = .unlock }.disabled(!commandsEnabled)
                 Button("Kilitle") { pending = .lock }.disabled(!commandsEnabled)
@@ -129,10 +183,40 @@ struct CommandView: View {
                 Button("Sürüş yetkilendir") { pending = .driveAuthorize }
                     .disabled(!commandsEnabled)
                     .buttonStyle(.borderedProminent)
-                if !ble.state.isReady {
-                    Text("Komutlar, araç kimliği doğrulandıktan sonra etkinleşir.")
+                if !ble.canSendVehicleCommands {
+                    Text(commandGateMessage)
                         .font(.caption).foregroundStyle(.secondary)
                 }
+            }
+
+            Section {
+                diagnosticMetric("Tarama / devir / sonuçsuz", "\(diagnosticReport.scanStarts) / \(diagnosticReport.scanRotations) / \(diagnosticReport.scanExhaustions)")
+                diagnosticMetric("Bağlandı / koptu / READY", "\(diagnosticReport.successfulConnections) / \(diagnosticReport.disconnects) / \(diagnosticReport.readyTransitions)")
+                diagnosticMetric("Doğrudan yeniden bağlanma", "\(diagnosticReport.directReconnects)")
+                diagnosticMetric("Radyo aç / kapat", "\(diagnosticReport.radioOnEvents) / \(diagnosticReport.radioOffEvents)")
+                diagnosticMetric("RSSI örnekleri", "\(diagnosticReport.rssiSamples.count) · \(diagnosticReport.rssiSummary)")
+                diagnosticMetric("Eksik araç anahtarı", "\(diagnosticReport.missingVehicleKeys)")
+                diagnosticMetric("Telemetri doğrulama hatası", "\(diagnosticReport.telemetryVerificationFailures)")
+                diagnosticMetric("Eski GATT RSSI / yakınlık döngüsü sıfırlama", "\(diagnosticReport.staleGATTRSSISamples) / \(diagnosticReport.proximityFreshCycleResets)")
+
+                if diagnosticReport.totalFailures == 0 {
+                    Text("Son 60 dakikada sınıflandırılmış kopma/hata yok.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    ForEach(BleFailureKind.allCases, id: \.rawValue) { kind in
+                        if let count = diagnosticReport.failureCounts[kind], count > 0 {
+                            diagnosticMetric(kind.summary, "\(count)")
+                        }
+                    }
+                }
+
+                ShareLink(item: diagnosticReport.shareText) {
+                    Label("Tanı özetini paylaş", systemImage: "square.and.arrow.up")
+                }
+            } header: {
+                Text("BLE tanı özeti · son 60 dk")
+            } footer: {
+                Text("Özet son bir saatteki, bu iPhone’da tutulan en fazla 500 olaydan hesaplanır. VIN redakte edilir; anahtarlar ve ham paketler rapora eklenmez.")
             }
 
             Section {
@@ -153,13 +237,25 @@ struct CommandView: View {
             } header: {
                 Text("BLE tanı günlüğü · son \(ble.diagnosticEvents.count)")
             } footer: {
-                Text("Son 200 olay bu iPhone’da tutulur; erişim anahtarı ve ham imza kaydedilmez.")
+                Text("Son 500 olay bu iPhone’da tutulur; erişim anahtarı ve ham imza kaydedilmez.")
             }
 
             Section("Uyarı") {
                 Text("Komutlar gerçek araca gönderilir. Yalnızca aracın yanındayken ve gerektiğinde kullanın.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
+
+            #if DEBUG
+            Section("Ses testi · yalnızca ses") {
+                Button {
+                    LockConfirmationSound.playDoubleBeep()
+                } label: {
+                    Label("Kilit teyit sesini dene", systemImage: "speaker.wave.2.fill")
+                }
+                Text("Bu düğme araca komut göndermez.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            #endif
 
             if let error {
                 Section("Hata") { Text(error).foregroundStyle(.red).textSelection(.enabled) }
@@ -179,6 +275,61 @@ struct CommandView: View {
         } message: { command in
             Text(command.detail)
         }
+        .confirmationDialog("Paylaşılan anahtar daveti kabul edilsin mi?",
+                            isPresented: $showShareConfirmation,
+                            titleVisibility: .visible) {
+            Button("İmzalı kabul isteği gönder", role: .destructive) {
+                Task { await acceptSharedInvitation() }
+            }
+            Button("Vazgeç", role: .cancel) {}
+        } message: {
+            Text("Yalnızca bu VIN için telefon açık anahtarı ve davet imzası gönderilir. Araç sahipliği değişmez; Trumore araç sahibinin onayı beklenir. Aynı davet otomatik tekrarlanmaz.")
+        }
+        .onAppear { if shareVIN.isEmpty { shareVIN = vehicle.vin } }
+    }
+
+    private var isValidShareVIN: Bool {
+        shareVIN.range(of: "^[A-HJ-NPR-Z0-9]{17}$", options: .regularExpression) != nil
+    }
+
+    @MainActor
+    private func acceptSharedInvitation() async {
+        guard !shareBusy else { return }
+        shareBusy = true
+        shareError = nil
+        shareStatus = ""
+        defer { shareBusy = false }
+        do {
+            try await api.acceptSharedKeyInvitation(vin: shareVIN, invitationURL: shareInvitationURL)
+            shareInvitationURL = ""
+            shareStatus = "Kabul isteği imzalanıp gönderildi. Araç sahibinin Trumore onayından sonra sertifikayı oku."
+        } catch {
+            shareError = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func readSharedCertificate() async {
+        guard !shareBusy else { return }
+        shareBusy = true
+        shareError = nil
+        shareStatus = ""
+        defer { shareBusy = false }
+        do {
+            let record = try await api.readSharedCertificate(vin: shareVIN)
+            shareStatus = record.carPublicKey.isEmpty
+                ? "Paylaşılan sertifika alındı; araç doğrulama anahtarı henüz yok. READY için araç anahtarı gerekli."
+                : "Paylaşılan sertifika ve araç anahtarı Keychain'e kaydedildi. Araç yanında bağlanıp doğrula."
+            if shareVIN == vehicle.vin, (ble.state.isCertificate || ble.state.isChallenge) {
+                try ble.beginAuthentication(
+                    vin: shareVIN,
+                    certificateBase64: record.certificateBase64,
+                    carKey: record.carPublicKey
+                )
+            }
+        } catch {
+            shareError = error.localizedDescription
+        }
     }
 
     private func authenticate(overwriteOwner: Bool = false) async {
@@ -194,6 +345,20 @@ struct CommandView: View {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    private func diagnosticMetric(_ title: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Text(value).font(.caption.monospacedDigit()).multilineTextAlignment(.trailing)
+        }
+    }
+
+    private var commandGateMessage: String {
+        guard ble.state.isReady else { return "Komutlar, araç kimliği doğrulandıktan sonra etkinleşir." }
+        guard ble.hasFreshSignedTelemetry else { return "Komut için 15 saniyeden yeni imzalı araç durumu gerekli." }
+        return "Kilit durumu bilinmiyor; araç komutları güvenlik için kapalı."
     }
 
     private func send(_ command: PendingCommand) {

@@ -53,6 +53,46 @@ final class ProximityAutomationTests: XCTestCase {
         XCTAssertEqual(invalidGate.presence, .unknown)
     }
 
+    func testNewBleSessionRequiresFarBaselineBeforeNewApproachCanUnlock() {
+        let calibration = ProximityCalibration(nearSample: -75, farSample: -95)
+        var gate = ProximityGate(calibration: calibration)
+        XCTAssertNil(gate.update(rssi: -80))
+        XCTAssertEqual(gate.update(rssi: -80), .approached)
+
+        gate.requireFreshCycle()
+        XCTAssertTrue(gate.isAwaitingFarBaseline)
+        XCTAssertNil(gate.update(rssi: -80))
+        XCTAssertNil(gate.update(rssi: -80))
+        XCTAssertEqual(gate.presence, .unknown)
+
+        // The first fresh far readings only establish a new baseline.
+        XCTAssertNil(gate.update(rssi: -95))
+        XCTAssertNil(gate.update(rssi: -95))
+        XCTAssertFalse(gate.isAwaitingFarBaseline)
+        XCTAssertEqual(gate.presence, .far)
+
+        XCTAssertNil(gate.update(rssi: -80))
+        XCTAssertEqual(gate.update(rssi: -80), .approached)
+        XCTAssertNil(gate.update(rssi: -95))
+        XCTAssertEqual(gate.update(rssi: -95), .departed)
+    }
+
+    func testStaleOrFutureGATTRSSIIsRejectedUsingProfileCadence() {
+        let now = Date(timeIntervalSince1970: 10_000)
+        XCTAssertTrue(ProximityRSSIPolicy.isFresh(
+            sampledAt: now.addingTimeInterval(-2.9), now: now, profile: .balanced
+        ))
+        XCTAssertFalse(ProximityRSSIPolicy.isFresh(
+            sampledAt: now.addingTimeInterval(-3.1), now: now, profile: .balanced
+        ))
+        XCTAssertFalse(ProximityRSSIPolicy.isFresh(
+            sampledAt: now.addingTimeInterval(0.1), now: now, profile: .balanced
+        ))
+        XCTAssertFalse(ProximityRSSIPolicy.isFresh(
+            sampledAt: now.addingTimeInterval(-1.6), now: now, profile: .fast
+        ))
+    }
+
     func testProfilesExposeDifferentLatencyAndFilteringPolicies() {
         XCTAssertEqual(ProximityProfile.balanced.requiredSamples, 2)
         XCTAssertEqual(ProximityProfile.fast.requiredSamples, 1)

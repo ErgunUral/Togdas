@@ -84,8 +84,8 @@ final class ToggAPI {
                     body.append(byte)
                 }
             } catch {}
-            let text = String(data: body, encoding: .utf8) ?? ""
-            print("[HTTP] \(http.statusCode) \(request.url?.path ?? "?") body=\(text)")
+            // Error bodies can echo account/VIN data; never copy them into device logs.
+            print("[HTTP] \(http.statusCode) \(request.url?.path ?? "?") yanıt gövdesi gizlendi")
             throw AppError.message(http.statusCode == 401 ? "Oturum kabul edilmedi; yeniden giriş yapın." : "Servis hatası: HTTP \(http.statusCode) (\(request.url?.path ?? "bilinmeyen adres"))")
         }
         var data = Data()
@@ -346,7 +346,7 @@ final class ToggAPI {
         try await get("/integration/api/v1/Tickets/Tur/\(ticketId)/notes", base: SUPERAPP_URL)
     }
 
-    func checkPhoneRelation(publicKey: String, language: String = "TR") async throws -> Data {
+    func checkPhoneRelation(publicKey: String, language: String = "TR", platform: String = "ios") async throws -> Data {
         var components = URLComponents(url: smartAccessURL, resolvingAgainstBaseURL: false)!
         components.path = smartAccessURL.path + "/UserPhoneRelation/CheckUserPhoneRelation"
         components.queryItems = [URLQueryItem(name: "publicKey", value: publicKey)]
@@ -358,12 +358,156 @@ final class ToggAPI {
         request.setValue("663", forHTTPHeaderField: "x-app-build-number")
         request.setValue("Bearer \(try await token())", forHTTPHeaderField: "Authorization")
         let body: [String: Any] = [
-            "Platform": ["android"],
+            "Platform": [platform],
             "Language": [language],
             "PushNotificationToken": [""]
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         return try await send(request)
+    }
+
+    /// Togg/Trumore tarafından üretilen paylaşım davetini imzalı olarak kabul eder.
+    /// Bu akış araç sahipliği talep etmez ve `ClaimCarToUser` çağırmaz.
+    func acceptSharedKeyInvitation(vin: String, invitationURL: String) async throws {
+        guard vin.range(of: "^[A-HJ-NPR-Z0-9]{17}$", options: .regularExpression) != nil else {
+            throw AppError.message("Geçerli 17 karakterli VIN girin.")
+        }
+        let invitation = try KeySharingInvitation.parse(invitationURL)
+        guard !SharedKeyRequestStore.wasRequested(vin: vin, fingerprint: invitation.replayFingerprint) else {
+            throw AppError.message("Bu davet için kabul isteği zaten gönderildi. Sahip onayından sonra sertifikayı okuyun; istek otomatik tekrarlanmaz.")
+        }
+
+        let pair = try PhoneKeyStore.keyPair(for: vin)
+        let account = try accountUUID()
+        let message = try invitation.signatureMessage(accountUUID: account, phonePublicKey: pair.publicKey)
+        let signature = try PhoneKeyStore.sign(message, with: pair.key)
+        let publicKey = pair.publicKey.hexString
+
+        let relation = try await checkPhoneRelation(publicKey: publicKey, platform: "ios")
+        if let result = Self.resultEnum(in: relation),
+           !["Success", "Updated", "OwnerChange", "RelationAlreadyExists"].contains(result) {
+            throw AppError.message("Telefon anahtarı hesabınıza kaydedilemedi (\(result)).")
+        }
+
+        // İstek gönderildikten sonra yanıt kaybolsa bile aynı daveti tekrarlamayız.
+        SharedKeyRequestStore.markRequested(vin: vin, fingerprint: invitation.replayFingerprint)
+        let response = try await replyToShareSession(
+            sessionID: invitation.sessionID,
+            signatureBase64: signature.base64EncodedString(),
+            phonePublicKey: publicKey
+        )
+        if let result = Self.resultEnum(in: response),
+           ["Failure", "Rejected", "Error"].contains(result) {
+            throw AppError.message("Paylaşım daveti sunucu tarafından reddedildi (\(result)).")
+        }
+    }
+
+    /// Araç sahibi Trumore'da onay verdikten sonra yalnızca bu VIN ve telefon
+    /// açık anahtarına bağlı paylaşılan sertifikayı bulur ve Keychain'e yazar.
+    func readSharedCertificate(vin: String) async throws -> CertificateRecord {
+        guard vin.range(of: "^[A-HJ-NPR-Z0-9]{17}$", options: .regularExpression) != nil else {
+            throw AppError.message("Geçerli 17 karakterli VIN girin.")
+        }
+        let pair = try PhoneKeyStore.keyPair(for: vin)
+        let phonePublicKey = pair.publicKey.hexString
+        let cached = CertificateCache.loadCertificate(vin: vin, phonePublicKeyHex: phonePublicKey)
+        // A valid VIN/device-bound cache is safe to reuse even when the vehicle
+        // list labels the VIN as shared. It must not fall through to owner claim.
+        if let cached,
+           SharedKeyRequestStore.hasCertificate(vin: vin) || !cached.carPublicKey.isEmpty {
+            return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: cached.carPublicKey)
+        }
+        guard SharedKeyRequestStore.canCheckCertificate(vin: vin) else {
+            throw AppError.message("Paylaşılan sertifika için son sorgu yapıldı. Araç sahibinin Trumore onayından sonra en az bir dakika bekleyip yeniden deneyin.")
+        }
+        SharedKeyRequestStore.markCertificateCheck(vin: vin)
+
+        let data = try await getAllCertificates(phonePublicKey: phonePublicKey)
+        guard let record = try CertificateRecord.parseShared(
+            data, vin: vin, phonePublicKey: pair.publicKey
+        ) else {
+            if let cached {
+                return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: cached.carPublicKey)
+            }
+            throw AppError.message("Paylaşılan sertifika bulunamadı. Araç sahibinin Trumore onayını kontrol edin.")
+        }
+        guard let certificateData = Data(base64Encoded: record.certificateBase64),
+              let expiry = BLEProtocol.certificateEndDate(certificateData),
+              expiry > Date().addingTimeInterval(86_400) else {
+            throw AppError.message("Paylaşılan sertifika süresi geçmiş veya geçersiz.")
+        }
+
+        let existingKey = cached?.carPublicKey ?? ""
+        let returnedKey = Self.normalizedVehiclePublicKey(record.carPublicKey)
+        let cachedKey = Self.normalizedVehiclePublicKey(existingKey)
+        if let returnedKey, let cachedKey, returnedKey != cachedKey {
+            throw AppError.message("Paylaşılan sertifikadaki araç anahtarı daha önce güvenilen anahtarla eşleşmiyor; önbellek değiştirilmedi.")
+        }
+        let trustedKey = returnedKey ?? cachedKey
+        CertificateCache.save(
+            certificateBase64: record.certificateBase64,
+            carPublicKey: trustedKey?.hexString ?? "",
+            vin: vin,
+            phonePublicKeyHex: phonePublicKey
+        )
+        guard let saved = CertificateCache.loadCertificate(vin: vin, phonePublicKeyHex: phonePublicKey),
+              saved.certificateBase64 == record.certificateBase64 else {
+            throw AppError.message("Paylaşılan sertifika Keychain'e güvenle kaydedilemedi.")
+        }
+        SharedKeyRequestStore.markCertificateAvailable(vin: vin)
+        return CertificateRecord(certificateBase64: saved.certificateBase64, carPublicKey: saved.carPublicKey)
+    }
+
+    private func getAllCertificates(phonePublicKey: String) async throws -> Data {
+        var components = URLComponents(url: smartAccessURL, resolvingAgainstBaseURL: false)!
+        components.path = smartAccessURL.path + "/Certificates/GetAllCertificates"
+        components.queryItems = [URLQueryItem(name: "phonePublicKey", value: phonePublicKey)]
+        var request = URLRequest(url: components.url!)
+        request.setValue("Bearer \(try await token())", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(language, forHTTPHeaderField: "language")
+        request.setValue("663", forHTTPHeaderField: "x-app-build-number")
+        return try await send(request)
+    }
+
+    private func replyToShareSession(sessionID: String, signatureBase64: String,
+                                     phonePublicKey: String) async throws -> Data {
+        var components = URLComponents(url: smartAccessURL, resolvingAgainstBaseURL: false)!
+        components.path = smartAccessURL.path + "/ShareProcess/ReplyToSession"
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(try await token())", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        request.setValue(language, forHTTPHeaderField: "language")
+        request.setValue("663", forHTTPHeaderField: "x-app-build-number")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "sessionId": sessionID,
+            "signatureBase64": signatureBase64,
+            "phonePublicKey": phonePublicKey,
+            "sharedName": "Toqdas",
+            "friendName": "Toqdas"
+        ])
+        let data = try await send(request)
+        if let value = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? Bool,
+           !value {
+            throw AppError.message("Paylaşım daveti kabul edilmedi.")
+        }
+        if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           object["success"] as? Bool == false {
+            throw AppError.message("Paylaşım daveti kabul edilmedi.")
+        }
+        return data
+    }
+
+    private static func normalizedVehiclePublicKey(_ text: String) -> Data? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let withoutPrefix = trimmed.lowercased().hasPrefix("0x") ? String(trimmed.dropFirst(2)) : trimmed
+        let raw = Data(hexBytes: withoutPrefix) ?? Data(base64Encoded: trimmed)
+        guard let normalized = raw.flatMap(PhoneKeyStore.normalizedPublicKey),
+              (try? BLEProtocol.publicKey(normalized)) != nil else { return nil }
+        return normalized
     }
 
     func getCertificate(phonePublicKey: String, vin: String, isOwner: Bool = true) async throws -> Data {
@@ -405,7 +549,7 @@ final class ToggAPI {
         }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let data = try await send(request)
-        print("[CERT] create response: \(String(data: data, encoding: .utf8)?.prefix(3000) ?? "")")
+        print("[CERT] create response result=\(Self.resultEnum(in: data) ?? "bilinmiyor")")
         return data
     }
 
@@ -445,15 +589,41 @@ final class ToggAPI {
 
     /// Sertifikayı sunucudan alır; yoksa sahip sertifikası üretir.
     /// Dönen sertifika, telefonun açık anahtarına bağlı doğrulanmış 247 byte'lık kayıttır.
-    func ensureCertificate(vin: String, phonePublicKeyHex: String, overwriteOwner: Bool = false) async throws -> CertificateRecord {
-        if let cached = CertificateCache.load(vin: vin, phonePublicKeyHex: phonePublicKeyHex) {
-            print("[CERT] cached certificate used len=\(cached.certificateBase64.count)")
-            return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: cached.carPublicKey)
+    func ensureCertificate(vin: String, phonePublicKeyHex: String, overwriteOwner: Bool = false,
+                           isShared: Bool = false) async throws -> CertificateRecord {
+        // Araç listesi authoritative'dir; SharedKeyRequestStore yalnızca API verisi
+        // henüz yüklenmediğinde fallback olarak kullanılır.
+        let sharedFlow = isShared
+        if sharedFlow {
+            guard !overwriteOwner else {
+                throw AppError.message("Paylaşılan anahtar sahiplik devrine dönüştürülemez.")
+            }
+            return try await readSharedCertificate(vin: vin)
+        }
+        // "Yeniden eşleştir" (overwriteOwner) önbelleği atlamalı; aksi halde buton
+        // hiçbir şey yapmaz ve araç anahtarı sunucudan hiç istenmez.
+        if !overwriteOwner,
+           let cached = CertificateCache.loadCertificate(vin: vin, phonePublicKeyHex: phonePublicKeyHex) {
+            print("[CERT] cached certificate used len=\(cached.certificateBase64.count) carKey=\(cached.carPublicKey.isEmpty ? "yok" : "var")")
+            guard cached.carPublicKey.isEmpty else {
+                return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: cached.carPublicKey)
+            }
+            // Sertifika var ama araç açık anahtarı yok: el sıkışma araç anahtarı
+            // adımında kopar. Sunucudan yalnızca anahtarı tazelemeyi dene.
+            print("[CERT] cache has no vehicle key; refreshing from server")
+            if let data = try? await getCertificate(phonePublicKey: phonePublicKeyHex, vin: vin),
+               let fresh = try? CertificateRecord.parse(data, vin: vin, excluding: phonePublicKeyHex),
+               !fresh.carPublicKey.isEmpty {
+                CertificateCache.updateCarKey(vin: vin, phonePublicKeyHex: phonePublicKeyHex, carKey: fresh.carPublicKey)
+                print("[CERT] vehicle key refreshed from server")
+                return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: fresh.carPublicKey)
+            }
+            print("[CERT] server returned no vehicle key; using cached certificate only")
+            return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: "")
         }
         print("[CERT] getCertificate başlıyor")
         do {
             let data = try await getCertificate(phonePublicKey: phonePublicKeyHex, vin: vin)
-            print("[CERT] getCertificate response: \(String(data: data, encoding: .utf8)?.prefix(4000) ?? "")")
             if let record = try CertificateRecord.parse(data, vin: vin, excluding: phonePublicKeyHex), !record.certificateBase64.isEmpty {
                 print("[CERT] mevcut sertifika alındı len=\(record.certificateBase64.count)")
                 CertificateCache.save(certificateBase64: record.certificateBase64, carPublicKey: record.carPublicKey, vin: vin, phonePublicKeyHex: phonePublicKeyHex)
@@ -468,12 +638,11 @@ final class ToggAPI {
         // Android akışıyla aynı: telefon anahtarını kaydet, aracı hesaba bağla, sertifika üret.
         print("[CERT] checkPhoneRelation")
         if let check = try? await checkPhoneRelation(publicKey: phonePublicKeyHex) {
-            print("[CERT] check response: \(String(data: check, encoding: .utf8)?.prefix(2000) ?? "")")
+            print("[CERT] phone relation result=\(Self.resultEnum(in: check) ?? "bilinmiyor")")
         }
         print("[CERT] claimCar overwrite=\(overwriteOwner)")
         let claim = try await claimCar(ownerPublicKey: phonePublicKeyHex, vin: vin, overwritePhoneRelation: overwriteOwner)
-        let claimText = String(data: claim, encoding: .utf8) ?? ""
-        print("[CERT] claim response: \(claimText.prefix(2000))")
+        print("[CERT] claim result=\(Self.resultEnum(in: claim) ?? "bilinmiyor")")
         let claimResult = Self.resultEnum(in: claim)
         // RelationAlreadyExists, bu telefon anahtarı için ilişkinin zaten kurulu
         // olduğu anlamına gelir; sertifika üretimine devam edilebilir.
@@ -501,7 +670,7 @@ final class ToggAPI {
         print("[CERT] createCertificate")
         // Resmî akış: 119 byte gövde + 64 byte ECDSA imzası = 183 byte.
         let signature = try PhoneKeyStore.sign(body, with: keyPair.key)
-        print("[CERT] body=\(body.hexString) key=\(keyPair.publicKey.hexString) sig=\(signature.count)")
+        print("[CERT] signed owner certificate bodyBytes=\(body.count) signatureBytes=\(signature.count)")
         do {
             try BLEProtocol.verify(signature: signature, message: body, trustedKey: try BLEProtocol.publicKey(keyPair.publicKey))
             print("[CERT] local signature verify OK")
@@ -569,13 +738,66 @@ struct CertificateRecord {
         guard let root = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) else {
             return nil
         }
-        guard let certificate = findString(root, keys: certificateKeys), !certificate.isEmpty else {
-            return nil
+        let phoneKey = excluding.flatMap { Data(hexBytes: $0) }
+            .flatMap(PhoneKeyStore.normalizedPublicKey)
+        var candidates: [(certificate: String, carKey: String, vin: String?)] = []
+        collectSharedCandidates(root, inheritedVIN: nil, excluding: excluding, depth: 0, into: &candidates)
+        for candidate in candidates {
+            if let candidateVIN = candidate.vin, candidateVIN != vin { continue }
+            guard let packet = Data(base64Encoded: candidate.certificate) else { continue }
+            let normalized: Data
+            if let phoneKey {
+                guard let bound = try? BLEProtocol.boundCertificate(packet, vin: vin, devicePublicKey: phoneKey) else { continue }
+                normalized = bound
+            } else {
+                guard packet.count == 247,
+                      let packetVIN = String(data: packet[17..<34], encoding: .utf8), packetVIN == vin else { continue }
+                normalized = packet
+            }
+            guard let expiry = BLEProtocol.certificateEndDate(normalized), expiry > Date() else { continue }
+            return CertificateRecord(
+                certificateBase64: normalized.base64EncodedString(),
+                carPublicKey: candidate.carKey
+            )
         }
-        let carKey = findString(root, keys: vehicleKeyKeys)
-            ?? findString(root, keys: ["publicKey"]).flatMap { $0 == excluding ? nil : $0 }
-            ?? ""
-        return CertificateRecord(certificateBase64: certificate, carPublicKey: carKey)
+        return nil
+    }
+
+    /// GetAllCertificates yanıtında önce VIN ve telefon anahtarına bağlanan
+    /// sertifika bulunur; yanıt dizisindeki başka araca ait kayıt seçilmez.
+    static func parseShared(_ data: Data, vin: String, phonePublicKey: Data) throws -> CertificateRecord? {
+        try parse(data, vin: vin, excluding: phonePublicKey.hexString)
+    }
+
+    private static func collectSharedCandidates(
+        _ node: Any,
+        inheritedVIN: String?,
+        excluding: String?,
+        depth: Int,
+        into result: inout [(certificate: String, carKey: String, vin: String?)]
+    ) {
+        guard depth <= 12, result.count < 500 else { return }
+        if let object = node as? [String: Any] {
+            let localVIN = (object["vin"] as? String)
+                ?? (object["vinNumber"] as? String)
+                ?? (object["VIN"] as? String)
+                ?? inheritedVIN
+            let carKey = vehicleKeyKeys.compactMap { object[$0] as? String }.first
+                ?? (object["publicKey"] as? String).flatMap { $0 == excluding ? nil : $0 }
+                ?? ""
+            for key in certificateKeys {
+                if let certificate = object[key] as? String, !certificate.isEmpty {
+                    result.append((certificate, carKey, localVIN))
+                }
+            }
+            for value in object.values {
+                collectSharedCandidates(value, inheritedVIN: localVIN, excluding: excluding, depth: depth + 1, into: &result)
+            }
+        } else if let array = node as? [Any] {
+            for value in array.prefix(500) {
+                collectSharedCandidates(value, inheritedVIN: inheritedVIN, excluding: excluding, depth: depth + 1, into: &result)
+            }
+        }
     }
 
     private static func findString(_ node: Any, keys: [String], depth: Int = 0) -> String? {

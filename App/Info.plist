@@ -9,13 +9,21 @@
     <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
     <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
     <key>LSRequiresIPhoneOS</key><true/>
+    <key>UIBackgroundModes</key><array><string>bluetooth-central</string><string>location</string></array>
     <key>UILaunchScreen</key><dict/>
     <key>UIApplicationSceneManifest</key><dict><key>UIApplicationSupportsMultipleScenes</key><false/></dict>
     <key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string></array>
     <key>NSBluetoothAlwaysUsageDescription</key><string>Yakındaki Togg araç servislerini bulmak için Bluetooth kullanılır.</string>
-    <key>NSLocationWhenInUseUsageDescription</key><string>Yakındaki şarj istasyonlarını haritada göstermek için konumun kullanılır.</string>
+    <key>NSLocationWhenInUseUsageDescription</key><string>Yakındaki EPDK istasyonlarını cihazda sıralamak için konum kullanılır; sunucuya gönderilmez.</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key><string>Geofence otomasyonu (evde aç, uzakta kilitle) için arka plan konumu kullanılır.</string>
+    <key>NSMicrophoneUsageDescription</key><string>Sesli araç komutlarını dinlemek için mikrofon kullanılır. Ses kaydı saklanmaz.</string>
+    <key>NSSpeechRecognitionUsageDescription</key><string>Sesli komutları cihaz üstünde metne çevirmek için konuşma tanıma kullanılır.</string>
+    <key>NSFaceIDUsageDescription</key><string>Sesli komutla kilit açmadan önce kimliğini doğrulamak için Face ID kullanılır.</string>
     <key>CFBundleURLTypes</key><array><dict>
         <key>CFBundleURLName</key><string>togg-id-callback</string>
         <key>CFBundleURLSchemes</key><array><string>superapp</string></array>
+    </dict><dict>
+        <key>CFBundleURLName</key><string>toqdas-command</string>
+        <key>CFBundleURLSchemes</key><array><string>toqdas</string></array>
     </dict></array>
 </dict></plist>
