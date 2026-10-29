@@ -100,10 +100,14 @@ struct DashboardView: View {
     @State private var showProximityGuide = false
     private var drivingStats: DrivingStatsStore { DrivingStatsStore(vin: vehicle.vin) }
     private var maintenanceStore: MaintenanceStore { MaintenanceStore(vin: vehicle.vin) }
+    private var chargingBudgetStore: ChargingSpendStore { ChargingSpendStore(vin: vehicle.vin) }
     @State private var maintenanceTitle = ""
     @State private var maintenanceDueKm = ""
     @State private var maintenanceItems: [MaintenanceItem] = []
     @State private var maintenanceError: String?
+    @State private var chargingBudgetLimit = 0.0
+    @State private var chargingSpentTRY: Double?
+    @State private var chargingBudgetUpdatedAt: Date?
 
 
     private func checkTirePressure(_ tires: [TireReading]) {
@@ -290,6 +294,10 @@ struct DashboardView: View {
         .task { await climateLoop() }
         .task { await prefetchCertificate() }
         .task { loadProximitySettings() }
+        .onAppear { reloadChargingBudget() }
+        .onChange(of: showExperience) { presented in
+            if !presented { reloadChargingBudget() }
+        }
         }
         .onReceive(ble.$state) { state in
             print("[BLE] state -> \(state.description)")
@@ -509,6 +517,7 @@ struct DashboardView: View {
             if layout == .sport { proximityCard }
             geofenceCard
             drivingStatsCard
+            chargingBudgetCard
             maintenanceCard
             if layout != .sport { quickActions }
             chargingOverviewLink
@@ -1050,6 +1059,101 @@ struct DashboardView: View {
                 .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
         }
         .padding(18).toggCardBackground()
+    }
+
+    // MARK: - Şarj bütçesi
+
+    private var budgetLimitBinding: Binding<Double> {
+        Binding(
+            get: { chargingBudgetLimit },
+            set: { newValue in
+                chargingBudgetLimit = newValue
+                let store = chargingBudgetStore
+                store.setMonthlyLimit(newValue)
+                guard newValue > 0 else { return }
+                ChargingBudgetNotifier.notifyIfNeeded(budget: store.budget(), vin: vehicle.vin, store: store)
+            }
+        )
+    }
+
+    private var chargingBudgetCard: some View {
+        let budget = ChargingBudget(limitTRY: chargingBudgetLimit, spentTRY: chargingSpentTRY ?? 0)
+        let hasSpend = chargingSpentTRY != nil
+        let hasLimit = chargingBudgetLimit > 0
+        let tint: Color = budget.status == .exceeded ? ToggTheme.pink
+            : (budget.status == .nearLimit ? ToggTheme.orange : ToggTheme.teal)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Şarj Bütçesi", systemImage: "gauge.with.dots.needle.50percent")
+                    .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                Spacer()
+                Text(monthTitle(ChargingSpendStore.monthString()))
+                    .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(hasSpend ? ChargingBudget.money(budget.spentTRY) : "—")
+                    .font(.system(size: 24, weight: .bold)).foregroundStyle(hasSpend ? tint : ToggTheme.muted)
+                    .monospacedDigit()
+                if hasLimit {
+                    Text("/ \(ChargingBudget.money(chargingBudgetLimit))")
+                        .font(.system(size: 12, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                }
+                Spacer()
+                if hasLimit, hasSpend {
+                    Text(budget.percentText)
+                        .font(.system(size: 13, weight: .bold)).foregroundStyle(tint)
+                        .monospacedDigit()
+                }
+            }
+            if hasLimit, hasSpend {
+                ProgressView(value: budget.ratio)
+                    .tint(tint)
+                Text(budget.message)
+                    .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            VStack(spacing: 4) {
+                HStack {
+                    Text("Aylık limit").font(.system(size: 11)).foregroundStyle(ToggTheme.muted)
+                    Spacer()
+                    Text(hasLimit ? ChargingBudget.money(chargingBudgetLimit) : "Kapalı")
+                        .font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
+                        .monospacedDigit()
+                }
+                Slider(value: budgetLimitBinding, in: 0...30_000, step: 500)
+                    .tint(ToggTheme.teal)
+                    .accessibilityLabel("Aylık şarj bütçesi limiti")
+                    .accessibilityValue(hasLimit ? ChargingBudget.money(chargingBudgetLimit) : "Kapalı")
+            }
+            if !hasSpend {
+                Text("Bu ay harcama verisi yok. Seyahatname → Şarj → Bu ay görünümü açıldığında sunucudan gelen gerçek tutar buraya işlenir.")
+                    .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if let updated = chargingBudgetUpdatedAt {
+                Text("Son güncelleme: \(budgetUpdatedText(updated)). Harcama sunucunun gerçek şarj toplamıdır; tahmin değildir.")
+                    .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Text("Bütçe yalnız uyarı amaçlıdır; ödeme veya otomatik kesinti yapılmaz. %80 ve %100 eşiklerinde ayda bir bildirim gönderilir.")
+                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(18).toggCardBackground()
+    }
+
+    private func budgetUpdatedText(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "d MMM HH:mm"
+        return formatter.string(from: date)
+    }
+
+    private func reloadChargingBudget() {
+        let store = chargingBudgetStore
+        chargingBudgetLimit = store.monthlyLimit()
+        let snapshot = store.snapshot()
+        chargingSpentTRY = snapshot?.amountTRY
+        chargingBudgetUpdatedAt = snapshot?.updatedAt
     }
 
     private func reloadMaintenance() {

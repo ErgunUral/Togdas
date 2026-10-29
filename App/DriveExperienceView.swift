@@ -640,6 +640,23 @@ struct DriveExperienceView: View {
         return formatter.date(from: anchor)
     }
 
+    /// Cari ayın gerçek şarj harcamasını panodaki bütçe kartı için önbelleğe alır.
+    /// Yalnız aylık görünümde ve bu ay için çalışır; geçmiş aylar bütçeye sayılmaz.
+    private func recordChargingSpendIfCurrentMonth(_ data: Data) {
+        guard kind == .charges, period == "Monthly" else { return }
+        let month = ChargingSpendStore.monthString()
+        guard anchor == nil || anchor == month else { return }
+        guard let spend = ExperienceFormat.chargeSpend(from: data) else { return }
+        let store = ChargingSpendStore(vin: vehicle.vin)
+        store.record(amountTRY: spend, month: month)
+        #if DEBUG
+        if diagnosticsEnabled {
+            print("[BUDGET] month=\(month) spend=\(spend) limit=\(store.monthlyLimit()) cached=\(store.snapshot()?.amountTRY ?? -1)")
+        }
+        #endif
+        ChargingBudgetNotifier.notifyIfNeeded(budget: store.budget(), vin: vehicle.vin, store: store)
+    }
+
     private func anchorString(for date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -990,6 +1007,7 @@ struct DriveExperienceView: View {
                                                      pricePerKWh: pricePerKWh) else {
                 throw AppError.message("Analiz yanıtı beklenen biçimde değil.")
             }
+            recordChargingSpendIfCurrentMonth(data)
             metrics = page.metrics
             bars = page.bars
             if reset {

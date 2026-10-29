@@ -315,6 +315,11 @@ new watchOS versions; observe documented runtime errors and test target versions
 - Grafik ölçüsü: Yolculuklar için mesafe, süre, ortalama hız ve yolculuk sayısı; Şarjlar için
   enerji ve tahmini tutar (enerji × birim fiyat). Sunucunun o dönem için döndürmediği ölçü
   çizilmez; enerji alanı yolculuk çubuklarında yoksa enerji ölçüsü sunulmaz.
+- Aylık şarj bütçesi: Panodaki "Şarj Bütçesi" kartında kullanıcı 0–30.000 ₺ arası limit
+  belirler (0 = kapalı). Harcama, Seyahatname > Şarjlar > Bu ay açıldığında sunucunun gerçek
+  `total_price`/`total_cost` toplamından VIN bazlı önbelleğe yazılır; tahmini tutar bütçeye
+  sayılmaz. Ay değişince önceki ayın tutarı gösterilmez. %80 ve %100 eşiklerinde ayda en fazla
+  birer yerel bildirim gönderilir; bildirim izni ilk eşikte istenir. Bütçe ödeme/kesinti yapmaz.
 - Canlı hesapta doğrulandı (Ekim 2026): bu ay 5 şarj · 263,04 kWh · 3.940,34 ₺ (14,98 ₺/kWh);
   Haziran 2026: 10 şarj · 5.408,92 ₺; 2026 yılı: 40 şarj · 25.939,92 ₺; 28 Eylül 2026 haftası:
   1 şarj · 987,48 ₺. Kayıtlarda `total_price` seans tutarı, `cost` birim fiyat (₺/kWh).
@@ -326,6 +331,9 @@ new watchOS versions; observe documented runtime errors and test target versions
   20,01 kWh/100 km; 20 yolculuk kaydı ve 3 şarj kaydı görüntülendi. Kayıt
   ayrıntıları ve şarj maliyeti uyarısı cihazda kontrol edildi. Farklı dönemler ve
   hesap türleri için canlı doğrulama sürüyor.
+- Bütçe önbelleği canlı doğrulandı (29 Ekim 2026): Seyahatname > Şarjlar açıldığında
+  `[BUDGET] month=2026-10 spend=3940.34` kaydı yazıldı; pano kartı bu tutarı kullanır.
+  Limit kaydırıcısı, eşik bildirimi ve ay devri cihazda ayrıca kontrol edilecek.
 - Klima gRPC istemcisi: protobuf kodlama/çözme ve gRPC çerçeve testleri geçti; uygulama
   cihaz için derlendi. `GetClimateControlStatus` cihazda `gRPC 14` ve
   `upstream connect error … 111` döndürdü; aynı yanıt kimlik doğrulaması olmadan da

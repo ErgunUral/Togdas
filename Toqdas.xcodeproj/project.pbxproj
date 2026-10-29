@@ -22,6 +22,7 @@
 		2668B4DB93142EAD2CF5563E /* ProtocolModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CC9E78D87168C951A60BEB0 /* ProtocolModels.swift */; };
 		27987F3A56B769117E3CE13A /* ChargingEstimate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7473E4E29DEF8580E34774A4 /* ChargingEstimate.swift */; };
 		2BC29DA791506A09A071A7BB /* VoiceCommandParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9EB3AE99CA2F29A0F4ED1B7 /* VoiceCommandParser.swift */; };
+		2BF1CD9C45EF795C8AECF7E4 /* ChargingBudgetNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A42FB182A4519BD0CEAC78 /* ChargingBudgetNotifier.swift */; };
 		31749A2306E9110347F3F08F /* ProximityAutomation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84CB7A88A6525A18CF92F242 /* ProximityAutomation.swift */; };
 		32034D131B511BABE4A5D6A2 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4527B59245C2BB4367844422 /* ErrorBanner.swift */; };
 		36DD25841A82F4389882937E /* DashboardCustomization.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C5FB0BE9CCF79E283AA6A0 /* DashboardCustomization.swift */; };
@@ -65,6 +66,7 @@
 		A109CC28F6CAA2BDEC125112 /* UserFacingError+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAFFE034EDBD2CF3B72D8465 /* UserFacingError+App.swift */; };
 		A115F06720AF8677B766B586 /* VoiceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726267B05D0DDF66575C2144 /* VoiceSheet.swift */; };
 		A291DEDA2C2D871446426D4A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 48BBBF59B97A8AC6EBD8A68C /* Foundation.framework */; };
+		A5CDF76839DDCD594CF8BD6E /* ChargingBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4B6B8B65CC65D8E84FA3C40 /* ChargingBudget.swift */; };
 		A698B0565F64FB462C00F9EF /* DashboardTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87E9AD0C3188E52B427A89BA /* DashboardTheme.swift */; };
 		AB34A63EA6D2DD32ACDFE977 /* BluetoothDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B0937BFEE69314B58DD6FD /* BluetoothDiscovery.swift */; };
 		AC2161870B64999080BB67E4 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411E3E4ABBC6C73898F4546D /* SessionStore.swift */; };
@@ -208,6 +210,7 @@
 		B678CEE9819DFD44926ECBFA /* ProximityAutomation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityAutomation.swift; path = Core/ProximityAutomation.swift; sourceTree = "<group>"; };
 		C061F6A300F0531443087282 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = Widget/Info.plist; sourceTree = "<group>"; };
 		C11A721D89663BA3DDF6D624 /* ExperienceFormat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExperienceFormat.swift; path = Core/ExperienceFormat.swift; sourceTree = "<group>"; };
+		C1A42FB182A4519BD0CEAC78 /* ChargingBudgetNotifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingBudgetNotifier.swift; path = App/ChargingBudgetNotifier.swift; sourceTree = "<group>"; };
 		C39F9C8F8DE63FDCFB5C37C9 /* ServiceView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServiceView.swift; path = App/ServiceView.swift; sourceTree = "<group>"; };
 		C47F70330A6194A6BE63D1B2 /* BluetoothDiscovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothDiscovery.swift; path = Shared/BluetoothDiscovery.swift; sourceTree = "<group>"; };
 		C656C463F5F07112DFBC2398 /* ChargingEstimate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingEstimate.swift; path = Core/ChargingEstimate.swift; sourceTree = "<group>"; };
@@ -223,6 +226,7 @@
 		E5026366159A018B56620748 /* WatchLink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchLink.swift; path = Shared/WatchLink.swift; sourceTree = "<group>"; };
 		E97AC49AE2ABA02AA6D304E9 /* ToggAPI.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToggAPI.swift; path = App/ToggAPI.swift; sourceTree = "<group>"; };
 		ED85292C3B4DC74E070D4819 /* LoginCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LoginCoordinator.swift; path = App/LoginCoordinator.swift; sourceTree = "<group>"; };
+		F4B6B8B65CC65D8E84FA3C40 /* ChargingBudget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingBudget.swift; path = Core/ChargingBudget.swift; sourceTree = "<group>"; };
 		F77C813FDF07671FEDDAE0CE /* VoiceCommandPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceCommandPolicy.swift; path = Core/VoiceCommandPolicy.swift; sourceTree = "<group>"; };
 		F9EB3AE99CA2F29A0F4ED1B7 /* VoiceCommandParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceCommandParser.swift; path = Core/VoiceCommandParser.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -358,6 +362,8 @@
 				A2C5FB0BE9CCF79E283AA6A0 /* DashboardCustomization.swift */,
 				C58FAF801D346BB884EBF4C3 /* Core */,
 				25F82CB31C36B958F0F583EC /* App */,
+				F4B6B8B65CC65D8E84FA3C40 /* ChargingBudget.swift */,
+				C1A42FB182A4519BD0CEAC78 /* ChargingBudgetNotifier.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -625,6 +631,8 @@
 				1E0C5A4A13F1AC06C06B1447 /* BleReconnectPolicy.swift in Sources */,
 				78B95720E4FE860F8E25C1EC /* GaragePreferences.swift in Sources */,
 				C23920B6B06B730C7550F679 /* EnergyPricing.swift in Sources */,
+				A5CDF76839DDCD594CF8BD6E /* ChargingBudget.swift in Sources */,
+				2BF1CD9C45EF795C8AECF7E4 /* ChargingBudgetNotifier.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

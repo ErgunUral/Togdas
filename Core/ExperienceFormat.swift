@@ -459,6 +459,14 @@ enum ExperienceFormat {
         }
     }
 
+    /// Sunucunun dönem için döndürdüğü gerçek şarj harcaması.
+    /// Tutar yoksa nil döner; tahmini tutar burada hesaplanmaz.
+    static func chargeSpend(from data: Data) -> Double? {
+        guard let root = root(from: data) else { return nil }
+        let summary = root["summary"] as? [String: Any] ?? root
+        return number(summary, ["total_price", "total_cost"])
+    }
+
     static func period(from data: Data, kind: ExperienceKind, offset: Int = 0,
                        pricePerKWh: Double? = nil) -> ExperiencePeriod? {
         guard let root = root(from: data) else { return nil }
