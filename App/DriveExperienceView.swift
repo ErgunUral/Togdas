@@ -46,6 +46,9 @@ struct DriveExperienceView: View {
     @State private var selectedSummaryID: String?
     @State private var metrics: [ExperienceMetric] = []
     @State private var bars: [ExperienceBar] = []
+    @State private var chargeTypeStats: [ChargeTypeStat] = []
+    @State private var chargeTypesLoading = false
+    @State private var chargeTypesIncomplete = false
     @State private var records: [ExperienceRecord] = []
     @State private var offset = 0
     @State private var hasMore = false
@@ -95,6 +98,9 @@ struct DriveExperienceView: View {
                     }
                     if !bars.isEmpty {
                         chartCard
+                    }
+                    if kind == .charges && (!chargeTypeStats.isEmpty || chargeTypesLoading) {
+                        chargeTypeCard
                     }
 
                     if busy && records.isEmpty {
@@ -642,6 +648,53 @@ struct DriveExperienceView: View {
 
     /// Cari ayın gerçek şarj harcamasını panodaki bütçe kartı için önbelleğe alır.
     /// Yalnız aylık görünümde ve bu ay için çalışır; geçmiş aylar bütçeye sayılmaz.
+    /// Şarj türü dağılımı için dönemin tüm sayfalarını (en fazla 10 sayfa)
+    /// tarar. İlk sayfa zaten yüklü olduğundan yeniden istenmez.
+    @MainActor
+    private func loadChargeTypeStats(firstPage: Data, nextOffset: Int,
+                                     hasMore: Bool, token: Int) async {
+        chargeTypesLoading = true
+        defer { if token == requestGeneration { chargeTypesLoading = false } }
+
+        var pages = [firstPage]
+        var cursor = nextOffset
+        var more = hasMore
+        var extraRequests = 0
+
+        while more && extraRequests < 9 {
+            guard token == requestGeneration else { return }
+            do {
+                let data = try await api.driveExperience(
+                    vin: vehicle.vin, kind: ExperienceKind.charges.rawValue,
+                    period: period, offset: cursor, anchor: anchor
+                )
+                guard token == requestGeneration else { return }
+                guard let page = ExperienceFormat.period(from: data, kind: .charges,
+                                                         offset: cursor, pricePerKWh: pricePerKWh),
+                      page.receivedCount > 0 else {
+                    more = false
+                    break
+                }
+                pages.append(data)
+                cursor = page.nextOffset
+                more = page.hasMore
+                extraRequests += 1
+            } catch {
+                more = false
+            }
+        }
+
+        guard token == requestGeneration else { return }
+        chargeTypeStats = ExperienceFormat.chargeTypeStats(from: pages, pricePerKWh: pricePerKWh)
+        chargeTypesIncomplete = more
+        #if DEBUG
+        if diagnosticsEnabled {
+            let summary = chargeTypeStats.map { "\($0.type)|\($0.sessions)|\($0.costTRY)" }.joined(separator: " ; ")
+            print("[TYPES] incomplete=\(more) \(summary)")
+        }
+        #endif
+    }
+
     private func recordChargingSpendIfCurrentMonth(_ data: Data) {
         guard kind == .charges, period == "Monthly" else { return }
         let month = ChargingSpendStore.monthString()
@@ -852,6 +905,58 @@ struct DriveExperienceView: View {
         }
     }
 
+    private var chargeTypeCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Türlere göre maliyet", systemImage: "bolt.horizontal.circle")
+                    .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                Spacer()
+                if chargeTypesLoading {
+                    ProgressView().controlSize(.mini).tint(ToggTheme.teal)
+                }
+            }
+            if chargeTypeStats.isEmpty {
+                Text("Dönemdeki şarjlar taranıyor…")
+                    .font(.system(size: 11)).foregroundStyle(ToggTheme.muted)
+                    .frame(maxWidth: .infinity, minHeight: 40)
+            } else {
+                ForEach(chargeTypeStats) { stat in
+                    HStack(alignment: .top, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(stat.type)
+                                .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                            Text("\(stat.sessions) seans · \(ExperienceFormat.twoDecimals(stat.energyKWh)) kWh")
+                                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                            if let unitCost = stat.averageCostPerKWh,
+                               let perSession = stat.averageCostPerSession {
+                                Text("\(ExperienceFormat.twoDecimals(unitCost)) ₺/kWh · seans \(ExperienceFormat.twoDecimals(perSession)) ₺")
+                                    .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                            }
+                        }
+                        Spacer(minLength: 4)
+                        Text(stat.hasCost
+                             ? "\(stat.hasEstimatedCost ? "≈ " : "")\(ExperienceFormat.twoDecimals(stat.costTRY)) ₺"
+                             : "—")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(stat.hasCost ? ToggTheme.teal : ToggTheme.muted)
+                            .monospacedDigit()
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(ToggTheme.surfaceVariant))
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            Text(chargeTypesIncomplete
+                 ? "Dönemin tüm kayıtları taranamadı; özet yüklenen şarjlardan. Tutar sunucunun seans toplamıdır."
+                 : "Dönemdeki tüm şarj kayıtlarından. Tutar sunucunun seans toplamıdır; eksik tutar varsa birim fiyatla tahmin edilir (≈).")
+                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .toggCardBackground(20)
+    }
+
     private var chartCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -992,6 +1097,8 @@ struct DriveExperienceView: View {
             metrics = []
             bars = []
             hasMore = false
+            chargeTypeStats = []
+            chargeTypesIncomplete = false
         }
         defer { if token == requestGeneration { busy = false } }
         do {
@@ -1018,6 +1125,13 @@ struct DriveExperienceView: View {
             }
             offset = max(page.nextOffset, offset)
             hasMore = page.hasMore && page.receivedCount > 0
+            if kind == .charges, reset {
+                let firstPage = data
+                Task {
+                    await loadChargeTypeStats(firstPage: firstPage, nextOffset: page.nextOffset,
+                                             hasMore: page.hasMore, token: token)
+                }
+            }
         } catch {
             guard token == requestGeneration else { return }
             self.error = error.localizedDescription

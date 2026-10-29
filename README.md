@@ -315,6 +315,12 @@ new watchOS versions; observe documented runtime errors and test target versions
 - Grafik ölçüsü: Yolculuklar için mesafe, süre, ortalama hız ve yolculuk sayısı; Şarjlar için
   enerji ve tahmini tutar (enerji × birim fiyat). Sunucunun o dönem için döndürmediği ölçü
   çizilmez; enerji alanı yolculuk çubuklarında yoksa enerji ölçüsü sunulmaz.
+- Şarj türüne göre maliyet: Seyahatname > Şarjlar görünümünde dönemin tüm sayfaları
+  (en fazla 10 sayfa) taranır; her tür için seans sayısı, enerji, tutar, ₺/kWh ve seans
+  başına tutar gösterilir. Tür adı sunucudan eşlenir (FAST → Hızlı şarj). Tutar gerçek
+  `total_price` toplamıdır; tutar yoksa birim fiyatla tahmin edilir ve "≈" ile işaretlenir.
+  Sayfalar tamamlanamazsa kart bunu açıkça söyler. Canlı doğrulama (2026 yılı):
+  38 hızlı şarj 25.545,10 ₺ + 2 yavaş şarj 394,82 ₺ = 25.939,92 ₺ (özet toplamıyla aynı).
 - Aylık şarj bütçesi: Panodaki "Şarj Bütçesi" kartında kullanıcı 0–30.000 ₺ arası limit
   belirler (0 = kapalı). Harcama, Seyahatname > Şarjlar > Bu ay açıldığında sunucunun gerçek
   `total_price`/`total_cost` toplamından VIN bazlı önbelleğe yazılır; tahmini tutar bütçeye

@@ -467,6 +467,55 @@ enum ExperienceFormat {
         return number(summary, ["total_price", "total_cost"])
     }
 
+    /// Birden çok sayfadaki şarj kayıtlarını türe göre toplar.
+    /// Toplam tutar sunucunun `total_price` alanıdır; yoksa verilen birim
+    /// fiyatla tahmin edilir ve `hasEstimatedCost` işaretlenir.
+    static func chargeTypeStats(from pages: [Data], pricePerKWh: Double? = nil) -> [ChargeTypeStat] {
+        struct Accumulator {
+            var sessions = 0
+            var energy = 0.0
+            var cost = 0.0
+            var estimated = false
+            var priced = false
+        }
+        var accumulators: [String: Accumulator] = [:]
+        var found = false
+
+        for data in pages {
+            guard let root = root(from: data) else { continue }
+            let list = (root["charges"] as? [Any]) ?? (root["items"] as? [Any]) ?? []
+            for item in list {
+                guard let dictionary = item as? [String: Any] else { continue }
+                let type = display(text(dictionary, ["charge_type"])) ?? "Bilinmeyen"
+                var accumulator = accumulators[type] ?? Accumulator()
+                accumulator.sessions += 1
+                let added = number(dictionary, ["kwh_added", "total_energy_kwh"])
+                if let added, added.isFinite, added > 0 { accumulator.energy += added }
+                if let total = number(dictionary, ["total_price"]) {
+                    accumulator.cost += max(0, total)
+                    accumulator.priced = true
+                } else if let pricePerKWh, let added, added.isFinite, added > 0 {
+                    accumulator.cost += added * EnergyPricing(pricePerKWh: pricePerKWh).pricePerKWh
+                    accumulator.estimated = true
+                    accumulator.priced = true
+                }
+                accumulators[type] = accumulator
+                found = true
+            }
+        }
+
+        guard found else { return [] }
+        return accumulators.map { type, accumulator in
+            ChargeTypeStat(type: type, sessions: accumulator.sessions,
+                           energyKWh: accumulator.energy, costTRY: accumulator.cost,
+                           hasEstimatedCost: accumulator.estimated, hasCost: accumulator.priced)
+        }.sorted { lhs, rhs in
+            if lhs.costTRY != rhs.costTRY { return lhs.costTRY > rhs.costTRY }
+            if lhs.sessions != rhs.sessions { return lhs.sessions > rhs.sessions }
+            return lhs.type < rhs.type
+        }
+    }
+
     static func period(from data: Data, kind: ExperienceKind, offset: Int = 0,
                        pricePerKWh: Double? = nil) -> ExperiencePeriod? {
         guard let root = root(from: data) else { return nil }
@@ -874,4 +923,29 @@ enum ExperienceFormat {
 
 private extension String {
     var upperCasedTr: String { uppercased(with: Locale(identifier: "tr_TR")) }
+}
+
+/// Şarj türüne göre dönem özeti. Yalnız sunucudaki kayıtlardan hesaplanır;
+/// tür bilgisi olmayan kayıt "Bilinmeyen" altında toplanır.
+struct ChargeTypeStat: Identifiable, Equatable {
+    let type: String
+    let sessions: Int
+    let energyKWh: Double
+    let costTRY: Double
+    /// Tutarın bir kısmı kullanıcı birim fiyatıyla tahmin edildiyse true.
+    let hasEstimatedCost: Bool
+    /// En az bir seansta tutar bilgisi var mı.
+    let hasCost: Bool
+
+    var id: String { type }
+
+    var averageCostPerKWh: Double? {
+        guard hasCost, energyKWh > 0 else { return nil }
+        return costTRY / energyKWh
+    }
+
+    var averageCostPerSession: Double? {
+        guard hasCost, sessions > 0 else { return nil }
+        return costTRY / Double(sessions)
+    }
 }
