@@ -20,6 +20,8 @@ struct DriveExperienceView: View {
 
     @State private var kind = ProcessInfo.processInfo.arguments.contains("-experienceCharges")
         ? ExperienceKind.charges : ExperienceKind.journeys
+    @State private var chartMetric = ExperienceChartMetric.distance
+    @State private var showPeriodPicker = false
     @State private var period: String = {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
@@ -193,6 +195,12 @@ struct DriveExperienceView: View {
         .sheet(item: $detailTarget) { target in
             ExperienceDetailSheet(api: api, vin: vehicle.vin, target: target,
                                   pricePerKWh: pricePerKWh)
+        }
+        .sheet(isPresented: $showPeriodPicker) {
+            PeriodPickerSheet(period: period, initialAnchor: anchor) { selected in
+                anchor = selected
+                Task { await load(reset: true) }
+            }
         }
     }
 
@@ -539,6 +547,7 @@ struct DriveExperienceView: View {
                     Button {
                         guard kind != item else { return }
                         kind = item
+                        chartMetric = item == .charges ? .energy : .distance
                         Task { await load(reset: true) }
                     } label: {
                         Text(item.title)
@@ -586,11 +595,19 @@ struct DriveExperienceView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Önceki dönem")
 
-                Text(anchorLabel)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(ToggTheme.muted)
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                Button { showPeriodPicker = true } label: {
+                    HStack(spacing: 4) {
+                        Text(anchorLabel)
+                            .font(.system(size: 11, weight: .bold))
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                        Image(systemName: "calendar")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(ToggTheme.teal)
                     .frame(minWidth: 92)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dönem seç: \(anchorLabel)")
 
                 Button { movePeriod(1) } label: {
                     Label("Sonraki", systemImage: "chevron.right")
@@ -719,8 +736,9 @@ struct DriveExperienceView: View {
 
     #if DEBUG
     /// Yalnız `-experienceCharges` ile açılan tanılama oturumunda günlük üretir.
-    private var chargeDiagnosticsEnabled: Bool {
-        ProcessInfo.processInfo.arguments.contains("-experienceCharges")
+    private var diagnosticsEnabled: Bool {
+        let args = ProcessInfo.processInfo.arguments
+        return args.contains("-experienceCharges") || args.contains("-experienceDiagnostics")
     }
 
     /// Sunucunun şarj yanıtında hangi maliyet alanlarını döndürdüğünü görünür kılar.
@@ -732,6 +750,12 @@ struct DriveExperienceView: View {
         }
         let summary = root["summary"] as? [String: Any] ?? root
         let charges = root["charges"] as? [[String: Any]] ?? []
+        for key in ["period_km", "period_energy"] {
+            if let items = root[key] as? [[String: Any]], let first = items.first {
+                print("[CHARGES] \(key) anahtarlar=\(first.keys.sorted().joined(separator: ","))")
+                print("[CHARGES] \(key) ilk=\(first)")
+            }
+        }
         print("[CHARGES] kayıt sayısı=\(charges.count)")
         print("[CHARGES] summary anahtarları=\(summary.keys.sorted().joined(separator: ","))")
         print("[CHARGES] summary maliyet alanları=\(costFields(summary))")
@@ -802,12 +826,38 @@ struct DriveExperienceView: View {
         .toggCardBackground(20)
     }
 
+    /// Seçilen ölçüye göre çubukları dönüştürür; ölçüsü olmayan dönem atlanır.
+    private var displayedBars: [ExperienceBar] {
+        bars.compactMap { bar in
+            guard let value = bar.value(for: chartMetric) else { return nil }
+            return ExperienceBar(id: bar.id, label: bar.label, value: value,
+                                 unit: chartMetric.unit, values: bar.values)
+        }
+    }
+
     private var chartCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(kind == .journeys ? "Dönem mesafe grafiği" : "Dönem şarj enerjisi grafiği")
-                .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
-            ExperienceBarChart(bars: bars)
-            Text("Her çubuk bir dönemi gösterir; yalnız sunucu değeri bulunan dönemler kullanılır.")
+            HStack {
+                Text("Dönem grafiği")
+                    .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                Spacer()
+                Picker("Grafik ölçüsü", selection: $chartMetric) {
+                    ForEach(ExperienceChartMetric.available(for: kind)) { metric in
+                        Text(metric.title).tag(metric)
+                    }
+                }
+                .pickerStyle(.menu)
+                .tint(ToggTheme.teal)
+                .accessibilityLabel("Grafik ölçüsü")
+            }
+            if displayedBars.isEmpty {
+                Text("Bu ölçü için dönem verisi yok.")
+                    .font(.system(size: 11)).foregroundStyle(ToggTheme.muted)
+                    .frame(maxWidth: .infinity, minHeight: 60)
+            } else {
+                ExperienceBarChart(bars: displayedBars)
+            }
+            Text("Her çubuk bir dönemi gösterir; yalnız sunucu değeri bulunan dönemler kullanılır. Ölçü: \(chartMetric.title.lowercased()).")
                 .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
         }
         .padding(16)
@@ -913,8 +963,8 @@ struct DriveExperienceView: View {
         requestGeneration += 1
         let token = requestGeneration
         #if DEBUG
-        if kind == .charges, chargeDiagnosticsEnabled {
-            print("[CHARGES] istek anchor=\(anchor ?? "nil") period=\(period) offset=\(offset)")
+        if diagnosticsEnabled {
+            print("[CHARGES] istek kind=\(kind.rawValue) anchor=\(anchor ?? "nil") period=\(period) offset=\(offset)")
         }
         #endif
         busy = true
@@ -934,7 +984,7 @@ struct DriveExperienceView: View {
             guard token == requestGeneration else { return }
             raw = String(decoding: data, as: UTF8.self)
             #if DEBUG
-            if kind == .charges, chargeDiagnosticsEnabled { logChargeFields(data) }
+            if diagnosticsEnabled { logChargeFields(data) }
             #endif
             guard let page = ExperienceFormat.period(from: data, kind: kind, offset: offset,
                                                      pricePerKWh: pricePerKWh) else {
@@ -963,6 +1013,11 @@ struct DriveExperienceView: View {
 private struct ExperienceBarChart: View {
     let bars: [ExperienceBar]
 
+    private func barValueText(_ bar: ExperienceBar) -> String {
+        let number = bar.unit == "adet" ? ExperienceFormat.whole(bar.value) : ExperienceFormat.oneDecimal(bar.value)
+        return "\(number) \(bar.unit)"
+    }
+
     var body: some View {
         let maximum = max(bars.map(\.value).max() ?? 0, 1)
         VStack(spacing: 7) {
@@ -979,12 +1034,160 @@ private struct ExperienceBarChart: View {
                         }
                     }
                     .frame(height: 7)
-                    Text("\(ExperienceFormat.oneDecimal(bar.value)) \(bar.unit)")
+                    Text(barValueText(bar))
                         .font(.system(size: 9, weight: .semibold)).foregroundStyle(.white)
                         .frame(width: 62, alignment: .trailing).lineLimit(1)
                 }
             }
         }
+    }
+}
+
+// MARK: - Dönem seçici
+
+/// Takvimden dönem atlama. Haftalık için tarih, aylık için yıl+ay,
+/// yıllık için yıl seçilir; gelecek dönem seçilemez.
+private struct PeriodPickerSheet: View {
+    let period: String
+    let onSelect: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var year: Int
+    @State private var month: Int
+    @State private var weekDate: Date
+
+    private let months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                          "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+
+    init(period: String, initialAnchor: String?, onSelect: @escaping (String) -> Void) {
+        self.period = period
+        self.onSelect = onSelect
+        let now = Date()
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+        let components = calendar.dateComponents([.year, .month], from: now)
+        _year = State(initialValue: components.year ?? 2026)
+        _month = State(initialValue: components.month ?? 1)
+        _weekDate = State(initialValue: now)
+        if let initialAnchor {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.timeZone = TimeZone(secondsFromGMT: 0)
+            formatter.dateFormat = period == "Annual" ? "yyyy"
+                : (period == "Weekly" ? "yyyy-MM-dd" : "yyyy-MM")
+            if let date = formatter.date(from: initialAnchor) {
+                let parts = calendar.dateComponents([.year, .month], from: date)
+                _year = State(initialValue: parts.year ?? _year.wrappedValue)
+                _month = State(initialValue: parts.month ?? _month.wrappedValue)
+                _weekDate = State(initialValue: date)
+            }
+        }
+    }
+
+    private var currentYear: Int {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+        return calendar.component(.year, from: Date())
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    switch period {
+                    case "Annual":
+                        yearGrid
+                    case "Weekly":
+                        DatePicker("Hafta", selection: $weekDate, in: weekRange,
+                                   displayedComponents: .date)
+                            .datePickerStyle(.graphical)
+                            .tint(ToggTheme.teal)
+                    default:
+                        yearStepper
+                        monthGrid
+                    }
+                }
+                .padding(20)
+            }
+            .background(ToggTheme.background.ignoresSafeArea())
+            .navigationTitle("Dönem seç")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Kapat") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private var weekRange: ClosedRange<Date> {
+        let start = Calendar(identifier: .gregorian).date(byAdding: .year, value: -3, to: Date()) ?? Date()
+        return start...Date()
+    }
+
+    private var yearStepper: some View {
+        HStack {
+            Button { if year > 2023 { year -= 1 } } label: {
+                Image(systemName: "chevron.left").frame(width: 44, height: 36)
+            }
+            .disabled(year <= 2023)
+            Spacer()
+            Text(String(year)).font(.system(size: 20, weight: .bold)).foregroundStyle(.white)
+            Spacer()
+            Button { if year < currentYear { year += 1 } } label: {
+                Image(systemName: "chevron.right").frame(width: 44, height: 36)
+            }
+            .disabled(year >= currentYear)
+        }
+        .foregroundStyle(ToggTheme.teal)
+        .padding(.horizontal, 8)
+    }
+
+    private var monthGrid: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 10) {
+            ForEach(1...12, id: \.self) { value in
+                let disabled = year == currentYear && value > currentMonth
+                Button {
+                    choose(String(format: "%04d-%02d", year, value))
+                } label: {
+                    Text(months[value - 1])
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(disabled ? ToggTheme.muted : .white)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background(RoundedRectangle(cornerRadius: 12)
+                            .fill(disabled ? ToggTheme.surfaceVariant.opacity(0.4) : ToggTheme.surfaceVariant))
+                }
+                .buttonStyle(.plain)
+                .disabled(disabled)
+            }
+        }
+    }
+
+    private var currentMonth: Int {
+        Calendar(identifier: .gregorian).component(.month, from: Date())
+    }
+
+    private var yearGrid: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 10) {
+            ForEach(2023...currentYear, id: \.self) { value in
+                Button {
+                    choose(String(value))
+                } label: {
+                    Text(String(value))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(ToggTheme.surfaceVariant))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func choose(_ anchor: String) {
+        onSelect(anchor)
+        dismiss()
     }
 }
 

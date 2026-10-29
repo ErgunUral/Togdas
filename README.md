@@ -310,6 +310,11 @@ new watchOS versions; observe documented runtime errors and test target versions
   tutar uydurulmaz.
 - Dönem çapası: sunucu düz `anchor` parametresini yok sayıyor; Android köprüsü gibi
   `anchor_year` (yyyy), `anchor_month` (yyyy-MM), `anchor_date` (yyyy-MM-dd) gönderilir.
+- Dönem seçici: takvim simgesinden aylık için yıl+ay, yıllık için yıl, haftalık için tarih
+  seçilir; gelecek dönem seçilemez.
+- Grafik ölçüsü: Yolculuklar için mesafe, süre, ortalama hız ve yolculuk sayısı; Şarjlar için
+  enerji ve tahmini tutar (enerji × birim fiyat). Sunucunun o dönem için döndürmediği ölçü
+  çizilmez; enerji alanı yolculuk çubuklarında yoksa enerji ölçüsü sunulmaz.
 - Canlı hesapta doğrulandı (Ekim 2026): bu ay 5 şarj · 263,04 kWh · 3.940,34 ₺ (14,98 ₺/kWh);
   Haziran 2026: 10 şarj · 5.408,92 ₺; 2026 yılı: 40 şarj · 25.939,92 ₺; 28 Eylül 2026 haftası:
   1 şarj · 987,48 ₺. Kayıtlarda `total_price` seans tutarı, `cost` birim fiyat (₺/kWh).

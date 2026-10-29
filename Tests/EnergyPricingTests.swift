@@ -184,3 +184,50 @@ extension ChargeSpendingTests {
         XCTAssertTrue(detail.notes.contains { $0.contains("Tahmini tutar") && $0.contains("100") })
     }
 }
+
+final class ExperienceChartMetricTests: XCTestCase {
+    private func data(_ json: String) -> Data { Data(json.utf8) }
+
+    func testJourneyBarsExposeAvailableMetrics() throws {
+        let json = """
+        {"journeys": [],
+         "period_km": [{"period_label": "Week 1", "km_total": 335.85,
+                        "total_duration_min": 731.55, "avg_speed_kmh": 27.55,
+                        "journey_count": 9}]}
+        """
+        let period = try XCTUnwrap(ExperienceFormat.period(from: data(json), kind: .journeys))
+        let bar = try XCTUnwrap(period.bars.first)
+        XCTAssertEqual(bar.value(for: .distance)!, 335.85, accuracy: 0.01)
+        XCTAssertEqual(bar.value(for: .duration)!, 731.55, accuracy: 0.01)
+        XCTAssertEqual(bar.value(for: .speed)!, 27.55, accuracy: 0.01)
+        XCTAssertEqual(bar.value(for: .journeys)!, 9, accuracy: 0.01)
+        // Sunucu enerji vermediği için enerji ölçüsü uydurulmaz.
+        XCTAssertNil(bar.value(for: .energy))
+    }
+
+    func testChargeBarsExposeEnergyAndEstimatedCost() throws {
+        let json = """
+        {"charges": [],
+         "period_energy": [{"period_label": "Week 1", "kwh_total": 65.92}]}
+        """
+        let period = try XCTUnwrap(ExperienceFormat.period(from: data(json), kind: .charges,
+                                                          pricePerKWh: 10))
+        let bar = try XCTUnwrap(period.bars.first)
+        XCTAssertEqual(bar.value(for: .energy)!, 65.92, accuracy: 0.01)
+        XCTAssertEqual(bar.value(for: .estimatedCost)!, 659.2, accuracy: 0.01)
+    }
+
+    func testChargeBarsWithoutPriceHaveNoCostSeries() throws {
+        let json = """
+        {"charges": [], "period_energy": [{"period_label": "Week 1", "kwh_total": 10}]}
+        """
+        let period = try XCTUnwrap(ExperienceFormat.period(from: data(json), kind: .charges))
+        XCTAssertNil(period.bars.first?.value(for: .estimatedCost))
+    }
+
+    func testMetricAvailabilityPerKind() {
+        XCTAssertEqual(ExperienceChartMetric.available(for: .journeys),
+                       [.distance, .duration, .speed, .journeys])
+        XCTAssertEqual(ExperienceChartMetric.available(for: .charges), [.energy, .estimatedCost])
+    }
+}

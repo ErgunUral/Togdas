@@ -71,11 +71,49 @@ struct ExperienceDashboard: Equatable {
     let lastCharge: ExperienceHighlight?
 }
 
+/// Grafikte seçilebilen ölçüler. Yalnız sunucunun dönem çubuğunda
+/// gerçekten döndürdüğü alanlar kullanılabilir; olmayan ölçü uydurulmaz.
+enum ExperienceChartMetric: String, CaseIterable, Identifiable, Hashable {
+    case distance, duration, speed, journeys, energy, estimatedCost
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .distance: return "Mesafe"
+        case .duration: return "Süre"
+        case .speed: return "Ort. hız"
+        case .journeys: return "Yolculuk"
+        case .energy: return "Enerji"
+        case .estimatedCost: return "Tahmini tutar"
+        }
+    }
+
+    var unit: String {
+        switch self {
+        case .distance: return "km"
+        case .duration: return "dk"
+        case .speed: return "km/sa"
+        case .journeys: return "adet"
+        case .energy: return "kWh"
+        case .estimatedCost: return "₺"
+        }
+    }
+
+    static func available(for kind: ExperienceKind) -> [Self] {
+        kind == .charges ? [.energy, .estimatedCost] : [.distance, .duration, .speed, .journeys]
+    }
+}
+
 struct ExperienceBar: Identifiable, Equatable {
     let id: String
     let label: String
     let value: Double
     let unit: String
+    /// Ölçü bazlı değerler; eksik ölçü grafikte gösterilmez.
+    var values: [ExperienceChartMetric: Double] = [:]
+
+    func value(for metric: ExperienceChartMetric) -> Double? { values[metric] }
 }
 
 struct ExperienceRecord: Identifiable, Equatable {
@@ -482,8 +520,23 @@ enum ExperienceFormat {
                     : number(dictionary, ["kwh_total", "total_kwh", "kwh_added", "value"])
                 guard let value, value.isFinite, value >= 0 else { continue }
                 let rawLabel = firstValue(dictionary, ["period_label", "period_start", "period", "label"])
+                var chartValues: [ExperienceChartMetric: Double] = [kind == .journeys ? .distance : .energy: value]
+                if kind == .journeys {
+                    if let minutes = number(dictionary, ["total_duration_min", "duration_min"]) {
+                        chartValues[.duration] = minutes
+                    }
+                    if let speed = number(dictionary, ["avg_speed_kmh"]) {
+                        chartValues[.speed] = speed
+                    }
+                    if let count = number(dictionary, ["journey_count", "total_journeys"]) {
+                        chartValues[.journeys] = count
+                    }
+                } else if let pricePerKWh {
+                    chartValues[.estimatedCost] = value * EnergyPricing(pricePerKWh: pricePerKWh).pricePerKWh
+                }
                 bars.append(ExperienceBar(id: "\(index)-\(dateText(rawLabel))",
-                                          label: periodLabel(rawLabel), value: value, unit: barUnit))
+                                          label: periodLabel(rawLabel), value: value, unit: barUnit,
+                                          values: chartValues))
             }
             bars = Array(bars.suffix(12))
         }
