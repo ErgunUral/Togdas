@@ -192,6 +192,18 @@ Uygulama içi bas-konuş arayüzü:
 - Klima servisi yanıt vermediği için sesli klima komutu "kullanılamıyor" der; aracı bul
   komutu doğrulanmadığı için gönderilmez.
 
+## Mimari notlar
+
+- `BleTelemetry` ve tanılama olayı `Core/BleTelemetry.swift` içinde ayrı tutulur;
+  `BleConnection` yalnız taşıma/el sıkışma durum makinesini yönetir.
+- `ChargingBudgetCard` ve `MaintenanceCard` kendi durumlarını, depolama erişimlerini ve
+  bildirimlerini yöneten bağımsız görünümlerdir. `DashboardView` bu kartlara yalnız VIN ve
+  güncel kilometreyi verir; şarj harcaması güncellenince kart `NotificationCenter` ile tazelenir.
+- `ChargingBudget`, `BleReconnectPolicy`, `GaragePreferences` ve `EnergyPricing` saf,
+  test edilebilir tiplerdir; platform bildirimleri App katmanında kalır.
+- Arayüz metinleri şu an yalnız Türkçedir; tarih/sayı/tutar biçimleri tr_TR kullanır.
+  Çok dilli arayüz için hedef diller netleşince String Catalog'a geçilecek.
+
 Doğrulama durumu: cihazda tr-TR için `supportsOnDeviceRecognition = true` okundu ve mikrofon
 hattı tanı testiyle açıldı. `-voiceDemo "Şarjım ne kadar?"` cihazda yeni ayrıştırıcıyla
 `status(.battery)` üretip “Batarya yüzde 63, menzil 233 kilometre” yanıtını ve TTS’i çalıştırdı.
