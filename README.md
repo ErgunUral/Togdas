@@ -195,7 +195,17 @@ Doğrulama durumu: cihazda tr-TR için `supportsOnDeviceRecognition = true` okun
 hattı tanı testiyle açıldı. `-voiceDemo "Şarjım ne kadar?"` cihazda yeni ayrıştırıcıyla
 `status(.battery)` üretip “Batarya yüzde 63, menzil 233 kilometre” yanıtını ve TTS’i çalıştırdı.
 Arayüzden tam sesli komut cümlesi, araç içi gürültü ve eylem onayı henüz denenmedi.
-Siri/App Intents ve saat diktesi henüz yok.
+Siri/App Intents: `Core/CarShortcuts.swift` dört komut sunar (kilitle, kilidi aç, bagajı aç,
+bagajı kapat). Kısayollar `toqdas://command?action=<lock|unlock|trunkOpen|trunkClose>` URL'ine
+yönlendirir; URL ayrıştırma `Core/ShortcutLink.swift` içinde tek yerde ve birim testlidir.
+Komutlar yine `BLECommandPolicy` kapısından geçer (READY + 15 sn taze telemetri); reddedilirse
+uygulama gerekçeyi hata bandında gösterir, sessizce yutmaz.
+
+Siri/Shortcuts elle test adımları (araç yanında, uygulama arka planda):
+1. Kısayollar uygulaması > Toqdas > "Arabamı kilitle" kısayolunu çalıştır.
+2. Uygulama açılır; BLE hazır değilse "Kilitle gönderilemedi" bandı ve gerekçe görünür.
+3. Araç uyanıkken ve "Komut hazır" iken aynı kısayol kilitleme komutunu gönderir.
+4. Aynı adımlar "Arabamı aç" ve "Bagajı aç/kapat" için tekrarlanır.
 
 Geliştirme kısıtı: iPhone Mac'e **kabloyla** bağlıyken mikrofon tüm örnekleri sıfır veriyor
 (rota `builtInMic`, `isInputMuted = false` olmasına rağmen). Kablo çıkarılınca ses normal

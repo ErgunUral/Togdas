@@ -26,6 +26,7 @@
 		3715AD858D6A911D69C3A040 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 48BBBF59B97A8AC6EBD8A68C /* Foundation.framework */; };
 		39C551789B97C67A4836B06B /* GRPCProto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02AC29F97B99B77107E2C112 /* GRPCProto.swift */; };
 		3CFC99DA36C6C806BF54ED03 /* ProximityCalibrationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1AF44C17D3FE981C19A1A8C /* ProximityCalibrationSheet.swift */; };
+		3E573134388F2997403C7038 /* ShortcutLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E6553C89E34442D30915FB /* ShortcutLink.swift */; };
 		404ABC4D3DD42DABB1BE60AC /* LockConfirmationSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CA21BA085F722911635017 /* LockConfirmationSound.swift */; };
 		4317E884109146BF8BB94813 /* VoiceCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E3943ADA53E9864A4A558C3 /* VoiceCommand.swift */; };
 		49808D4581BF8AB41A118BD0 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916E3FFCE5A36274CE3483A4 /* BLEProtocol.swift */; };
@@ -50,6 +51,7 @@
 		823335EA740E4FC7B19FAE90 /* ToggAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97AC49AE2ABA02AA6D304E9 /* ToggAPI.swift */; };
 		83F4F96E9B37426E2E33EF7E /* PhoneKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A6DDC24EBF5668BCBD8BEED /* PhoneKeyStore.swift */; };
 		84C01423028B7B78968A0D58 /* UserFacingError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7779420C66BEEB0F9F0F67E1 /* UserFacingError.swift */; };
+		84EC9E4A9D7717FE89ABB007 /* CarShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4758C2FBFB7F0D2C07357E0A /* CarShortcuts.swift */; };
 		86D0885E4002411D6A889565 /* ChargingStationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08AD3BFEDDDC63D034E95BD7 /* ChargingStationsView.swift */; };
 		9422B7EDFA3FC3FD65E4472C /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD57A3E8A9EC43D30D8A077 /* DashboardView.swift */; };
 		94FE6F5C1DDA16FEC6B03FB1 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 9628B0944C04A12BD08FD196 /* AppIcon.icon */; };
@@ -164,6 +166,7 @@
 		411E3E4ABBC6C73898F4546D /* SessionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SessionStore.swift; path = App/SessionStore.swift; sourceTree = "<group>"; };
 		44637AF01B20028684127788 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		4527B59245C2BB4367844422 /* ErrorBanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App/ErrorBanner.swift; sourceTree = "<group>"; };
+		4758C2FBFB7F0D2C07357E0A /* CarShortcuts.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/CarShortcuts.swift; sourceTree = "<group>"; };
 		48BBBF59B97A8AC6EBD8A68C /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		4B8E453F271AC262C7B58756 /* WatchLink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchLink.swift; path = Shared/WatchLink.swift; sourceTree = "<group>"; };
 		4D3F7A0A3A858FECE4000FF1 /* AccountCenterView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AccountCenterView.swift; path = App/AccountCenterView.swift; sourceTree = "<group>"; };
@@ -177,6 +180,7 @@
 		726267B05D0DDF66575C2144 /* VoiceSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceSheet.swift; path = App/VoiceSheet.swift; sourceTree = "<group>"; };
 		7473E4E29DEF8580E34774A4 /* ChargingEstimate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingEstimate.swift; path = Core/ChargingEstimate.swift; sourceTree = "<group>"; };
 		7779420C66BEEB0F9F0F67E1 /* UserFacingError.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/UserFacingError.swift; sourceTree = "<group>"; };
+		79E6553C89E34442D30915FB /* ShortcutLink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/ShortcutLink.swift; sourceTree = "<group>"; };
 		7A6DDC24EBF5668BCBD8BEED /* PhoneKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PhoneKeyStore.swift; path = Core/PhoneKeyStore.swift; sourceTree = "<group>"; };
 		7C2152C155718D7560834660 /* ToqdasWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasWidget.swift; path = Widget/ToqdasWidget.swift; sourceTree = "<group>"; };
 		7E3943ADA53E9864A4A558C3 /* VoiceCommand.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceCommand.swift; path = Core/VoiceCommand.swift; sourceTree = "<group>"; };
@@ -360,6 +364,8 @@
 				A726A6BC8538C30D64031109 /* WidgetRefreshPolicy.swift */,
 				7779420C66BEEB0F9F0F67E1 /* UserFacingError.swift */,
 				580F6C5BEBBE0C89A99F0AA7 /* GeofencePolicy.swift */,
+				79E6553C89E34442D30915FB /* ShortcutLink.swift */,
+				4758C2FBFB7F0D2C07357E0A /* CarShortcuts.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -603,6 +609,8 @@
 				A109CC28F6CAA2BDEC125112 /* UserFacingError+App.swift in Sources */,
 				32034D131B511BABE4A5D6A2 /* ErrorBanner.swift in Sources */,
 				D500538ED1997BA67DB8D6F0 /* GeofencePolicy.swift in Sources */,
+				3E573134388F2997403C7038 /* ShortcutLink.swift in Sources */,
+				84EC9E4A9D7717FE89ABB007 /* CarShortcuts.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

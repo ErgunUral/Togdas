@@ -265,14 +265,36 @@ final class GarageModel: ObservableObject {
     }
 
     @MainActor
-    func handleShortcutCommand(_ action: String) {
-        guard ble.state.isReady else { return }
+    func handleShortcutCommand(_ action: ShortcutAction) {
+        // Kısayol sessizce başarısız olmasın: reddedilme nedenini göster.
+        guard selectedVehicle != nil else {
+            facingError = UserFacingError(
+                kind: .unknown,
+                title: "Araç seçili değil",
+                message: "Kısayol için önce uygulamada bir araç seçin.",
+                recovery: "Toqdas'ı açıp garajdan aracınızı seçin.",
+                isRetryable: true
+            )
+            return
+        }
+        let sent: Bool
         switch action {
-        case "lock": _ = ble.lock()
-        case "unlock": _ = ble.unlock()
-        case "trunkOpen": _ = ble.trunkOpen()
-        case "trunkClose": _ = ble.trunkClose()
-        default: break
+        case .lock: sent = ble.lock()
+        case .unlock: sent = ble.unlock()
+        case .trunkOpen: sent = ble.trunkOpen()
+        case .trunkClose: sent = ble.trunkClose()
+        }
+        print("[SHORTCUT] action=\(action.rawValue) sent=\(sent) ready=\(ble.state.isReady)")
+        if !sent {
+            facingError = UserFacingError(
+                kind: .bleNotReady,
+                title: "\(action.title) gönderilemedi",
+                message: ble.lastEvent,
+                recovery: "Uygulamayı açık tutup “Komut hazır” olmasını bekleyin, sonra kısayolu tekrar çalıştırın.",
+                isRetryable: true
+            )
+        } else {
+            facingError = nil
         }
     }
 
@@ -385,9 +407,7 @@ struct ToqdasApp: App {
     var body: some Scene {
         WindowGroup { GarageView(model: model).environmentObject(model.ble)
             .onOpenURL { url in
-                guard url.scheme == "toqdas", url.host == "command",
-                      let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                      let action = comps.queryItems?.first(where: { $0.name == "action" })?.value else { return }
+                guard let action = ShortcutLink.action(from: url) else { return }
                 model.handleShortcutCommand(action)
             } }
     }
