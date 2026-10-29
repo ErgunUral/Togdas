@@ -12,6 +12,7 @@
 		01D2482999D0569E46DDFF10 /* ChargingEstimate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C656C463F5F07112DFBC2398 /* ChargingEstimate.swift */; };
 		02285C5AD352AD6649DAF2D7 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85040453788C961DCF9A0558 /* ShareSheet.swift */; };
 		0458E095B333ACDFBC5ED61F /* ToqdasWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E78CC5BA15E8412DB097101 /* ToqdasWatchApp.swift */; };
+		06F1A723038A48755E84F117 /* TurkishFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC000EFC9F6259DC15B3CDA /* TurkishFormat.swift */; };
 		071C233F41A984EDEE0CA4EF /* VoiceAssistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA6278A026A65A776D46227 /* VoiceAssistant.swift */; };
 		0A1BA7EB98D1CA3AC13C7E03 /* KeySharing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 225E7DB7A647E687C254D937 /* KeySharing.swift */; };
 		0E38E0360A699B6A77485B81 /* BleConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116E891E8D1E2CBDE901BDC5 /* BleConnection.swift */; };
@@ -30,6 +31,7 @@
 		32034D131B511BABE4A5D6A2 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4527B59245C2BB4367844422 /* ErrorBanner.swift */; };
 		36DD25841A82F4389882937E /* DashboardCustomization.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C5FB0BE9CCF79E283AA6A0 /* DashboardCustomization.swift */; };
 		3715AD858D6A911D69C3A040 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 48BBBF59B97A8AC6EBD8A68C /* Foundation.framework */; };
+		38F478E51897E636420DB1AD /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4F09661B230F595973341DA9 /* Localizable.xcstrings */; };
 		39C551789B97C67A4836B06B /* GRPCProto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02AC29F97B99B77107E2C112 /* GRPCProto.swift */; };
 		3CFC99DA36C6C806BF54ED03 /* ProximityCalibrationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1AF44C17D3FE981C19A1A8C /* ProximityCalibrationSheet.swift */; };
 		3E573134388F2997403C7038 /* ShortcutLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E6553C89E34442D30915FB /* ShortcutLink.swift */; };
@@ -169,6 +171,7 @@
 		1A4DD3F5F17FD7AB467DE8B0 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = App/Assets.xcassets; sourceTree = "<group>"; };
 		1A90646A8F064CC74B8E1653 /* GaragePreferences.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/GaragePreferences.swift; sourceTree = "<group>"; };
 		1BAEA7A0F42D1E9CE5507E25 /* MaintenanceReminder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/MaintenanceReminder.swift; sourceTree = "<group>"; };
+		1FC000EFC9F6259DC15B3CDA /* TurkishFormat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TurkishFormat.swift; path = Core/TurkishFormat.swift; sourceTree = "<group>"; };
 		215F2C49326A1FA6F27313DF /* TirePressurePolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/TirePressurePolicy.swift; sourceTree = "<group>"; };
 		225E7DB7A647E687C254D937 /* KeySharing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeySharing.swift; path = Core/KeySharing.swift; sourceTree = "<group>"; };
 		25AE24F767FA57184C0C3002 /* BleReconnectPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/BleReconnectPolicy.swift; sourceTree = "<group>"; };
@@ -187,6 +190,7 @@
 		4D3F7A0A3A858FECE4000FF1 /* AccountCenterView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AccountCenterView.swift; path = App/AccountCenterView.swift; sourceTree = "<group>"; };
 		4DB38BAF3BBC341BD7A379E7 /* BleAuth.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleAuth.swift; path = App/BleAuth.swift; sourceTree = "<group>"; };
 		4E893B70F3216DCD1099B811 /* ToqdasApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasApp.swift; path = App/ToqdasApp.swift; sourceTree = "<group>"; };
+		4F09661B230F595973341DA9 /* Localizable.xcstrings */ = {isa = PBXFileReference; includeInIndex = 1; name = Localizable.xcstrings; path = App/Localizable.xcstrings; sourceTree = "<group>"; };
 		4F9120A9A9B3C30156968E6B /* ToqdasWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; name = ToqdasWidget.entitlements; path = Widget/ToqdasWidget.entitlements; sourceTree = "<group>"; };
 		55695E170544648784C555E6 /* ExperienceFormat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExperienceFormat.swift; path = Core/ExperienceFormat.swift; sourceTree = "<group>"; };
 		5682048056DA67E947A73FEF /* ChargingBudgetCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingBudgetCard.swift; path = App/ChargingBudgetCard.swift; sourceTree = "<group>"; };
@@ -383,6 +387,8 @@
 				EA44742AB17EF2BB229C2C0B /* BleTelemetry.swift */,
 				5682048056DA67E947A73FEF /* ChargingBudgetCard.swift */,
 				80908C7EBEE8D40DBD5416C3 /* MaintenanceCard.swift */,
+				4F09661B230F595973341DA9 /* Localizable.xcstrings */,
+				1FC000EFC9F6259DC15B3CDA /* TurkishFormat.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -500,10 +506,10 @@
 			};
 			buildConfigurationList = A0A26CA8F549E53335B00347 /* Build configuration list for PBXProject "Toqdas" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = en;
+			developmentRegion = tr;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
+				tr,
 				Base,
 			);
 			mainGroup = 49CBD57FE14834633A3C1EB8;
@@ -533,6 +539,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				662C1493B0896EA61D7E6D04 /* Assets.xcassets in Resources */,
+				38F478E51897E636420DB1AD /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -659,6 +666,7 @@
 				30081546A962723BE62A13C6 /* BleTelemetry.swift in Sources */,
 				D99DEECED119DF76411AA16A /* ChargingBudgetCard.swift in Sources */,
 				4A200B0668C4514398BB6591 /* MaintenanceCard.swift in Sources */,
+				06F1A723038A48755E84F117 /* TurkishFormat.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -825,6 +833,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -924,6 +933,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 				VALIDATE_PRODUCT = YES;

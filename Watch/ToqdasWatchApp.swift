@@ -4,7 +4,10 @@ import SwiftUI
 struct ToqdasWatchApp: App {
     @StateObject private var link = WatchLink()
     var body: some Scene {
-        WindowGroup { WatchGarageView(link: link) }
+        WindowGroup {
+            WatchGarageView(link: link)
+                .environment(\.locale, Locale(identifier: "tr_TR"))
+        }
     }
 }
 

@@ -201,8 +201,12 @@ Uygulama içi bas-konuş arayüzü:
   güncel kilometreyi verir; şarj harcaması güncellenince kart `NotificationCenter` ile tazelenir.
 - `ChargingBudget`, `BleReconnectPolicy`, `GaragePreferences` ve `EnergyPricing` saf,
   test edilebilir tiplerdir; platform bildirimleri App katmanında kalır.
-- Arayüz metinleri şu an yalnız Türkçedir; tarih/sayı/tutar biçimleri tr_TR kullanır.
-  Çok dilli arayüz için hedef diller netleşince String Catalog'a geçilecek.
+- Arayüz tek dilli Türkçedir: proje `developmentRegion = tr`, bilinen bölgeler `tr`/`Base`;
+  iPhone ve saat kökü `tr_TR` yerel ayarını zorlar. `App/Localizable.xcstrings` kaynak dili
+  `tr` olarak eklendi ve `SWIFT_EMIT_LOC_STRINGS = YES` ile metin çıkarımı açıldı.
+  Para/tarih biçimleri `Core/TurkishFormat.swift` üzerinden tek noktadan yönetilir
+  (`3.940 ₺`, `29 Eki 23:45`). İngilizce veya başka dil çevirisi bu kapsamda değildir;
+  arayüz metinleri hâlâ doğrudan Türkçe yazılmıştır.
 
 Doğrulama durumu: cihazda tr-TR için `supportsOnDeviceRecognition = true` okundu ve mikrofon
 hattı tanı testiyle açıldı. `-voiceDemo "Şarjım ne kadar?"` cihazda yeni ayrıştırıcıyla

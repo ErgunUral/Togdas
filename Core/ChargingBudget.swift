@@ -69,14 +69,7 @@ struct ChargingBudget: Equatable {
 
     /// Türkçe biçim: binlik ayırıcı nokta, kuruş yok.
     static func money(_ value: Double) -> String {
-        let rounded = Int(max(0, value).rounded())
-        let digits = String(rounded)
-        var grouped = ""
-        for (index, character) in digits.reversed().enumerated() {
-            if index > 0, index % 3 == 0 { grouped.append(".") }
-            grouped.append(character)
-        }
-        return String(grouped.reversed()) + " ₺"
+        TurkishFormat.money(value)
     }
 }
 

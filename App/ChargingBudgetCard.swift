@@ -120,9 +120,6 @@ struct ChargingBudgetCard: View {
     }
 
     private func updatedText(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMM HH:mm"
-        return formatter.string(from: date)
+        TurkishFormat.date(date, format: "d MMM HH:mm")
     }
 }

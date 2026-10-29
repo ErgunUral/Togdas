@@ -417,6 +417,7 @@ struct ToqdasApp: App {
 
     var body: some Scene {
         WindowGroup { GarageView(model: model).environmentObject(model.ble)
+            .environment(\.locale, TurkishFormat.locale)
             .onOpenURL { url in
                 guard let action = ShortcutLink.action(from: url) else { return }
                 model.handleShortcutCommand(action)

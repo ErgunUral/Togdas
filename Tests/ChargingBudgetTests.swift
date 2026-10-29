@@ -164,3 +164,28 @@ final class ChargingSpendExtractionTests: XCTestCase {
     }
 
 }
+
+final class TurkishFormatTests: XCTestCase {
+    func testIntegerGrouping() {
+        XCTAssertEqual(TurkishFormat.integer(0), "0")
+        XCTAssertEqual(TurkishFormat.integer(999), "999")
+        XCTAssertEqual(TurkishFormat.integer(1000), "1.000")
+        XCTAssertEqual(TurkishFormat.integer(3940.34), "3.940")
+        XCTAssertEqual(TurkishFormat.integer(25_939.92), "25.940")
+        XCTAssertEqual(TurkishFormat.integer(1_234_567), "1.234.567")
+    }
+
+    func testMoney() {
+        XCTAssertEqual(TurkishFormat.money(3940.34), "3.940 ₺")
+        XCTAssertEqual(TurkishFormat.money(0), "0 ₺")
+        XCTAssertEqual(TurkishFormat.money(.nan), "— ₺")
+    }
+
+    func testDateFormatUsesTurkishMonthNames() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul")!
+        let date = calendar.date(from: DateComponents(year: 2026, month: 10, day: 29,
+                                                      hour: 23, minute: 45))!
+        XCTAssertEqual(TurkishFormat.date(date, format: "d MMM HH:mm"), "29 Eki 23:45")
+    }
+}
