@@ -77,6 +77,18 @@ final class ChargingBudgetTests: XCTestCase {
         XCTAssertEqual(store.snapshot(for: date(2026, 10))?.amountTRY, 700)
     }
 
+    func testRecordingAnotherMonthDoesNotInheritCurrentAmount() {
+        let defaults = UserDefaults(suiteName: "ChargingBudgetTests.\(UUID().uuidString)")!
+        let store = ChargingSpendStore(vin: "VIN1", defaults: defaults)
+        defer { defaults.removePersistentDomain(forName: "ChargingBudgetTests") }
+
+        store.record(amountTRY: 500, month: "2026-10", at: date(2026, 10, 10))
+        // Geçmiş bir ayı yazmak cari ayın tutarını devralmaz.
+        store.record(amountTRY: 40, month: "2026-09", at: date(2026, 10, 11))
+        XCTAssertEqual(store.snapshot(for: date(2026, 9))?.amountTRY, 40)
+        XCTAssertNil(store.snapshot(for: date(2026, 10)), "Tek kayıt alanı yeni ayla değişir.")
+    }
+
     func testLimitAndBudget() {
         let defaults = UserDefaults(suiteName: "ChargingBudgetTests.\(UUID().uuidString)")!
         let store = ChargingSpendStore(vin: "VIN1", defaults: defaults)

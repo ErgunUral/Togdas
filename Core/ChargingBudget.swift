@@ -123,7 +123,9 @@ final class ChargingSpendStore {
     /// gelirse (sayfalama/eksik yanıt) mevcut değer korunur.
     func record(amountTRY: Double, month: String = ChargingSpendStore.monthString(), at: Date = Date()) {
         guard amountTRY.isFinite, amountTRY >= 0 else { return }
-        let value = SnapshotValue(month: month, amount: max(amountTRY, snapshot(for: at)?.amountTRY ?? 0),
+        let existing = snapshot(for: at)
+        let sameMonthAmount = existing?.month == month ? existing?.amountTRY ?? 0 : 0
+        let value = SnapshotValue(month: month, amount: max(amountTRY, sameMonthAmount),
                                   updatedAt: at.timeIntervalSince1970)
         if let data = try? JSONEncoder().encode(["value": value]) {
             defaults.set(data, forKey: snapshotKey)
