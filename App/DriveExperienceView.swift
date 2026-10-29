@@ -20,6 +20,8 @@ struct DriveExperienceView: View {
 
     @State private var kind = ExperienceKind.journeys
     @State private var period = "Monthly"
+    /// Sunucuya gönderilen dönem çapası: yıllık "2026", aylık "2026-10", haftalık "2026-10-19".
+    @State private var anchor: String?
     @State private var dashboard: ExperienceDashboard?
     @State private var selectedSummaryID: String?
     @State private var metrics: [ExperienceMetric] = []
@@ -171,7 +173,8 @@ struct DriveExperienceView: View {
             await load(reset: true)
         }
         .sheet(item: $detailTarget) { target in
-            ExperienceDetailSheet(api: api, vin: vehicle.vin, target: target)
+            ExperienceDetailSheet(api: api, vin: vehicle.vin, target: target,
+                                  pricePerKWh: pricePerKWh)
         }
     }
 
@@ -538,6 +541,7 @@ struct DriveExperienceView: View {
                     Button {
                         guard period != item.0 else { return }
                         period = item.0
+                        anchor = nil
                         Task { await load(reset: true) }
                     } label: {
                         Text(item.1)
@@ -552,6 +556,111 @@ struct DriveExperienceView: View {
                     .buttonStyle(.plain)
                 }
             }
+
+            HStack(spacing: 8) {
+                Button { movePeriod(-1) } label: {
+                    Label("Önceki", systemImage: "chevron.left")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).frame(height: 32)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(ToggTheme.surfaceVariant))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Önceki dönem")
+
+                Text(anchorLabel)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(ToggTheme.muted)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                    .frame(minWidth: 92)
+
+                Button { movePeriod(1) } label: {
+                    Label("Sonraki", systemImage: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).frame(height: 32)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(ToggTheme.surfaceVariant))
+                }
+                .buttonStyle(.plain)
+                .disabled(!canMoveForward)
+                .opacity(canMoveForward ? 1 : 0.35)
+                .accessibilityLabel("Sonraki dönem")
+            }
+        }
+    }
+
+    // MARK: - Dönem gezinme
+
+    private var utcCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+        return calendar
+    }
+
+    private func anchorDate(from anchor: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = period == "Annual" ? "yyyy" : (period == "Weekly" ? "yyyy-MM-dd" : "yyyy-MM")
+        return formatter.date(from: anchor)
+    }
+
+    private func anchorString(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = period == "Annual" ? "yyyy" : (period == "Weekly" ? "yyyy-MM-dd" : "yyyy-MM")
+        return formatter.string(from: date)
+    }
+
+    private func shifted(_ date: Date, by steps: Int) -> Date? {
+        switch period {
+        case "Annual": return utcCalendar.date(byAdding: .year, value: steps, to: date)
+        case "Weekly": return utcCalendar.date(byAdding: .day, value: steps * 7, to: date)
+        default: return utcCalendar.date(byAdding: .month, value: steps, to: date)
+        }
+    }
+
+    private var canMoveForward: Bool {
+        let base = anchor.flatMap(anchorDate(from:)) ?? Date()
+        guard let next = shifted(base, by: 1) else { return false }
+        return next <= Date()
+    }
+
+    private func movePeriod(_ steps: Int) {
+        let base = anchor.flatMap(anchorDate(from:)) ?? Date()
+        guard let next = shifted(base, by: steps) else { return }
+        guard steps < 0 || next <= Date() else { return }
+        anchor = anchorString(for: next)
+        Task { await load(reset: true) }
+    }
+
+    private var anchorLabel: String {
+        guard let anchor else {
+            switch period {
+            case "Annual": return "Bu yıl"
+            case "Weekly": return "Bu hafta"
+            default: return "Bu ay"
+            }
+        }
+        switch period {
+        case "Annual":
+            return anchor
+        case "Weekly":
+            guard let start = anchorDate(from: anchor),
+                  let end = utcCalendar.date(byAdding: .day, value: 6, to: start) else { return anchor }
+            let day = DateFormatter()
+            day.locale = Locale(identifier: "tr_TR")
+            day.timeZone = TimeZone(secondsFromGMT: 0)
+            day.dateFormat = "d MMM"
+            let year = utcCalendar.component(.year, from: end)
+            return "\(day.string(from: start)) – \(day.string(from: end)) \(year)"
+        default:
+            let parts = anchor.split(separator: "-")
+            guard parts.count == 2, let month = Int(parts[1]), (1...12).contains(month) else { return anchor }
+            let names = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                         "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+            return "\(names[month - 1]) \(parts[0])"
         }
     }
 
@@ -601,8 +710,14 @@ struct DriveExperienceView: View {
 
     private var periodMetricsCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Dönem Özeti")
-                .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+            HStack {
+                Text("Dönem Özeti")
+                    .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                Spacer()
+                Text(anchorLabel)
+                    .font(.system(size: 10, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                    .lineLimit(1)
+            }
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(metrics) { metric in
                     VStack(alignment: .leading, spacing: 3) {
@@ -617,6 +732,11 @@ struct DriveExperienceView: View {
                     .padding(12)
                     .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.surfaceVariant))
                 }
+            }
+            if kind == .charges {
+                Text("Harcama, dönemin eklenen enerjisi × birim fiyat ile tahmin edilir; servis tutarı varsa kayıt detayında gösterilir.")
+                    .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(16)
@@ -745,7 +865,7 @@ struct DriveExperienceView: View {
         defer { if token == requestGeneration { busy = false } }
         do {
             let data = try await api.driveExperience(
-                vin: vehicle.vin, kind: kind.rawValue, period: period, offset: offset
+                vin: vehicle.vin, kind: kind.rawValue, period: period, offset: offset, anchor: anchor
             )
             guard token == requestGeneration else { return }
             raw = String(decoding: data, as: UTF8.self)
@@ -807,6 +927,7 @@ private struct ExperienceDetailSheet: View {
     let api: ToggAPI
     let vin: String
     let target: ExperienceDetailTarget
+    let pricePerKWh: Double
 
     @Environment(\.dismiss) private var dismiss
     @State private var detail: ExperienceDetail?
@@ -952,7 +1073,8 @@ private struct ExperienceDetailSheet: View {
             )
             guard token == generation else { return }
             raw = String(decoding: data, as: UTF8.self)
-            guard let parsed = ExperienceFormat.detail(from: data, kind: target.kind) else {
+            guard let parsed = ExperienceFormat.detail(from: data, kind: target.kind,
+                                                      pricePerKWh: pricePerKWh) else {
                 error = "Kayıt ayrıntısı beklenen biçimde değil."
                 return
             }

@@ -300,6 +300,12 @@ new watchOS versions; observe documented runtime errors and test target versions
   `toqdas.chargePricePerKWh` birim fiyatını kullanır (varsayılan 10 ₺/kWh, 0–100 arası).
   Enerji miktarı varsa "Tahmini maliyet" ve "Km başına" eklenir; sunucu maliyeti yerine
   geçmez ve fatura olarak sunulmaz.
+- Şarj harcaması: Seyahatname > Şarjlar sekmesinde haftalık/aylık/yıllık dönem seçilir;
+  "Önceki/Sonraki" ile geçmiş dönemlere gidilir (`anchor=yyyy`, `yyyy-MM`, `yyyy-MM-dd`).
+  Dönem özeti şarj sayısı, toplam/ortalama enerji, "Tahmini maliyet" ve "Seans başına tutar"
+  gösterir. Sunucu `total_price`/`total_cost` döndürürse gerçek "Toplam harcama" önce gelir;
+  her şarj kaydında servis tutarı varsa "Tutar", yoksa enerji × birim fiyat ile "≈ Tahmini tutar"
+  yazılır. Enerji yoksa tutar uydurulmaz.
   Özet (`this_month`, `last_month`, `last_month_calendar`, `all_time`,
   `community_comparison`, `last_journey`, `last_charge`), yolculuk/şarj listeleri
   (`journeys`, `charges`), dönem grafikleri (`period_km`, `period_energy`) ve

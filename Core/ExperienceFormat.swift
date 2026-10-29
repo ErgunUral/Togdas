@@ -449,11 +449,21 @@ enum ExperienceFormat {
             appendCostMetrics(&metrics, energyKWh: totalEnergy, distanceKM: totalDistance, pricePerKWh: pricePerKWh)
         } else {
             let totalEnergy = number(summary, ["total_energy_kwh", "total_kwh_added"])
-            appendMetric(&metrics, "Şarj sayısı", number(summary, ["total_sessions", "monthly_charges", "charge_count", "total_charges"]).map { whole($0) })
+            let sessions = number(summary, ["total_sessions", "monthly_charges", "charge_count", "total_charges"])
+            appendMetric(&metrics, "Şarj sayısı", sessions.map { whole($0) })
             appendMetric(&metrics, "Toplam enerji", energy(totalEnergy))
             appendMetric(&metrics, "Süre", duration(minutes: number(summary, ["total_duration_min", "duration_min_total", "duration_min"])))
+            if let sessions, sessions > 0, let totalEnergy, totalEnergy.isFinite, totalEnergy > 0 {
+                appendMetric(&metrics, "Seans başına", "\(oneDecimal(totalEnergy / sessions)) kWh")
+            }
             appendMetric(&metrics, "Birim maliyet", number(summary, ["avg_cost_per_kwh"]).map { "\(twoDecimals($0)) ₺/kWh" })
+            // Sunucu dönem toplamı döndürürse gerçek tutar önce gösterilir.
+            appendMetric(&metrics, "Toplam harcama", number(summary, ["total_price", "total_cost"]).map { "\(twoDecimals($0)) ₺" })
             appendCostMetrics(&metrics, energyKWh: totalEnergy, distanceKM: nil, pricePerKWh: pricePerKWh)
+            if let sessions, sessions > 0, let totalEnergy,
+               let cost = EnergyPricing(pricePerKWh: pricePerKWh).cost(forEnergyKWh: totalEnergy) {
+                appendMetric(&metrics, "Seans başına tutar", "≈ \(whole(cost / sessions)) ₺")
+            }
         }
 
         let barKey = kind == .journeys ? "period_km" : "period_energy"
@@ -475,7 +485,7 @@ enum ExperienceFormat {
 
         let records = list.enumerated().compactMap { index, item -> ExperienceRecord? in
             guard let dictionary = item as? [String: Any] else { return nil }
-            return record(dictionary, kind: kind, index: offset + index)
+            return record(dictionary, kind: kind, index: offset + index, pricePerKWh: pricePerKWh)
         }
 
         let paginationKey = kind == .journeys ? "journeys_pagination" : "charges_pagination"
@@ -486,7 +496,8 @@ enum ExperienceFormat {
                                 nextOffset: nextOffset, receivedCount: list.count)
     }
 
-    private static func record(_ dictionary: [String: Any], kind: ExperienceKind, index: Int) -> ExperienceRecord {
+    private static func record(_ dictionary: [String: Any], kind: ExperienceKind, index: Int,
+                               pricePerKWh: Double? = nil) -> ExperienceRecord {
         let rawID = recordID(dictionary)
         let stableID = rawID.isEmpty ? "\(kind.rawValue)-\(index)" : rawID
         let dateText = dateText(firstValue(dictionary, ["start_ts", "start_time", "event_date", "date", "created_at"]))
@@ -498,8 +509,15 @@ enum ExperienceFormat {
             if start != nil || end != nil {
                 metrics.append(ExperienceMetric(label: "SOC", value: "\(whole(start))% → \(whole(end))%"))
             }
-            if let energy = energy(number(dictionary, ["kwh_added", "total_energy_kwh"])) {
+            let addedEnergy = number(dictionary, ["kwh_added", "total_energy_kwh"])
+            if let energy = energy(addedEnergy) {
                 metrics.append(ExperienceMetric(label: "Enerji", value: energy))
+            }
+            if let servedCost = number(dictionary, ["total_price", "cost"]) {
+                metrics.append(ExperienceMetric(label: "Tutar", value: "\(twoDecimals(servedCost)) ₺"))
+            } else if let pricePerKWh,
+                      let estimate = EnergyPricing(pricePerKWh: pricePerKWh).cost(forEnergyKWh: addedEnergy) {
+                metrics.append(ExperienceMetric(label: "Tahmini tutar", value: "≈ \(whole(estimate)) ₺"))
             }
             if let duration = duration(minutes: number(dictionary, ["duration_min", "total_duration_min"])) {
                 metrics.append(ExperienceMetric(label: "Süre", value: duration))
@@ -532,7 +550,7 @@ enum ExperienceFormat {
 
     // MARK: - Ayrıntı
 
-    static func detail(from data: Data, kind: ExperienceKind) -> ExperienceDetail? {
+    static func detail(from data: Data, kind: ExperienceKind, pricePerKWh: Double? = nil) -> ExperienceDetail? {
         guard let root = root(from: data) else { return nil }
         let dateText = dateText(firstValue(root, ["start_ts", "start_time", "event_date", "date", "created_at"]))
         let subtitle = kind == .charges ? (chargePlace(root) ?? "") : (journeyRoute(root) ?? "")
@@ -557,6 +575,10 @@ enum ExperienceFormat {
             }
             if let price = number(root, ["total_price", "cost"]) {
                 notes.append("Servisteki maliyet: \(twoDecimals(price)) ₺ · Ödeme/fatura olarak doğrulanmadı.")
+            } else if let pricePerKWh,
+                      let estimate = EnergyPricing(pricePerKWh: pricePerKWh).cost(forEnergyKWh: added) {
+                let pricing = EnergyPricing(pricePerKWh: pricePerKWh)
+                notes.append("Tahmini tutar: ≈ \(whole(estimate)) ₺ · \(pricing.priceText) varsayımıyla; fatura değildir.")
             }
         } else {
             appendMetric(&metrics, "Mesafe", distance(number(root, ["total_distance_km", "distance_km", "total_km"])))
