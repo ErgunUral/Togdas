@@ -37,8 +37,6 @@ final class BleLinkCoordinator: ObservableObject {
     private var hasConnectedOnce = false
     private var lastStartAt: Date?
 
-    private let maxAttempts = 8
-
     init(ble: BleConnection, api: ToggAPI) {
         self.ble = ble
         self.api = api
@@ -81,11 +79,15 @@ final class BleLinkCoordinator: ObservableObject {
     /// Android 1.0.24.42'deki "ekran açıldı · etkileşimli" davranışının
     /// iOS karşılığı: telefon ekranı açılınca bağlantı hemen yeniden denenir.
     func handleForeground() {
-        guard autoConnectEnabled, ble.isRadioAvailable else { return }
-        guard ble.state.isDisconnected || ble.state.isFailed else { return }
-        if let lastStartAt, Date().timeIntervalSince(lastStartAt) < 3 { return }
-        guard reconnectTask != nil || pairingTask != nil
-                || ble.state.isFailed || ble.state.isDisconnected else { return }
+        let sinceLastStart = lastStartAt.map { Date().timeIntervalSince($0) }
+        guard BleReconnectPolicy.shouldRetryOnForeground(
+            autoConnectEnabled: autoConnectEnabled,
+            radioAvailable: ble.isRadioAvailable,
+            stateDisconnectedOrFailed: ble.state.isDisconnected || ble.state.isFailed,
+            sinceLastStart: sinceLastStart,
+            hasPendingTimerOrDisconnected: reconnectTask != nil || pairingTask != nil
+                || ble.state.isFailed || ble.state.isDisconnected
+        ) else { return }
         reconnectTask?.cancel()
         reconnectTask = nil
         pairingTask?.cancel()
@@ -161,50 +163,59 @@ final class BleLinkCoordinator: ObservableObject {
             connectedAt = nil
             stableTask?.cancel()
             stableTask = nil
-            // Combine `@Published` abonelik anında mevcut değeri yayınlar; ilk
-            // "bağlı değil" yayını kopma sayılmamalı.
-            guard hasConnectedOnce || awaitingConnection else { return }
-            if ble.needsRepair {
-                status = ble.lastEvent
-                return
-            }
-            if ble.pairingRequired {
-                schedulePairingRetry()
-                return
-            }
-            guard autoConnectEnabled else {
-                if !hasConnectedOnce { status = ble.state.description }
-                return
-            }
-            // Bluetooth kapalıyken deneme sayacı tüketilmez; radyo açılınca
-            // BleConnection kendiliğinden yeniden bağlanır.
-            guard ble.isRadioAvailable else {
-                status = ble.failureSummary ?? "Bluetooth kapalı"
-                reconnecting = false
-                return
-            }
-            silentRecovery = hasConnectedOnce
-            scheduleReconnect()
+            handleDrop()
 
         default:
             break
         }
     }
 
-    private func scheduleReconnect() {
-        guard reconnectTask == nil else { return }
-        guard attempts < maxAttempts else {
-            reconnecting = false
-            status = "Otomatik yeniden bağlanma durdu (\(maxAttempts) deneme). Araç yakınında Bluetooth'u kapatıp açıp yeniden deneyin."
-            ble.recordDiagnostic(status)
+    /// Kopma kararını saf politikaya devreder; politika yalnızca eylem üretir.
+    private func handleDrop() {
+        let decision = BleReconnectPolicy.action(
+            connectedBefore: hasConnectedOnce,
+            awaitingConnection: awaitingConnection,
+            needsRepair: ble.needsRepair,
+            repairStatus: ble.lastEvent,
+            pairingRequired: ble.pairingRequired,
+            autoConnectEnabled: autoConnectEnabled,
+            radioAvailable: ble.isRadioAvailable,
+            radioFailureStatus: ble.failureSummary,
+            attempts: attempts,
+            pairingAttempts: pairingAttempts
+        )
+
+        switch decision {
+        case .ignore:
             return
+        case .repair(let message):
+            status = message
+        case .pairingWait:
+            schedulePairingRetry()
+        case .pairingExhausted(let message):
+            status = message
+        case .showStatus(let message):
+            if !message.isEmpty { status = message }
+        case .waitForRadio(let message):
+            status = message
+            reconnecting = false
+        case .stopped(let message):
+            reconnecting = false
+            status = message
+            ble.recordDiagnostic(message)
+        case .reconnect(let delay, let attempt):
+            silentRecovery = hasConnectedOnce
+            scheduleReconnect(delay: delay, attempt: attempt)
         }
-        attempts += 1
-        let delay = min(pow(2.0, Double(attempts - 1)) * 1.5, 15.0)
+    }
+
+    private func scheduleReconnect(delay: TimeInterval, attempt: Int) {
+        guard reconnectTask == nil else { return }
+        attempts = attempt
         reconnecting = true
         status = hasConnectedOnce ? "Bağlantı yeniden kuruluyor…" : "Araç aranıyor…"
         ble.recordDiagnostic(
-            "ble_reconnect · \(String(format: "%.1f", delay)) sn sonra deneme \(attempts)/\(maxAttempts)"
+            "ble_reconnect · \(String(format: "%.1f", delay)) sn sonra deneme \(attempt)/\(BleReconnectPolicy.maxAttempts)"
         )
         reconnectTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
@@ -228,10 +239,6 @@ final class BleLinkCoordinator: ObservableObject {
         if status != message {
             status = message
             ble.recordDiagnostic("pairing_wait · araç anahtarı yok; 20 sn'de bir yeniden denenecek")
-        }
-        guard pairingAttempts < 30 else {
-            status = "Araç eşleştirmesi tamamlanmadı. Araç ekranından eşleştirmeyi başlatıp yeniden deneyin."
-            return
         }
         pairingAttempts += 1
         pairingTask = Task { [weak self] in
