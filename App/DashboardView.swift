@@ -1000,8 +1000,12 @@ struct DashboardView: View {
         return "\(names[monthNumber - 1]) \(parts[0])"
     }
 
+    private var priceText: String {
+        EnergyPricing(pricePerKWh: chargePricePerKWh).priceText
+    }
+
     private var drivingStatsCard: some View {
-        let stats = drivingStats.monthlyStats()
+        let stats = drivingStats.monthlyStats(pricePerKWh: chargePricePerKWh)
         let weekKm = drivingStats.last7DaysKm()
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -1040,8 +1044,8 @@ struct DashboardView: View {
             }
             Text(stats.daysWithData > 1
                  ? (stats.consumptionIsMeasured
-                    ? "Tüketim batarya yüzdesi farkından ölçülür (88,5 kWh batarya). Maliyet 10 ₺/kWh, kayıp yok."
-                    : "Tüketim için yeterli batarya ölçümü yok; 17 kWh/100 km varsayılanı kullanılıyor. Maliyet 10 ₺/kWh, kayıp yok.")
+                    ? "Tüketim batarya yüzdesi farkından ölçülür (88,5 kWh batarya). Maliyet \(priceText) varsayımıyla, kayıp yok."
+                    : "Tüketim için yeterli batarya ölçümü yok; 17 kWh/100 km varsayılanı kullanılıyor. Maliyet \(priceText) varsayımıyla, kayıp yok.")
                  : "Yeterli veri yok. Birkaç günlük odometer ve batarya okumasından sonra km, tüketim ve maliyet hesaplanır.")
                 .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
         }

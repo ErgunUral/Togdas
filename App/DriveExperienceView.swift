@@ -37,6 +37,7 @@ struct DriveExperienceView: View {
     @State private var detailTarget: ExperienceDetailTarget?
     @State private var requestGeneration = 0
     @State private var summaryGeneration = 0
+    @AppStorage(EnergyPricing.storageKey) private var pricePerKWh = EnergyPricing.defaultPricePerKWh
 
     private let periods: [(String, String)] = [
         ("Weekly", "Haftalık"), ("Monthly", "Aylık"), ("Annual", "Yıllık")
@@ -49,6 +50,7 @@ struct DriveExperienceView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     titleCard
+                    priceCard
 
                     if summaryBusy && dashboard == nil {
                         ProgressView().tint(ToggTheme.teal).padding(24)
@@ -553,6 +555,50 @@ struct DriveExperienceView: View {
         }
     }
 
+    private var priceCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Image(systemName: "bolt.badge.clock")
+                    .font(.system(size: 16)).foregroundStyle(ToggTheme.teal)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Elektrik birim fiyatı")
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                    Text("Maliyet ve km başına tutar bu fiyatla tahmin edilir; fatura değildir.")
+                        .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                HStack(spacing: 4) {
+                    TextField("10", value: $pricePerKWh,
+                              format: .number.precision(.fractionLength(0...2)))
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 64)
+                    Text("₺/kWh")
+                        .font(.system(size: 11)).foregroundStyle(ToggTheme.muted)
+                }
+            }
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 16).fill(ToggTheme.surfaceVariant))
+        .onChange(of: pricePerKWh) { value in
+            let clamped = EnergyPricing(pricePerKWh: value).pricePerKWh
+            if clamped != value { pricePerKWh = clamped }
+            recomputeMetricsFromLastResponse()
+        }
+    }
+
+    /// Fiyat değişince yeniden istek atmadan son yanıttan maliyet satırlarını günceller.
+    private func recomputeMetricsFromLastResponse() {
+        guard error == nil, !raw.isEmpty,
+              let page = ExperienceFormat.period(from: Data(raw.utf8), kind: kind, offset: 0,
+                                                 pricePerKWh: pricePerKWh) else { return }
+        metrics = page.metrics
+        bars = page.bars
+    }
+
     private var periodMetricsCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Dönem Özeti")
@@ -703,7 +749,8 @@ struct DriveExperienceView: View {
             )
             guard token == requestGeneration else { return }
             raw = String(decoding: data, as: UTF8.self)
-            guard let page = ExperienceFormat.period(from: data, kind: kind, offset: offset) else {
+            guard let page = ExperienceFormat.period(from: data, kind: kind, offset: offset,
+                                                     pricePerKWh: pricePerKWh) else {
                 throw AppError.message("Analiz yanıtı beklenen biçimde değil.")
             }
             metrics = page.metrics

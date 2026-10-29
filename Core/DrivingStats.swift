@@ -30,15 +30,17 @@ struct DrivingStats: Equatable {
         month: String,
         km: Double,
         daysWithData: Int,
-        consumptionKWhPer100km: Double? = nil
+        consumptionKWhPer100km: Double? = nil,
+        pricePerKWh: Double = pricePerKWhTRY
     ) -> DrivingStats {
         let consumption = consumptionKWhPer100km ?? defaultConsumptionKWhPer100km
         let kwh = km * consumption / 100
+        let price = EnergyPricing(pricePerKWh: pricePerKWh).pricePerKWh
         return DrivingStats(
             month: month,
             km: km,
             estimatedKWh: kwh,
-            estimatedCostTRY: kwh * pricePerKWhTRY,
+            estimatedCostTRY: kwh * price,
             daysWithData: daysWithData,
             consumptionKWhPer100km: consumption,
             consumptionIsMeasured: consumptionKWhPer100km != nil
@@ -109,21 +111,22 @@ final class DrivingStatsStore {
     }
 
     /// Belirtilen ayın istatistikleri.
-    func monthlyStats(for date: Date = Date()) -> DrivingStats {
+    func monthlyStats(for date: Date = Date(), pricePerKWh: Double = DrivingStats.pricePerKWhTRY) -> DrivingStats {
         let month = Self.monthString(date)
         let monthRecords = records
             .filter { $0.date.hasPrefix(month) }
             .sorted { $0.date < $1.date }
 
         guard let first = monthRecords.first, let last = monthRecords.last else {
-            return .make(month: month, km: 0, daysWithData: 0)
+            return .make(month: month, km: 0, daysWithData: 0, pricePerKWh: pricePerKWh)
         }
         let km = max(0, last.lastOdometer - first.firstOdometer)
         return .make(
             month: month,
             km: km,
             daysWithData: monthRecords.count,
-            consumptionKWhPer100km: measuredConsumption(in: monthRecords)
+            consumptionKWhPer100km: measuredConsumption(in: monthRecords),
+            pricePerKWh: pricePerKWh
         )
     }
 

@@ -403,7 +403,26 @@ enum ExperienceFormat {
 
     // MARK: - Dönem ve kayıtlar
 
-    static func period(from data: Data, kind: ExperienceKind, offset: Int = 0) -> ExperiencePeriod? {
+    /// - Parameter pricePerKWh: Verilirse dönemin enerji miktarından tahmini
+    ///   maliyet ve km başına maliyet eklenir. Sunucu maliyet alanı döndürmediğinde
+    ///   kullanıcının birim fiyatıyla hesaplanır; değer "tahmini" olarak etiketlenir.
+    /// Sunucudan maliyet gelmediğinde enerji × kullanıcı birim fiyatı.
+    /// Değer tahmindir; fatura değildir, bu yüzden "≈" ile gösterilir.
+    private static func appendCostMetrics(_ metrics: inout [ExperienceMetric],
+                                          energyKWh: Double?,
+                                          distanceKM: Double?,
+                                          pricePerKWh: Double?) {
+        guard let pricePerKWh else { return }
+        let pricing = EnergyPricing(pricePerKWh: pricePerKWh)
+        guard let cost = pricing.cost(forEnergyKWh: energyKWh) else { return }
+        metrics.append(ExperienceMetric(label: "Tahmini maliyet", value: "≈ \(whole(cost)) ₺"))
+        if let perKM = pricing.costPerKM(energyKWh: energyKWh, distanceKM: distanceKM) {
+            metrics.append(ExperienceMetric(label: "Km başına", value: "\(twoDecimals(perKM)) ₺/km"))
+        }
+    }
+
+    static func period(from data: Data, kind: ExperienceKind, offset: Int = 0,
+                       pricePerKWh: Double? = nil) -> ExperiencePeriod? {
         guard let root = root(from: data) else { return nil }
         let listKey = kind == .journeys ? "journeys" : "charges"
         let hasList = root[listKey] != nil || root["items"] != nil
@@ -415,8 +434,10 @@ enum ExperienceFormat {
 
         var metrics: [ExperienceMetric] = []
         if kind == .journeys {
-            appendMetric(&metrics, "Mesafe", distance(number(summary, ["total_distance_km", "total_km", "km_total"])))
-            appendMetric(&metrics, "Toplam tüketim", energy(number(summary, ["total_kwh_consumed", "total_consumption_kwh", "consumption_kwh", "kwh_consumed"])))
+            let totalDistance = number(summary, ["total_distance_km", "total_km", "km_total"])
+            let totalEnergy = number(summary, ["total_kwh_consumed", "total_consumption_kwh", "consumption_kwh", "kwh_consumed"])
+            appendMetric(&metrics, "Mesafe", distance(totalDistance))
+            appendMetric(&metrics, "Toplam tüketim", energy(totalEnergy))
             appendMetric(&metrics, "Ort. tüketim", consumption(number(summary, ["avg_consumption_per_100km", "avg_kwh_per_100km", "monthly_average_consumption_kwh"])))
             appendMetric(&metrics, "Yolculuk", number(summary, ["journey_count", "total_journeys", "drive_count"]).map { whole($0) })
             let durationValue = number(summary, ["total_duration_min", "duration_min_total", "duration_min"])
@@ -425,11 +446,14 @@ enum ExperienceFormat {
             appendMetric(&metrics, "Ort. hız", number(summary, ["avg_speed_kmh"]).map { "\(oneDecimal($0)) km/sa" })
             appendMetric(&metrics, "Verim puanı", number(summary, ["avg_economy_score", "economy_score", "journey_score"])
                 .flatMap { (0...100).contains($0) ? "\(whole($0)) / 100" : nil })
+            appendCostMetrics(&metrics, energyKWh: totalEnergy, distanceKM: totalDistance, pricePerKWh: pricePerKWh)
         } else {
+            let totalEnergy = number(summary, ["total_energy_kwh", "total_kwh_added"])
             appendMetric(&metrics, "Şarj sayısı", number(summary, ["total_sessions", "monthly_charges", "charge_count", "total_charges"]).map { whole($0) })
-            appendMetric(&metrics, "Toplam enerji", energy(number(summary, ["total_energy_kwh", "total_kwh_added"])))
+            appendMetric(&metrics, "Toplam enerji", energy(totalEnergy))
             appendMetric(&metrics, "Süre", duration(minutes: number(summary, ["total_duration_min", "duration_min_total", "duration_min"])))
             appendMetric(&metrics, "Birim maliyet", number(summary, ["avg_cost_per_kwh"]).map { "\(twoDecimals($0)) ₺/kWh" })
+            appendCostMetrics(&metrics, energyKWh: totalEnergy, distanceKM: nil, pricePerKWh: pricePerKWh)
         }
 
         let barKey = kind == .journeys ? "period_km" : "period_energy"

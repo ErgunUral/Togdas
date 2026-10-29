@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0062635A8B24E32231FAE0F0 /* EnergyPricing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CDCAC4C8F3596E99B43B8E6 /* EnergyPricing.swift */; };
 		00D259AB3EE47C81D03D7D4C /* GRPCProto.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A6D5A34D02E0858EF62F82 /* GRPCProto.swift */; };
 		01D2482999D0569E46DDFF10 /* ChargingEstimate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C656C463F5F07112DFBC2398 /* ChargingEstimate.swift */; };
 		0458E095B333ACDFBC5ED61F /* ToqdasWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E78CC5BA15E8412DB097101 /* ToqdasWatchApp.swift */; };
@@ -74,6 +75,7 @@
 		BD0BBD5CD2C6D7F467B88621 /* VoiceCommandParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9EB3AE99CA2F29A0F4ED1B7 /* VoiceCommandParser.swift */; };
 		BF53BD6546D08A2846ACEC12 /* MaintenanceReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAEA7A0F42D1E9CE5507E25 /* MaintenanceReminder.swift */; };
 		BFFC90F44D1902601A16ADD4 /* ProximityDetectionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17BD712EE0834958833A382D /* ProximityDetectionMonitor.swift */; };
+		C23920B6B06B730C7550F679 /* EnergyPricing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CDCAC4C8F3596E99B43B8E6 /* EnergyPricing.swift */; };
 		C3138A75FBF2E06A836D72EF /* EPDKCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F5C039B6839EF0057AFFCF /* EPDKCatalog.swift */; };
 		C5AEEBEBF92A0F6E9BBE9DE6 /* BLECommandPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19744B31775E323987033834 /* BLECommandPolicy.swift */; };
 		C614A7D049EC7F0F9A9AB2D7 /* BluetoothDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47F70330A6194A6BE63D1B2 /* BluetoothDiscovery.swift */; };
@@ -196,6 +198,7 @@
 		9628B0944C04A12BD08FD196 /* AppIcon.icon */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.iconcomposer.icon; name = AppIcon.icon; path = Watch/AppIcon.icon; sourceTree = "<group>"; };
 		962EAB5F4FCFF9ABEB3F0D6E /* MaintenanceNotifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App/MaintenanceNotifier.swift; sourceTree = "<group>"; };
 		98DE624F322FF097394BC7AE /* Toqdas.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; name = Toqdas.entitlements; path = App/Toqdas.entitlements; sourceTree = "<group>"; };
+		9CDCAC4C8F3596E99B43B8E6 /* EnergyPricing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/EnergyPricing.swift; sourceTree = "<group>"; };
 		A2259D07012A3A5E766C38E4 /* CommandView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CommandView.swift; path = App/CommandView.swift; sourceTree = "<group>"; };
 		A2C5FB0BE9CCF79E283AA6A0 /* DashboardCustomization.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DashboardCustomization.swift; path = Core/DashboardCustomization.swift; sourceTree = "<group>"; };
 		A726A6BC8538C30D64031109 /* WidgetRefreshPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/WidgetRefreshPolicy.swift; sourceTree = "<group>"; };
@@ -372,6 +375,7 @@
 				4758C2FBFB7F0D2C07357E0A /* CarShortcuts.swift */,
 				25AE24F767FA57184C0C3002 /* BleReconnectPolicy.swift */,
 				1A90646A8F064CC74B8E1653 /* GaragePreferences.swift */,
+				9CDCAC4C8F3596E99B43B8E6 /* EnergyPricing.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -556,6 +560,7 @@
 				0A1BA7EB98D1CA3AC13C7E03 /* KeySharing.swift in Sources */,
 				FD593741F80E5D1BCB317F2D /* BLECommandPolicy.swift in Sources */,
 				36DD25841A82F4389882937E /* DashboardCustomization.swift in Sources */,
+				0062635A8B24E32231FAE0F0 /* EnergyPricing.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -619,6 +624,7 @@
 				84EC9E4A9D7717FE89ABB007 /* CarShortcuts.swift in Sources */,
 				1E0C5A4A13F1AC06C06B1447 /* BleReconnectPolicy.swift in Sources */,
 				78B95720E4FE860F8E25C1EC /* GaragePreferences.swift in Sources */,
+				C23920B6B06B730C7550F679 /* EnergyPricing.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

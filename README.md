@@ -29,7 +29,7 @@ It overwrites project settings; preserve manual project changes before running i
 - Dashboard layouts: Klasik, Minimal, Sportif and Teknik. The selected layout only changes
   hierarchy and card visibility; it never changes vehicle command behavior.
 - Çoklu araç desteği: garajdaki araçlar arasında geçiş; seçim `UserDefaults` ile kalıcıdır.
-- Sürüş & şarj analizi: `DriveExperience` uçlarından son 30 gün, önceki dönem,
+- Seyahatname (Sürüş & şarj analizi): `DriveExperience` uçlarından son 30 gün, önceki dönem,
   önceki takvim ayı ve tüm zamanlar özeti; topluluk karşılaştırması; son yolculuk ve
   son şarj kartları; haftalık/aylık/yıllık yolculuk ve şarj listeleri; dönem grafiği,
   sayfalama, kayıt ayrıntıları ve ham yanıt görünümü. Şarj ayrıntısında ortalama güç
@@ -295,7 +295,11 @@ new watchOS versions; observe documented runtime errors and test target versions
   veya boşsa değer uydurulmaz. `location` alanı doluysa başlıkta enlem/boylam
   koordinatları gösterilir; alan yoksa "Konum yok" yazar.
 - Physical-device login, vehicle list and detail: passed.
-- Sürüş & şarj analizi: fiziksel iPhone'da gerçek hesap/araç yanıtıyla doğrulandı.
+- Seyahatname (Sürüş & şarj analizi): fiziksel iPhone'da gerçek hesap/araç yanıtıyla doğrulandı.
+- Maliyet tahmini: Seyahatname, sürüş istatistikleri ve şarj hesaplayıcısı aynı
+  `toqdas.chargePricePerKWh` birim fiyatını kullanır (varsayılan 10 ₺/kWh, 0–100 arası).
+  Enerji miktarı varsa "Tahmini maliyet" ve "Km başına" eklenir; sunucu maliyeti yerine
+  geçmez ve fatura olarak sunulmaz.
   Özet (`this_month`, `last_month`, `last_month_calendar`, `all_time`,
   `community_comparison`, `last_journey`, `last_charge`), yolculuk/şarj listeleri
   (`journeys`, `charges`), dönem grafikleri (`period_km`, `period_energy`) ve
