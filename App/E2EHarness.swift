@@ -190,6 +190,22 @@ enum E2EHarness {
             print("[E2E] SKIP widget snapshot: kayıt yok")
         }
 
+        // 8. Salt okunur Siri niyetleri: BLE'ye dokunmadan önbellekten yanıt.
+        do {
+            let status = try await VehicleStatusIntent().perform()
+            let description = String(describing: status)
+            check("Siri araç durumu", !description.isEmpty, description)
+        } catch {
+            fail("Siri araç durumu", "\(error)")
+        }
+        do {
+            let spend = try await ChargingSpendIntent().perform()
+            let description = String(describing: spend)
+            check("Siri şarj harcaması", !description.isEmpty, description)
+        } catch {
+            fail("Siri şarj harcaması", "\(error)")
+        }
+
         summary()
     }
 
