@@ -47,6 +47,7 @@
 		76475D2E0285CC3A1895A043 /* BleAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DB38BAF3BBC341BD7A379E7 /* BleAuth.swift */; };
 		768BE458489998C0C6392676 /* WatchLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8E453F271AC262C7B58756 /* WatchLink.swift */; };
 		78635F3C036060F244481CA3 /* MaintenanceNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962EAB5F4FCFF9ABEB3F0D6E /* MaintenanceNotifier.swift */; };
+		78B95720E4FE860F8E25C1EC /* GaragePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A90646A8F064CC74B8E1653 /* GaragePreferences.swift */; };
 		7E875253402EDC3321B82860 /* DrivingStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC006C81C7126BBE30BCB1B1 /* DrivingStats.swift */; };
 		7F07DCC632694FBA974C45D4 /* WidgetRefreshPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A726A6BC8538C30D64031109 /* WidgetRefreshPolicy.swift */; };
 		823335EA740E4FC7B19FAE90 /* ToggAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97AC49AE2ABA02AA6D304E9 /* ToggAPI.swift */; };
@@ -155,6 +156,7 @@
 		1886C2A1192CEB680C24EB80 /* BleLinkCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleLinkCoordinator.swift; path = App/BleLinkCoordinator.swift; sourceTree = "<group>"; };
 		19744B31775E323987033834 /* BLECommandPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLECommandPolicy.swift; path = Core/BLECommandPolicy.swift; sourceTree = "<group>"; };
 		1A4DD3F5F17FD7AB467DE8B0 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = App/Assets.xcassets; sourceTree = "<group>"; };
+		1A90646A8F064CC74B8E1653 /* GaragePreferences.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/GaragePreferences.swift; sourceTree = "<group>"; };
 		1BAEA7A0F42D1E9CE5507E25 /* MaintenanceReminder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/MaintenanceReminder.swift; sourceTree = "<group>"; };
 		215F2C49326A1FA6F27313DF /* TirePressurePolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/TirePressurePolicy.swift; sourceTree = "<group>"; };
 		225E7DB7A647E687C254D937 /* KeySharing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeySharing.swift; path = Core/KeySharing.swift; sourceTree = "<group>"; };
@@ -369,6 +371,7 @@
 				79E6553C89E34442D30915FB /* ShortcutLink.swift */,
 				4758C2FBFB7F0D2C07357E0A /* CarShortcuts.swift */,
 				25AE24F767FA57184C0C3002 /* BleReconnectPolicy.swift */,
+				1A90646A8F064CC74B8E1653 /* GaragePreferences.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -615,6 +618,7 @@
 				3E573134388F2997403C7038 /* ShortcutLink.swift in Sources */,
 				84EC9E4A9D7717FE89ABB007 /* CarShortcuts.swift in Sources */,
 				1E0C5A4A13F1AC06C06B1447 /* BleReconnectPolicy.swift in Sources */,
+				78B95720E4FE860F8E25C1EC /* GaragePreferences.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

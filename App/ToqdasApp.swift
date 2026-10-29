@@ -11,11 +11,12 @@ final class GarageModel: ObservableObject {
     @Published var facingError: UserFacingError?
     @Published var linkStatus = ""
     @Published var silentRecovery = false
-    @Published var selectedVin: String? = UserDefaults.standard.string(forKey: "toqdas.selectedVin")
-    let api = ToggAPI()
+    @Published var selectedVin: String?
+    let api: ToggAPI
     let loginCoordinator = LoginCoordinator()
     let watch = WatchLink()
-    let ble = BleConnection()
+    let ble: BleConnection
+    let preferences: GaragePreferences
     let proximityMonitor: ProximityDetectionMonitor
     let link: BleLinkCoordinator
     let geofence = GeofenceManager()
@@ -23,9 +24,17 @@ final class GarageModel: ObservableObject {
     let cloud = CloudTelemetryStore()
     private var lastWidgetReloadAt = Date.distantPast
 
-    init() {
+    convenience init() {
+        self.init(api: ToggAPI(), ble: BleConnection(), preferences: GaragePreferences())
+    }
+
+    init(api: ToggAPI, ble: BleConnection, preferences: GaragePreferences) {
+        self.api = api
+        self.ble = ble
+        self.preferences = preferences
+        self.selectedVin = preferences.selectedVin
         proximityMonitor = ProximityDetectionMonitor(ble: ble)
-        link = BleLinkCoordinator(ble: ble, api: api)
+        link = BleLinkCoordinator(ble: ble, api: api, preferences: preferences)
         do { signedIn = try api.hasSession() }
         catch { self.facingError = .from(error) }
 
@@ -150,7 +159,7 @@ final class GarageModel: ObservableObject {
             selectedVin = vehicles.first?.vin
         }
         if let selectedVin {
-            UserDefaults.standard.set(selectedVin, forKey: "toqdas.selectedVin")
+            preferences.selectedVin = selectedVin
             SharedKeyRequestStore.cleanupStaleState(vin: selectedVin)
             link.configure(vin: selectedVin, isShared: selectedVehicle?.isShared ?? false)
             link.startIfDesired()
@@ -196,7 +205,7 @@ final class GarageModel: ObservableObject {
 
     func select(_ vehicle: Vehicle) {
         selectedVin = vehicle.vin
-        UserDefaults.standard.set(vehicle.vin, forKey: "toqdas.selectedVin")
+        preferences.selectedVin = vehicle.vin
         link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
     }
 
@@ -322,7 +331,7 @@ final class GarageModel: ObservableObject {
             auxiliaryBatteryPercent: cloud.auxiliaryBatteryPercent,
             odometerKM: cloud.odometerKM,
             chargingState: cloud.chargingState,
-            proximityEnabled: UserDefaults.standard.bool(forKey: "toqdas.proximity.enabled.\(vin)"),
+            proximityEnabled: preferences.proximityEnabled(for: vin),
             recovering: link.silentRecovery
         ))
         refreshCloudIfStale()

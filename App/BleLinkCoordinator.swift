@@ -22,6 +22,7 @@ final class BleLinkCoordinator: ObservableObject {
 
     private let ble: BleConnection
     private let api: ToggAPI
+    private let preferences: GaragePreferences
     private var vin = ""
     private var isSharedVehicle = false
 
@@ -37,17 +38,15 @@ final class BleLinkCoordinator: ObservableObject {
     private var hasConnectedOnce = false
     private var lastStartAt: Date?
 
-    init(ble: BleConnection, api: ToggAPI) {
+    init(ble: BleConnection, api: ToggAPI, preferences: GaragePreferences = GaragePreferences()) {
         self.ble = ble
         self.api = api
+        self.preferences = preferences
     }
 
     /// Otomatik bağlanma izni: kullanıcı "bağlı tut" dediyse veya yakınlık açıksa.
     var autoConnectEnabled: Bool {
-        guard !vin.isEmpty else { return false }
-        let defaults = UserDefaults.standard
-        return defaults.bool(forKey: "toqdas.ble.keepConnected")
-            || defaults.bool(forKey: "toqdas.proximity.enabled.\(vin)")
+        preferences.autoConnectEnabled(for: vin)
     }
 
     func configure(vin: String, isShared: Bool = false) {

@@ -29,7 +29,7 @@ final class ProximityDetectionMonitor: ObservableObject {
         self.ble = ble
     }
 
-    private var enabledKey: String { "toqdas.proximity.enabled.\(vin)" }
+    private var enabledKey: String { GaragePreferences.proximityKey(for: vin) }
     private var nearKey: String { "toqdas.proximity.near.\(vin)" }
     private var farKey: String { "toqdas.proximity.far.\(vin)" }
     private var profileKey: String { "toqdas.proximity.profile.\(vin)" }
