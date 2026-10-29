@@ -67,6 +67,7 @@ struct DashboardView: View {
     @State private var updatedAt: Date?
     @State private var busy = false
     @State private var error: String?
+    @State private var facingError: UserFacingError?
     @State private var showCommands = false
     @State private var showDetail = false
     @State private var showDiscovery = false
@@ -258,7 +259,13 @@ struct DashboardView: View {
                     case .health: healthTab
                     }
 
-                    if let error {
+                    if let facingError {
+                        ErrorBanner(
+                            error: facingError,
+                            onRetry: { Task { await refresh() } },
+                            onDismiss: { self.facingError = nil }
+                        )
+                    } else if let error {
                         Text(error)
                             .font(.footnote)
                             .foregroundStyle(ToggTheme.pink)
@@ -1645,12 +1652,15 @@ struct DashboardView: View {
         guard !authBusy else { return }
         authBusy = true
         error = nil
+        facingError = nil
         defer { authBusy = false }
         do {
             model.link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
             try await model.link.authenticateNow(overwriteOwner: overwriteOwner)
+        } catch is CancellationError {
+            return
         } catch {
-            self.error = error.localizedDescription
+            self.facingError = .from(error)
         }
     }
 
@@ -2314,6 +2324,7 @@ struct DashboardView: View {
             try Task.checkCancellation()
             telemetry = parsed
             updatedAt = parsed.vehicleUpdatedAt ?? Date()
+            facingError = nil
             if let odo = parsed.odometerKM {
                 drivingStats.record(odometer: odo, batteryPercent: parsed.batteryPercent)
             }
@@ -2322,7 +2333,7 @@ struct DashboardView: View {
         } catch is CancellationError {
             return
         } catch {
-            self.error = error.localizedDescription
+            self.facingError = .from(error)
         }
     }
 }
@@ -3270,9 +3281,10 @@ struct LoginView: View {
                 .disabled(model.busy)
 
                 if model.busy { ProgressView().tint(ToggTheme.teal) }
-                if let error = model.error {
-                    Text(error).font(.footnote).foregroundStyle(ToggTheme.pink)
-                        .multilineTextAlignment(.center)
+                if let facingError = model.facingError {
+                    ErrorBanner(error: facingError,
+                                onRetry: { Task { await model.refresh() } },
+                                onDismiss: { model.facingError = nil })
                 }
                 Spacer()
                 Text("Togg ID ve araç bilgileri üretim servislerini kullanır.")

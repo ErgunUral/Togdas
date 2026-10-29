@@ -8,7 +8,7 @@ final class GarageModel: ObservableObject {
     @Published var vehicles: [Vehicle] = []
     @Published var signedIn = false
     @Published var busy = false
-    @Published var error: String?
+    @Published var facingError: UserFacingError?
     @Published var linkStatus = ""
     @Published var silentRecovery = false
     @Published var selectedVin: String? = UserDefaults.standard.string(forKey: "toqdas.selectedVin")
@@ -27,7 +27,7 @@ final class GarageModel: ObservableObject {
         proximityMonitor = ProximityDetectionMonitor(ble: ble)
         link = BleLinkCoordinator(ble: ble, api: api)
         do { signedIn = try api.hasSession() }
-        catch { self.error = error.localizedDescription }
+        catch { self.facingError = .from(error) }
 
         if let selectedVin {
             // Eski sürümlerden kalan geçici paylaşılan anahtar kayıtlarını temizle.
@@ -132,14 +132,14 @@ final class GarageModel: ObservableObject {
     func login() async {
         guard !busy else { return }
         busy = true
-        error = nil
+        facingError = nil
         defer { busy = false }
         do {
             let result = try await loginCoordinator.login()
             try await api.login(code: result.code, verifier: result.verifier)
             signedIn = true
             try await load()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.facingError = .from(error) }
     }
 
     private func load() async throws {
@@ -203,10 +203,10 @@ final class GarageModel: ObservableObject {
     func refresh() async {
         guard signedIn, !busy else { return }
         busy = true
-        error = nil
+        facingError = nil
         defer { busy = false }
         do { try await load() }
-        catch { self.error = error.localizedDescription }
+        catch { self.facingError = .from(error) }
     }
 
     func logout() {
@@ -216,7 +216,7 @@ final class GarageModel: ObservableObject {
             signedIn = false
             watch.publish(names: [])
             publishWidgetSnapshot()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.facingError = .from(error) }
     }
 
     // MARK: - Saat köprüsü
@@ -430,9 +430,9 @@ struct GarageView: View {
                 Button("Yenile") { Task { await model.refresh() } }
                     .buttonStyle(.borderedProminent).disabled(model.busy)
                 if model.busy { ProgressView().tint(ToggTheme.teal) }
-                if let error = model.error {
-                    Text(error).font(.footnote).foregroundStyle(ToggTheme.pink)
-                        .multilineTextAlignment(.center)
+                if let facingError = model.facingError {
+                    ErrorBanner(error: facingError, onRetry: { Task { await model.refresh() } },
+                                onDismiss: { model.facingError = nil })
                 }
             }
             .padding(24)
@@ -446,7 +446,7 @@ struct VehicleDetail: View {
     @State private var result = ""
     @State private var telemetry: VehicleTelemetry?
     @State private var receivedAt: Date?
-    @State private var error: String?
+    @State private var facingError: UserFacingError?
     @State private var busy = false
 
     var body: some View {
@@ -485,7 +485,10 @@ struct VehicleDetail: View {
                         .frame(maxWidth: .infinity)
                 }.buttonStyle(.borderedProminent).disabled(busy)
                 if busy { ProgressView() }
-                if let error { Text(error).foregroundStyle(.red) }
+                if let facingError {
+                    ErrorBanner(error: facingError, onRetry: { Task { await refresh() } },
+                                onDismiss: { self.facingError = nil })
+                }
                 if !result.isEmpty {
                     DisclosureGroup("Teknik servis yanıtı") {
                         Text(result).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
@@ -516,7 +519,7 @@ struct VehicleDetail: View {
     private func refresh() async {
         guard !busy else { return }
         busy = true
-        error = nil
+        facingError = nil
         defer { busy = false }
         do {
             let response = try await api.details(for: vehicle)
@@ -527,7 +530,7 @@ struct VehicleDetail: View {
             receivedAt = Date()
         } catch is CancellationError {
             return
-        } catch { self.error = error.localizedDescription }
+        } catch { self.facingError = .from(error) }
     }
 }
 
