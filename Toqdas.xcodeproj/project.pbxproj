@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E2E0A1B2C3D4E5F60718293A /* E2EHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E0A1B2C3D4E5F60718293B /* E2EHarness.swift */; };
 		0062635A8B24E32231FAE0F0 /* EnergyPricing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CDCAC4C8F3596E99B43B8E6 /* EnergyPricing.swift */; };
 		00D259AB3EE47C81D03D7D4C /* GRPCProto.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A6D5A34D02E0858EF62F82 /* GRPCProto.swift */; };
 		01D2482999D0569E46DDFF10 /* ChargingEstimate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C656C463F5F07112DFBC2398 /* ChargingEstimate.swift */; };
@@ -155,6 +156,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E2E0A1B2C3D4E5F60718293B /* E2EHarness.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = E2EHarness.swift; path = App/E2EHarness.swift; sourceTree = "<group>"; };
 		02AC29F97B99B77107E2C112 /* GRPCProto.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = GRPCProto.swift; path = Core/GRPCProto.swift; sourceTree = "<group>"; };
 		03818B913F27CF35EDB83E06 /* ToqdasWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ToqdasWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		05F08FBFC60D10D394CA5BA2 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Watch/Assets.xcassets; sourceTree = "<group>"; };
@@ -332,6 +334,7 @@
 				411E3E4ABBC6C73898F4546D /* SessionStore.swift */,
 				E97AC49AE2ABA02AA6D304E9 /* ToggAPI.swift */,
 				4E893B70F3216DCD1099B811 /* ToqdasApp.swift */,
+				E2E0A1B2C3D4E5F60718293B /* E2EHarness.swift */,
 				0EA6278A026A65A776D46227 /* VoiceAssistant.swift */,
 				726267B05D0DDF66575C2144 /* VoiceSheet.swift */,
 				E11854A761FC25AD5CF9F967 /* BLEProtocol.swift */,
@@ -667,6 +670,7 @@
 				D99DEECED119DF76411AA16A /* ChargingBudgetCard.swift in Sources */,
 				4A200B0668C4514398BB6591 /* MaintenanceCard.swift in Sources */,
 				06F1A723038A48755E84F117 /* TurkishFormat.swift in Sources */,
+				E2E0A1B2C3D4E5F60718293A /* E2EHarness.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

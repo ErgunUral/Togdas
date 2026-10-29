@@ -443,6 +443,11 @@ struct GarageView: View {
             .background((ToggThemeStyle(rawValue: themeName)?.backgroundColor ?? ToggTheme.background).ignoresSafeArea())
             .task {
                 if model.signedIn && model.vehicles.isEmpty { await model.refresh() }
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-e2e") {
+                    await E2EHarness.run(model: model)
+                }
+                #endif
             }
         }
         .preferredColorScheme(.dark)
