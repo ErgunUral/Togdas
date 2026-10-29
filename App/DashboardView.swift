@@ -538,9 +538,9 @@ struct DashboardView: View {
                     Image(systemName: "chart.bar.xaxis")
                         .font(.system(size: 15)).foregroundStyle(ToggTheme.teal)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Şarj ve Yolculuk Geçmişi")
+                        Text("Seyahatname")
                             .font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
-                        Text("Togg Drive Experience kayıtları")
+                        Text("Yolculuk, şarj ve karşılaştırma kayıtları")
                             .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
                     }
                     Spacer()
@@ -2524,7 +2524,7 @@ private struct DashboardHeader: View {
                         }
                         Button("Araç detayı", systemImage: "info.circle") { onOpenDetail() }
                         Button("Servis kartı", systemImage: "wrench.and.screwdriver") { onOpenService() }
-                        Button("Sürüş & şarj analizi", systemImage: "chart.xyaxis.line") { onOpenExperience() }
+                        Button("Seyahatname", systemImage: "chart.xyaxis.line") { onOpenExperience() }
                         Button("Bildirimler & destek", systemImage: "bell.badge") { onOpenAccount() }
                         Button("Bluetooth komutları", systemImage: "key.horizontal") { onOpenCommands() }
                         Button("Bluetooth taraması", systemImage: "dot.radiowaves.left.and.right") { onOpenDiscovery() }

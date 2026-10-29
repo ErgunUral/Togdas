@@ -183,7 +183,7 @@ struct DriveExperienceView: View {
                     .font(.system(size: 18)).foregroundStyle(ToggTheme.teal)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text("Sürüş & Şarj Analizi")
+                Text("Seyahatname")
                     .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
                 Text(vehicle.title + " • " + (vehicle.plate.isEmpty ? vehicle.vin : vehicle.plate))
                     .font(.system(size: 12)).foregroundStyle(ToggTheme.muted)
