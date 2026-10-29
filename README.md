@@ -303,9 +303,16 @@ new watchOS versions; observe documented runtime errors and test target versions
 - Şarj harcaması: Seyahatname > Şarjlar sekmesinde haftalık/aylık/yıllık dönem seçilir;
   "Önceki/Sonraki" ile geçmiş dönemlere gidilir (`anchor=yyyy`, `yyyy-MM`, `yyyy-MM-dd`).
   Dönem özeti şarj sayısı, toplam/ortalama enerji, "Tahmini maliyet" ve "Seans başına tutar"
-  gösterir. Sunucu `total_price`/`total_cost` döndürürse gerçek "Toplam harcama" önce gelir;
-  her şarj kaydında servis tutarı varsa "Tutar", yoksa enerji × birim fiyat ile "≈ Tahmini tutar"
-  yazılır. Enerji yoksa tutar uydurulmaz.
+  gösterir. Sunucu `total_price`/`total_cost` döndürürse gerçek "Toplam harcama" ve gerçek
+  seans ortalaması gelir, tahmin satırı gösterilmez. Gerçek yanıtta kayıt içindeki `cost`
+  birim fiyattır (₺/kWh); seans tutarı `total_price`'dır. Her şarj kaydında `total_price`
+  varsa "Tutar", yoksa enerji × birim fiyat ile "≈ Tahmini tutar" yazılır. Enerji yoksa
+  tutar uydurulmaz.
+- Dönem çapası: sunucu düz `anchor` parametresini yok sayıyor; Android köprüsü gibi
+  `anchor_year` (yyyy), `anchor_month` (yyyy-MM), `anchor_date` (yyyy-MM-dd) gönderilir.
+- Canlı hesapta doğrulandı (Ekim 2026): bu ay 5 şarj · 263,04 kWh · 3.940,34 ₺ (14,98 ₺/kWh);
+  Haziran 2026: 10 şarj · 5.408,92 ₺; 2026 yılı: 40 şarj · 25.939,92 ₺; 28 Eylül 2026 haftası:
+  1 şarj · 987,48 ₺. Kayıtlarda `total_price` seans tutarı, `cost` birim fiyat (₺/kWh).
   Özet (`this_month`, `last_month`, `last_month_calendar`, `all_time`,
   `community_comparison`, `last_journey`, `last_charge`), yolculuk/şarj listeleri
   (`journeys`, `charges`), dönem grafikleri (`period_km`, `period_energy`) ve

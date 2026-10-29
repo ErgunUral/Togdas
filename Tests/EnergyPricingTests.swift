@@ -91,7 +91,7 @@ final class ChargeSpendingTests: XCTestCase {
       "summary": {"total_sessions": 4, "total_energy_kwh": 40, "avg_cost_per_kwh": 9.5},
       "charges": [
         {"charge_id": "c1", "kwh_added": 12, "soc_start_pct": 30, "soc_end_pct": 60},
-        {"charge_id": "c2", "kwh_added": 10, "cost": 95},
+        {"charge_id": "c2", "kwh_added": 10, "total_price": 95},
         {"charge_id": "c3", "kwh_added": 9},
         {"charge_id": "c4", "kwh_added": 9}
       ]
@@ -119,6 +119,9 @@ final class ChargeSpendingTests: XCTestCase {
         """
         let period = try XCTUnwrap(ExperienceFormat.period(from: data(json), kind: .charges, pricePerKWh: 10))
         XCTAssertEqual(period.metrics.first { $0.label == "Toplam harcama" }?.value, "285.00 ₺")
+        XCTAssertEqual(period.metrics.first { $0.label == "Seans başına tutar" }?.value, "142.50 ₺")
+        // Sunucu gerçek tutar verdiyse tahmini maliyet gösterilmez.
+        XCTAssertNil(period.metrics.first { $0.label == "Tahmini maliyet" })
     }
 
     func testChargeRecordUsesServerCostThenEstimate() throws {
@@ -152,10 +155,32 @@ final class ChargeSpendingTests: XCTestCase {
 
     func testDetailKeepsServerCostWhenPresent() throws {
         let json = """
-        {"charge_id": "c2", "kwh_added": 10, "cost": 95}
+        {"charge_id": "c2", "kwh_added": 10, "total_price": 95}
         """
         let detail = try XCTUnwrap(ExperienceFormat.detail(from: data(json), kind: .charges, pricePerKWh: 10))
         XCTAssertTrue(detail.notes.contains { $0.contains("Servisteki maliyet: 95.00") })
         XCTAssertFalse(detail.notes.contains { $0.contains("Tahmini tutar") })
+    }
+}
+
+extension ChargeSpendingTests {
+    /// Gerçek yanıtta `cost` birim fiyattır (₺/kWh); toplam sanılmamalı.
+    func testUnitPriceFieldIsNotUsedAsTotalCost() throws {
+        let json = """
+        {"charges": [{"charge_id": "c7", "kwh_added": 10, "cost": 14.98, "currency": "TRY"}]}
+        """
+        let period = try XCTUnwrap(ExperienceFormat.period(from: data(json), kind: .charges, pricePerKWh: 10))
+        let record = try XCTUnwrap(period.records.first)
+        XCTAssertNil(record.metrics.first { $0.label == "Tutar" })
+        XCTAssertEqual(record.metrics.first { $0.label == "Tahmini tutar" }?.value, "≈ 100 ₺")
+    }
+
+    func testDetailDoesNotTreatUnitPriceAsTotal() throws {
+        let json = """
+        {"charge_id": "c7", "kwh_added": 10, "cost": 14.98}
+        """
+        let detail = try XCTUnwrap(ExperienceFormat.detail(from: data(json), kind: .charges, pricePerKWh: 10))
+        XCTAssertFalse(detail.notes.contains { $0.contains("Servisteki maliyet: 14.98") })
+        XCTAssertTrue(detail.notes.contains { $0.contains("Tahmini tutar") && $0.contains("100") })
     }
 }

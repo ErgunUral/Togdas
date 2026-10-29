@@ -457,12 +457,17 @@ enum ExperienceFormat {
                 appendMetric(&metrics, "Seans başına", "\(oneDecimal(totalEnergy / sessions)) kWh")
             }
             appendMetric(&metrics, "Birim maliyet", number(summary, ["avg_cost_per_kwh"]).map { "\(twoDecimals($0)) ₺/kWh" })
-            // Sunucu dönem toplamı döndürürse gerçek tutar önce gösterilir.
-            appendMetric(&metrics, "Toplam harcama", number(summary, ["total_price", "total_cost"]).map { "\(twoDecimals($0)) ₺" })
-            appendCostMetrics(&metrics, energyKWh: totalEnergy, distanceKM: nil, pricePerKWh: pricePerKWh)
-            if let sessions, sessions > 0, let totalEnergy,
-               let cost = EnergyPricing(pricePerKWh: pricePerKWh).cost(forEnergyKWh: totalEnergy) {
-                appendMetric(&metrics, "Seans başına tutar", "≈ \(whole(cost / sessions)) ₺")
+            // Sunucu gerçek tutarı döndürüyorsa tahmin gösterilmez; çelişki olmasın.
+            let serverTotal = number(summary, ["total_price", "total_cost"])
+            appendMetric(&metrics, "Toplam harcama", serverTotal.map { "\(twoDecimals($0)) ₺" })
+            if let serverTotal, let sessions, sessions > 0 {
+                appendMetric(&metrics, "Seans başına tutar", "\(twoDecimals(serverTotal / sessions)) ₺")
+            } else {
+                appendCostMetrics(&metrics, energyKWh: totalEnergy, distanceKM: nil, pricePerKWh: pricePerKWh)
+                if let sessions, sessions > 0, let totalEnergy,
+                   let estimate = EnergyPricing(pricePerKWh: pricePerKWh).cost(forEnergyKWh: totalEnergy) {
+                    appendMetric(&metrics, "Seans başına tutar", "≈ \(whole(estimate / sessions)) ₺")
+                }
             }
         }
 
@@ -513,7 +518,8 @@ enum ExperienceFormat {
             if let energy = energy(addedEnergy) {
                 metrics.append(ExperienceMetric(label: "Enerji", value: energy))
             }
-            if let servedCost = number(dictionary, ["total_price", "cost"]) {
+            // Gerçek yanıtta `cost` birim fiyat (₺/kWh), `total_price` seans tutarıdır.
+            if let servedCost = number(dictionary, ["total_price"]) {
                 metrics.append(ExperienceMetric(label: "Tutar", value: "\(twoDecimals(servedCost)) ₺"))
             } else if let pricePerKWh,
                       let estimate = EnergyPricing(pricePerKWh: pricePerKWh).cost(forEnergyKWh: addedEnergy) {
@@ -573,7 +579,7 @@ enum ExperienceFormat {
             if let type = display(text(root, ["charge_type"])) {
                 notes.append("Şarj türü: \(type)")
             }
-            if let price = number(root, ["total_price", "cost"]) {
+            if let price = number(root, ["total_price"]) {
                 notes.append("Servisteki maliyet: \(twoDecimals(price)) ₺ · Ödeme/fatura olarak doğrulanmadı.")
             } else if let pricePerKWh,
                       let estimate = EnergyPricing(pricePerKWh: pricePerKWh).cost(forEnergyKWh: added) {

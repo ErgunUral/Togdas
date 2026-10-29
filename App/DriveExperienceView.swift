@@ -18,10 +18,28 @@ struct DriveExperienceView: View {
     let vehicle: Vehicle
     let api: ToggAPI
 
-    @State private var kind = ExperienceKind.journeys
-    @State private var period = "Monthly"
+    @State private var kind = ProcessInfo.processInfo.arguments.contains("-experienceCharges")
+        ? ExperienceKind.charges : ExperienceKind.journeys
+    @State private var period: String = {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if let index = args.firstIndex(of: "-experiencePeriod"), index + 1 < args.count,
+           ["Weekly", "Monthly", "Annual"].contains(args[index + 1]) {
+            return args[index + 1]
+        }
+        #endif
+        return "Monthly"
+    }()
     /// Sunucuya gönderilen dönem çapası: yıllık "2026", aylık "2026-10", haftalık "2026-10-19".
-    @State private var anchor: String?
+    @State private var anchor: String? = {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if let index = args.firstIndex(of: "-experienceAnchor"), index + 1 < args.count {
+            return args[index + 1]
+        }
+        #endif
+        return nil
+    }()
     @State private var dashboard: ExperienceDashboard?
     @State private var selectedSummaryID: String?
     @State private var metrics: [ExperienceMetric] = []
@@ -672,7 +690,7 @@ struct DriveExperienceView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Elektrik birim fiyatı")
                         .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
-                    Text("Maliyet ve km başına tutar bu fiyatla tahmin edilir; fatura değildir.")
+                    Text("Sunucu gerçek tutarı döndürürse o gösterilir; dönmezse maliyet bu fiyatla tahmin edilir. Fatura değildir.")
                         .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -698,6 +716,47 @@ struct DriveExperienceView: View {
             recomputeMetricsFromLastResponse()
         }
     }
+
+    #if DEBUG
+    /// Yalnız `-experienceCharges` ile açılan tanılama oturumunda günlük üretir.
+    private var chargeDiagnosticsEnabled: Bool {
+        ProcessInfo.processInfo.arguments.contains("-experienceCharges")
+    }
+
+    /// Sunucunun şarj yanıtında hangi maliyet alanlarını döndürdüğünü görünür kılar.
+    /// Yalnız hata ayıklamada ve `-experienceCharges` ile açılan ekranda çalışır.
+    private func logChargeFields(_ data: Data) {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            print("[CHARGES] yanıt JSON olarak çözülemedi")
+            return
+        }
+        let summary = root["summary"] as? [String: Any] ?? root
+        let charges = root["charges"] as? [[String: Any]] ?? []
+        print("[CHARGES] kayıt sayısı=\(charges.count)")
+        print("[CHARGES] summary anahtarları=\(summary.keys.sorted().joined(separator: ","))")
+        print("[CHARGES] summary maliyet alanları=\(costFields(summary))")
+        for (index, charge) in charges.prefix(3).enumerated() {
+            print("[CHARGES] #\(index) anahtarlar=\(charge.keys.sorted().joined(separator: ","))")
+            print("[CHARGES] #\(index) maliyet=\(costFields(charge))")
+        }
+        if let page = ExperienceFormat.period(from: data, kind: .charges, offset: 0, pricePerKWh: pricePerKWh) {
+            let summaryLine = page.metrics.map { "\($0.label)=\($0.value)" }.joined(separator: " | ")
+            print("[CHARGES] ekranda=\(summaryLine)")
+            if let first = page.records.first {
+                let line = first.metrics.map { "\($0.label)=\($0.value)" }.joined(separator: " | ")
+                print("[CHARGES] ilk kayıt=\(line)")
+            }
+        }
+    }
+
+    private func costFields(_ dictionary: [String: Any]) -> String {
+        let fields = dictionary.filter {
+            let key = $0.key.lowercased()
+            return key.contains("cost") || key.contains("price") || key.contains("amount")
+        }
+        return fields.isEmpty ? "yok" : fields.map { "\($0.key)=\($0.value)" }.sorted().joined(separator: " | ")
+    }
+    #endif
 
     /// Fiyat değişince yeniden istek atmadan son yanıttan maliyet satırlarını günceller.
     private func recomputeMetricsFromLastResponse() {
@@ -853,6 +912,11 @@ struct DriveExperienceView: View {
     private func load(reset: Bool) async {
         requestGeneration += 1
         let token = requestGeneration
+        #if DEBUG
+        if kind == .charges, chargeDiagnosticsEnabled {
+            print("[CHARGES] istek anchor=\(anchor ?? "nil") period=\(period) offset=\(offset)")
+        }
+        #endif
         busy = true
         error = nil
         if reset {
@@ -869,6 +933,9 @@ struct DriveExperienceView: View {
             )
             guard token == requestGeneration else { return }
             raw = String(decoding: data, as: UTF8.self)
+            #if DEBUG
+            if kind == .charges, chargeDiagnosticsEnabled { logChargeFields(data) }
+            #endif
             guard let page = ExperienceFormat.period(from: data, kind: kind, offset: offset,
                                                      pricePerKWh: pricePerKWh) else {
                 throw AppError.message("Analiz yanıtı beklenen biçimde değil.")

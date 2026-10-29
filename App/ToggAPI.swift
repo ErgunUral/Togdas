@@ -314,7 +314,16 @@ final class ToggAPI {
         case "journeys", "charges":
             path += kind == "charges" ? "/chargingOverview\(period)" : "/journeysOverview\(period)"
             query = [.init(name: "limit", value: "20"), .init(name: "offset", value: String(max(0, offset)))]
-            if let anchor, !anchor.isEmpty { query.append(.init(name: "anchor", value: anchor)) }
+            if let anchor, !anchor.isEmpty {
+                // Sunucu dönem türüne göre ayrı parametre bekliyor; "anchor" yok sayılıyor.
+                let key: String
+                switch period {
+                case "Annual": key = "anchor_year"
+                case "Monthly": key = "anchor_month"
+                default: key = "anchor_date"
+                }
+                query.append(.init(name: key, value: anchor))
+            }
         case "journeyDetail":
             path += "/journeys/\(id ?? "")"
         case "chargeDetail":
