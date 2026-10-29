@@ -7,6 +7,8 @@ struct VehicleWidgetSnapshot: Codable, Equatable {
     let locked: Bool?
     let batteryPercent: Double?
     let rangeKM: Double?
+    /// Bu ayın gerçek şarj harcaması; kayıt yoksa nil. Tahmin yazılmaz.
+    let monthlyChargeSpendTRY: Double?
     let bleReady: Bool
     let bleUpdatedAt: Date?
     let cloudUpdatedAt: Date?
@@ -29,6 +31,18 @@ struct VehicleWidgetSnapshot: Codable, Equatable {
     var displayRange: String {
         guard let rangeKM, rangeKM.isFinite else { return "—" }
         return "\(Int(rangeKM.rounded())) km"
+    }
+
+    var displayChargeSpend: String {
+        guard let monthlyChargeSpendTRY, monthlyChargeSpendTRY.isFinite, monthlyChargeSpendTRY >= 0 else {
+            return "—"
+        }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.maximumFractionDigits = 0
+        formatter.minimumFractionDigits = 0
+        let text = formatter.string(from: NSNumber(value: monthlyChargeSpendTRY)) ?? "—"
+        return "\(text) ₺"
     }
 
     var displayLock: String {

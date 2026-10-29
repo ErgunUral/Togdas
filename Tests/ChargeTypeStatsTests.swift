@@ -86,3 +86,55 @@ final class ChargeTypeStatsTests: XCTestCase {
         XCTAssertEqual(stats.map(\.type), ["Hızlı şarj", "Yavaş şarj"])
     }
 }
+
+final class ChargeCostComparisonTests: XCTestCase {
+    private func data(_ json: String) -> Data { Data(json.utf8) }
+
+    func testOctoberComparison() throws {
+        let json = """
+        {"summary": {"total_price": 3940.34, "total_energy_kwh": 263.04,
+                     "avg_cost_per_kwh": 14.98}, "charges": []}
+        """
+        let comparison = try XCTUnwrap(ExperienceFormat.chargeCostComparison(from: data(json),
+                                                                            pricePerKWh: 10))
+        XCTAssertEqual(comparison.actualTRY, 3940.34, accuracy: 0.01)
+        XCTAssertEqual(comparison.estimatedTRY, 2630.40, accuracy: 0.01)
+        XCTAssertEqual(comparison.differenceTRY, 1309.94, accuracy: 0.01)
+        XCTAssertEqual(comparison.differenceRatio ?? 0, 0.498, accuracy: 0.001)
+        XCTAssertEqual(comparison.actualPricePerKWh ?? 0, 14.98, accuracy: 0.01)
+        XCTAssertEqual(comparison.assumedPricePerKWh, 10, accuracy: 0.001)
+    }
+
+    func testActualUnitPriceFallsBackToDivision() throws {
+        let json = """
+        {"summary": {"total_price": 500, "total_energy_kwh": 50}, "charges": []}
+        """
+        let comparison = try XCTUnwrap(ExperienceFormat.chargeCostComparison(from: data(json),
+                                                                            pricePerKWh: 8))
+        XCTAssertEqual(comparison.actualPricePerKWh ?? 0, 10, accuracy: 0.001)
+        XCTAssertEqual(comparison.estimatedTRY, 400, accuracy: 0.001)
+    }
+
+    func testServerTotalFallsBackToTotalCost() throws {
+        let json = """
+        {"summary": {"total_cost": 987.48, "total_energy_kwh": 65.83}, "charges": []}
+        """
+        XCTAssertNotNil(ExperienceFormat.chargeCostComparison(from: data(json), pricePerKWh: 15))
+    }
+
+    func testMissingInputsReturnNil() {
+        XCTAssertNil(ExperienceFormat.chargeCostComparison(from: data("{\"summary\": {}}"),
+                                                           pricePerKWh: 10))
+        XCTAssertNil(ExperienceFormat.chargeCostComparison(
+            from: data("{\"summary\": {\"total_price\": 100, \"total_energy_kwh\": 0}}"),
+            pricePerKWh: 10))
+        XCTAssertNil(ExperienceFormat.chargeCostComparison(
+            from: data("{\"summary\": {\"total_price\": 100, \"total_energy_kwh\": 10}}"),
+            pricePerKWh: 0))
+        // Birim fiyat 100 ile sınırlanır; tahmin yine üretilir.
+        let comparison = ExperienceFormat.chargeCostComparison(
+            from: data("{\"summary\": {\"total_price\": 100, \"total_energy_kwh\": 10}}"),
+            pricePerKWh: 500)
+        XCTAssertEqual(comparison?.estimatedTRY ?? 0, 1000, accuracy: 0.001)
+    }
+}

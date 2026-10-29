@@ -63,9 +63,10 @@ It overwrites project settings; preserve manual project changes before running i
   yerel arama/mesafe filtresi, harita ve Apple Maps yol tarifi. Cihaz konumu EPDK'ya
   gönderilmez, istemci geocoding yapılmaz; katalog saatlik sınırla önbelleğe alınır.
   EPDK kataloğu canlı soket uygunluğu/fiyat bilgisi sağlamaz.
-- Read-only WidgetKit araç özeti (small/medium): kilit, bulut batarya/menzil ve veri yaşı.
-  App Group `group.com.toqdas.ios` üzerinden hassas olmayan snapshot alır; WidgetKit
-  yenileme sıklığı sistem politikasına bağlıdır. İmzalı iPhone kurulumu başarılı.
+- Read-only WidgetKit araç özeti (small/medium): kilit, bulut batarya/menzil, bu ayın
+  gerçek şarj harcaması ve veri yaşı. Harcama yoksa "—" gösterilir, 0 yazılmaz. App Group
+  `group.com.toqdas.ios` üzerinden hassas olmayan snapshot alır; WidgetKit yenileme sıklığı
+  sistem politikasına bağlıdır. İmzalı iPhone kurulumu başarılı.
 - İklimlendirme: Togg uzaktan kontrol gRPC servisinden `GetClimateControlStatus` ile
   açık/kapalı ve hedef sıcaklık okunur; `SendClimateControlCommand` ile 16–30 °C arası
   hedefle açma/kapatma ve sıcaklık uygulama yapılır. Her komuttan sonra araç durumu
@@ -195,17 +196,25 @@ Doğrulama durumu: cihazda tr-TR için `supportsOnDeviceRecognition = true` okun
 hattı tanı testiyle açıldı. `-voiceDemo "Şarjım ne kadar?"` cihazda yeni ayrıştırıcıyla
 `status(.battery)` üretip “Batarya yüzde 63, menzil 233 kilometre” yanıtını ve TTS’i çalıştırdı.
 Arayüzden tam sesli komut cümlesi, araç içi gürültü ve eylem onayı henüz denenmedi.
-Siri/App Intents: `Core/CarShortcuts.swift` dört komut sunar (kilitle, kilidi aç, bagajı aç,
-bagajı kapat). Kısayollar `toqdas://command?action=<lock|unlock|trunkOpen|trunkClose>` URL'ine
-yönlendirir; URL ayrıştırma `Core/ShortcutLink.swift` içinde tek yerde ve birim testlidir.
-Komutlar yine `BLECommandPolicy` kapısından geçer (READY + 15 sn taze telemetri); reddedilirse
-uygulama gerekçeyi hata bandında gösterir, sessizce yutmaz.
+Siri/App Intents: `App/CarShortcuts.swift` dört yazma komutu sunar (kilitle, kilidi aç, bagajı
+aç, bagajı kapat). Kısayollar `toqdas://command?action=<lock|unlock|trunkOpen|trunkClose>`
+URL'ine yönlendirir; URL ayrıştırma `Core/ShortcutLink.swift` içinde tek yerde ve birim
+testlidir. Komutlar yine `BLECommandPolicy` kapısından geçer (READY + 15 sn taze telemetri);
+reddedilirse uygulama gerekçeyi hata bandında gösterir, sessizce yutmaz.
+
+Salt okunur Siri niyetleri (`App/ReadOnlyIntents.swift`): "Toqdas araç durumu / pil durumu"
+son widget özetinden pil, menzil ve kilit durumunu; "Toqdas bu ay şarj harcamam / şarj bütçem"
+bu ayın önbelleğe alınmış gerçek harcamasını ve varsa bütçe durumunu söyler. Bu niyetler
+`openAppWhenRun = false` ile çalışır, BLE bağlantısı kurmaz, komut göndermez ve veri yoksa
+tahmin üretmez; tazelik metni son güncelleme zamanını söyler.
 
 Siri/Shortcuts elle test adımları (araç yanında, uygulama arka planda):
 1. Kısayollar uygulaması > Toqdas > "Arabamı kilitle" kısayolunu çalıştır.
 2. Uygulama açılır; BLE hazır değilse "Kilitle gönderilemedi" bandı ve gerekçe görünür.
 3. Araç uyanıkken ve "Komut hazır" iken aynı kısayol kilitleme komutunu gönderir.
 4. Aynı adımlar "Arabamı aç" ve "Bagajı aç/kapat" için tekrarlanır.
+5. Uygulama arka plandayken "Hey Siri, Toqdas araç durumu" ve "Hey Siri, Toqdas bu ay şarj
+   harcamam" denir; yanıt yalnız okuma olmalı, uygulama BLE komutu göndermemeli.
 
 Geliştirme kısıtı: iPhone Mac'e **kabloyla** bağlıyken mikrofon tüm örnekleri sıfır veriyor
 (rota `builtInMic`, `isInputMuted = false` olmasına rağmen). Kablo çıkarılınca ses normal
@@ -321,6 +330,14 @@ new watchOS versions; observe documented runtime errors and test target versions
   `total_price` toplamıdır; tutar yoksa birim fiyatla tahmin edilir ve "≈" ile işaretlenir.
   Sayfalar tamamlanamazsa kart bunu açıkça söyler. Canlı doğrulama (2026 yılı):
   38 hızlı şarj 25.545,10 ₺ + 2 yavaş şarj 394,82 ₺ = 25.939,92 ₺ (özet toplamıyla aynı).
+- Gerçek/tahmin karşılaştırması: Şarjlar döneminde sunucunun gerçek `total_price` tutarı ile
+  enerji × kullanıcı birim fiyatı yan yana gösterilir; fark ve % oranı yazılır. Gerçek birim
+  fiyat (`avg_cost_per_kwh`) varsa varsayımla birlikte gösterilir. Tahmin fatura değildir ve
+  gerçek tutarı değiştirmez.
+- CSV dışa aktarma: "Kayıtlar" başlığındaki paylaş simgesiyle **yüklenen** kayıtlar
+  `Seyahatname-<tür>-<dönem>.csv` olarak paylaşılır. UTF-8 BOM ve noktalı virgül kullanılır;
+  yüklenmemiş sayfalar varmış gibi aktarılmaz. Sütunlar tür, tarih, konum/rota ve kayıtta
+  görünen metriklerdir.
 - Aylık şarj bütçesi: Panodaki "Şarj Bütçesi" kartında kullanıcı 0–30.000 ₺ arası limit
   belirler (0 = kapalı). Harcama, Seyahatname > Şarjlar > Bu ay açıldığında sunucunun gerçek
   `total_price`/`total_cost` toplamından VIN bazlı önbelleğe yazılır; tahmini tutar bütçeye
@@ -340,6 +357,10 @@ new watchOS versions; observe documented runtime errors and test target versions
 - Bütçe önbelleği canlı doğrulandı (29 Ekim 2026): Seyahatname > Şarjlar açıldığında
   `[BUDGET] month=2026-10 spend=3940.34` kaydı yazıldı; pano kartı bu tutarı kullanır.
   Limit kaydırıcısı, eşik bildirimi ve ay devri cihazda ayrıca kontrol edilecek.
+- Gerçek/tahmin canlı doğrulandı (29 Ekim 2026): cihazdaki 14,88 ₺/kWh varsayımıyla tahmin
+  3.914,04 ₺, sunucu gerçeği 3.940,34 ₺, fark +26,30 ₺; kart bu değerleri gösterir.
+- Siri salt okunur niyetleri derlendi; fiziksel Siri/Shortcuts çağrısı ve widget'ta harcama
+  görünümü henüz cihazda gözle doğrulanmadı.
 - Klima gRPC istemcisi: protobuf kodlama/çözme ve gRPC çerçeve testleri geçti; uygulama
   cihaz için derlendi. `GetClimateControlStatus` cihazda `gRPC 14` ve
   `upstream connect error … 111` döndürdü; aynı yanıt kimlik doğrulaması olmadan da

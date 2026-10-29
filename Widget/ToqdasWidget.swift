@@ -29,7 +29,7 @@ struct ToqdasVehicleStatusWidget: Widget {
             VehicleStatusView(snapshot: entry.snapshot)
         }
         .configurationDisplayName("Toqdas Araç Durumu")
-        .description("Kilit, batarya ve menzil bilgilerini gösterir. Komut göndermez.")
+        .description("Kilit, batarya, menzil ve bu ayın şarj harcamasını gösterir. Komut göndermez.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -83,6 +83,7 @@ private struct VehicleStatusView: View {
                 metric("Battery.100", snapshot.displayBattery)
                 metric("road.lanes", snapshot.displayRange)
             }
+            metric("bolt.car.fill", "Bu ay \(snapshot.displayChargeSpend)")
             freshness(snapshot)
         }
     }
@@ -101,6 +102,7 @@ private struct VehicleStatusView: View {
             VStack(alignment: .leading, spacing: 10) {
                 metric("Battery.100", snapshot.displayBattery)
                 metric("road.lanes", snapshot.displayRange)
+                metric("bolt.car.fill", "Bu ay \(snapshot.displayChargeSpend)")
             }
         }
     }

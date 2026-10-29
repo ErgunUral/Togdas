@@ -459,6 +459,23 @@ enum ExperienceFormat {
         }
     }
 
+    /// Gerçek tutar ile enerji × birim fiyat tahminini karşılaştırır.
+    /// Sunucu tutarı/enerjisi yoksa nil; tahmin fatura değildir.
+    static func chargeCostComparison(from data: Data, pricePerKWh: Double) -> ChargeCostComparison? {
+        guard let root = root(from: data) else { return nil }
+        let summary = root["summary"] as? [String: Any] ?? root
+        guard let actual = number(summary, ["total_price", "total_cost"]),
+              let energy = number(summary, ["total_energy_kwh", "total_kwh_added"]),
+              energy > 0, actual.isFinite, actual >= 0 else { return nil }
+        let pricing = EnergyPricing(pricePerKWh: pricePerKWh)
+        guard pricing.pricePerKWh > 0,
+              let estimate = pricing.cost(forEnergyKWh: energy) else { return nil }
+        let actualUnit = number(summary, ["avg_cost_per_kwh"]) ?? (actual / energy)
+        return ChargeCostComparison(actualTRY: actual, estimatedTRY: estimate,
+                                    energyKWh: energy, assumedPricePerKWh: pricing.pricePerKWh,
+                                    actualPricePerKWh: actualUnit)
+    }
+
     /// Sunucunun dönem için döndürdüğü gerçek şarj harcaması.
     /// Tutar yoksa nil döner; tahmini tutar burada hesaplanmaz.
     static func chargeSpend(from data: Data) -> Double? {
@@ -923,6 +940,23 @@ enum ExperienceFormat {
 
 private extension String {
     var upperCasedTr: String { uppercased(with: Locale(identifier: "tr_TR")) }
+}
+
+/// Sunucunun gerçek şarj tutarıyla kullanıcının birim fiyat varsayımıyla
+/// hesaplanan tahmini karşılaştırır. Yalnız sunucu tutarı ve enerji varsa üretilir.
+struct ChargeCostComparison: Equatable {
+    let actualTRY: Double
+    let estimatedTRY: Double
+    let energyKWh: Double
+    let assumedPricePerKWh: Double
+    let actualPricePerKWh: Double?
+
+    var differenceTRY: Double { actualTRY - estimatedTRY }
+
+    var differenceRatio: Double? {
+        guard estimatedTRY > 0 else { return nil }
+        return differenceTRY / estimatedTRY
+    }
 }
 
 /// Şarj türüne göre dönem özeti. Yalnız sunucudaki kayıtlardan hesaplanır;

@@ -354,6 +354,7 @@ final class GarageModel: ObservableObject {
             locked: ble.telemetry?.isLocked,
             batteryPercent: cloud.batteryPercent,
             rangeKM: cloud.rangeKM,
+            monthlyChargeSpendTRY: ChargingSpendStore(vin: vin).snapshot()?.amountTRY,
             bleReady: ble.state.isReady,
             bleUpdatedAt: ble.telemetry?.receivedAt,
             cloudUpdatedAt: cloud.updatedAt,
@@ -371,6 +372,7 @@ final class GarageModel: ObservableObject {
             || previous.locked != current.locked
             || previous.batteryPercent != current.batteryPercent
             || previous.rangeKM != current.rangeKM
+            || previous.monthlyChargeSpendTRY != current.monthlyChargeSpendTRY
             || previous.bleReady != current.bleReady
     }
 

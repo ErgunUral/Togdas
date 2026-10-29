@@ -49,6 +49,8 @@ struct DriveExperienceView: View {
     @State private var chargeTypeStats: [ChargeTypeStat] = []
     @State private var chargeTypesLoading = false
     @State private var chargeTypesIncomplete = false
+    @State private var costComparison: ChargeCostComparison?
+    @State private var exportFile: ExperienceExportFile?
     @State private var records: [ExperienceRecord] = []
     @State private var offset = 0
     @State private var hasMore = false
@@ -96,6 +98,9 @@ struct DriveExperienceView: View {
                     if !metrics.isEmpty {
                         periodMetricsCard
                     }
+                    if kind == .charges, let costComparison {
+                        costComparisonCard(costComparison)
+                    }
                     if !bars.isEmpty {
                         chartCard
                     }
@@ -122,6 +127,13 @@ struct DriveExperienceView: View {
                             Text("\(records.count)")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundStyle(ToggTheme.muted)
+                            Button { prepareExport() } label: {
+                                Label("Dışa aktar", systemImage: "square.and.arrow.up")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(ToggTheme.teal)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Yüklenen \(records.count) kaydı CSV dosyası olarak paylaşır")
                         }
                     }
 
@@ -207,6 +219,9 @@ struct DriveExperienceView: View {
                 anchor = selected
                 Task { await load(reset: true) }
             }
+        }
+        .sheet(item: $exportFile) { file in
+            ShareSheet(items: [file.url])
         }
     }
 
@@ -695,6 +710,24 @@ struct DriveExperienceView: View {
         #endif
     }
 
+    /// Yüklenen kayıtları CSV dosyasına yazar ve paylaşım sayfasını açar.
+    /// Henüz yüklenmemiş sayfalar dışa aktarılmaz; dosya adı dönemi taşır.
+    private func prepareExport() {
+        let csv = ExperienceExport.csv(records: records)
+        guard let data = csv.data(using: .utf8) else {
+            self.error = "Dışa aktarma dosyası oluşturulamadı."
+            return
+        }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(ExperienceExport.filename(kind: kind, anchor: anchor))
+        do {
+            try data.write(to: url, options: .atomic)
+            exportFile = ExperienceExportFile(url: url)
+        } catch {
+            self.error = "Dışa aktarma dosyası yazılamadı: \(error.localizedDescription)"
+        }
+    }
+
     private func recordChargingSpendIfCurrentMonth(_ data: Data) {
         guard kind == .charges, period == "Monthly" else { return }
         let month = ChargingSpendStore.monthString()
@@ -859,6 +892,10 @@ struct DriveExperienceView: View {
                                                  pricePerKWh: pricePerKWh) else { return }
         metrics = page.metrics
         bars = page.bars
+        if kind == .charges {
+            costComparison = ExperienceFormat.chargeCostComparison(from: Data(raw.utf8),
+                                                                  pricePerKWh: pricePerKWh)
+        }
     }
 
     private var periodMetricsCard: some View {
@@ -903,6 +940,57 @@ struct DriveExperienceView: View {
             return ExperienceBar(id: bar.id, label: bar.label, value: value,
                                  unit: chartMetric.unit, values: bar.values)
         }
+    }
+
+    private func costComparisonCard(_ comparison: ChargeCostComparison) -> some View {
+        let difference = comparison.differenceTRY
+        let tint = difference > 0 ? ToggTheme.orange : ToggTheme.teal
+        let percent = comparison.differenceRatio.map { "\(Int((abs($0) * 100).rounded()))%" }
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Gerçek / tahmin", systemImage: "equal.circle")
+                    .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                Spacer()
+                Text("≈ tahmin").font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+            }
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Gerçek (sunucu)")
+                        .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                    Text("\(ExperienceFormat.twoDecimals(comparison.actualTRY)) ₺")
+                        .font(.system(size: 20, weight: .bold)).foregroundStyle(ToggTheme.teal)
+                        .monospacedDigit()
+                }
+                Spacer(minLength: 4)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Tahmin (\(ExperienceFormat.oneDecimal(comparison.assumedPricePerKWh)) ₺/kWh)")
+                        .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                    Text("≈ \(ExperienceFormat.twoDecimals(comparison.estimatedTRY)) ₺")
+                        .font(.system(size: 16, weight: .bold)).foregroundStyle(ToggTheme.muted)
+                        .monospacedDigit()
+                }
+            }
+            HStack(spacing: 6) {
+                Text(difference > 0 ? "Gerçek tutar daha yüksek"
+                     : (difference < 0 ? "Gerçek tutar daha düşük" : "Tutarlar aynı"))
+                Spacer(minLength: 4)
+                Text("\(difference >= 0 ? "+" : "−")\(ExperienceFormat.twoDecimals(abs(difference))) ₺\(percent.map { " (%\($0))" } ?? "")")
+                    .foregroundStyle(tint)
+                    .monospacedDigit()
+            }
+            .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+            if let unit = comparison.actualPricePerKWh {
+                Text("Gerçek birim \(ExperienceFormat.twoDecimals(unit)) ₺/kWh · varsayım \(ExperienceFormat.oneDecimal(comparison.assumedPricePerKWh)) ₺/kWh · \(ExperienceFormat.twoDecimals(comparison.energyKWh)) kWh")
+                    .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Text("Tahmin, dönemin enerjisi × seçtiğiniz birim fiyattır; fatura değildir. Gerçek tutar sunucudan gelir ve tahminle değiştirilmez.")
+                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .toggCardBackground(20)
+        .accessibilityElement(children: .combine)
     }
 
     private var chargeTypeCard: some View {
@@ -1099,6 +1187,7 @@ struct DriveExperienceView: View {
             hasMore = false
             chargeTypeStats = []
             chargeTypesIncomplete = false
+            costComparison = nil
         }
         defer { if token == requestGeneration { busy = false } }
         do {
@@ -1115,6 +1204,15 @@ struct DriveExperienceView: View {
                 throw AppError.message("Analiz yanıtı beklenen biçimde değil.")
             }
             recordChargingSpendIfCurrentMonth(data)
+            if kind == .charges {
+                costComparison = ExperienceFormat.chargeCostComparison(from: data,
+                                                                      pricePerKWh: pricePerKWh)
+                #if DEBUG
+                if diagnosticsEnabled, let costComparison {
+                    print("[COMPARE] actual=\(costComparison.actualTRY) estimate=\(costComparison.estimatedTRY) diff=\(costComparison.differenceTRY)")
+                }
+                #endif
+            }
             metrics = page.metrics
             bars = page.bars
             if reset {
@@ -1486,4 +1584,10 @@ private struct ExperienceDetailSheet: View {
             self.error = error.localizedDescription
         }
     }
+}
+
+/// Paylaşım sayfası için dosya kimliği.
+private struct ExperienceExportFile: Identifiable {
+    let id = UUID()
+    let url: URL
 }

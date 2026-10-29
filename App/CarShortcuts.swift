@@ -70,5 +70,13 @@ struct ToqdasShortcuts: AppShortcutsProvider {
                     shortTitle: "Bagaj aç", systemImageName: "car.side")
         AppShortcut(intent: TrunkCloseIntent(), phrases: ["\(.applicationName) bagajı kapat"],
                     shortTitle: "Bagaj kapat", systemImageName: "car.side")
+        AppShortcut(intent: VehicleStatusIntent(),
+                    phrases: ["\(.applicationName) araç durumu",
+                              "\(.applicationName) pil durumu"],
+                    shortTitle: "Araç durumu", systemImageName: "car.fill")
+        AppShortcut(intent: ChargingSpendIntent(),
+                    phrases: ["\(.applicationName) bu ay şarj harcamam",
+                              "\(.applicationName) şarj bütçem"],
+                    shortTitle: "Şarj harcaması", systemImageName: "bolt.car.fill")
     }
 }

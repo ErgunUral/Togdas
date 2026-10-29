@@ -10,6 +10,7 @@
 		0062635A8B24E32231FAE0F0 /* EnergyPricing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CDCAC4C8F3596E99B43B8E6 /* EnergyPricing.swift */; };
 		00D259AB3EE47C81D03D7D4C /* GRPCProto.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A6D5A34D02E0858EF62F82 /* GRPCProto.swift */; };
 		01D2482999D0569E46DDFF10 /* ChargingEstimate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C656C463F5F07112DFBC2398 /* ChargingEstimate.swift */; };
+		02285C5AD352AD6649DAF2D7 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85040453788C961DCF9A0558 /* ShareSheet.swift */; };
 		0458E095B333ACDFBC5ED61F /* ToqdasWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E78CC5BA15E8412DB097101 /* ToqdasWatchApp.swift */; };
 		071C233F41A984EDEE0CA4EF /* VoiceAssistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA6278A026A65A776D46227 /* VoiceAssistant.swift */; };
 		0A1BA7EB98D1CA3AC13C7E03 /* KeySharing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 225E7DB7A647E687C254D937 /* KeySharing.swift */; };
@@ -60,6 +61,7 @@
 		9422B7EDFA3FC3FD65E4472C /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD57A3E8A9EC43D30D8A077 /* DashboardView.swift */; };
 		94FE6F5C1DDA16FEC6B03FB1 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 9628B0944C04A12BD08FD196 /* AppIcon.icon */; };
 		9CBC366849E488FE1A0AC93C /* WatchLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5026366159A018B56620748 /* WatchLink.swift */; };
+		9D1008E50FEF7644DB889AD8 /* ExperienceExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79B182570EB477C22BC30E83 /* ExperienceExport.swift */; };
 		9D25E9B85AD58C9DE5859579 /* GeofenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD92EE4D94F0DA63FF92D48 /* GeofenceManager.swift */; };
 		A04CEC469D20B59C116254B0 /* BLEDiagnosticReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77B299F1794FD935939C1DB /* BLEDiagnosticReport.swift */; };
 		A062ABF4EB2E6AF301B46D0C /* DriveExperienceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B29D2BCA49ABA1DEE358044 /* DriveExperienceView.swift */; };
@@ -94,6 +96,7 @@
 		E21DCD3FB069B0A7B1D5003B /* PhoneKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266AF5BEEDC756597FF5C07D /* PhoneKeyStore.swift */; };
 		E2C77100638F03D023917A1A /* VoiceCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E3943ADA53E9864A4A558C3 /* VoiceCommand.swift */; };
 		E2D5CBC7DDB2023AFE002B06 /* BleConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7D16B51E6FD3C9AC7A3801E /* BleConnection.swift */; };
+		EAA0C16D8CE47F8D226A1670 /* ReadOnlyIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0F108ED96A711430BDEFE7D /* ReadOnlyIntents.swift */; };
 		ED5F18B6BD55035C6838E60E /* ToqdasWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 03818B913F27CF35EDB83E06 /* ToqdasWidget.appex */; };
 		EE230E39862FB025B45615E3 /* ToqdasWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C2152C155718D7560834660 /* ToqdasWidget.swift */; };
 		F0370C47E8BC908E55A8CD79 /* VoiceIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C86BB1886720C1FA14C0827B /* VoiceIntent.swift */; };
@@ -174,7 +177,7 @@
 		411E3E4ABBC6C73898F4546D /* SessionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SessionStore.swift; path = App/SessionStore.swift; sourceTree = "<group>"; };
 		44637AF01B20028684127788 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		4527B59245C2BB4367844422 /* ErrorBanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App/ErrorBanner.swift; sourceTree = "<group>"; };
-		4758C2FBFB7F0D2C07357E0A /* CarShortcuts.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/CarShortcuts.swift; sourceTree = "<group>"; };
+		4758C2FBFB7F0D2C07357E0A /* CarShortcuts.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CarShortcuts.swift; path = App/CarShortcuts.swift; sourceTree = "<group>"; };
 		48BBBF59B97A8AC6EBD8A68C /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		4B8E453F271AC262C7B58756 /* WatchLink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchLink.swift; path = Shared/WatchLink.swift; sourceTree = "<group>"; };
 		4D3F7A0A3A858FECE4000FF1 /* AccountCenterView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AccountCenterView.swift; path = App/AccountCenterView.swift; sourceTree = "<group>"; };
@@ -188,12 +191,14 @@
 		726267B05D0DDF66575C2144 /* VoiceSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceSheet.swift; path = App/VoiceSheet.swift; sourceTree = "<group>"; };
 		7473E4E29DEF8580E34774A4 /* ChargingEstimate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingEstimate.swift; path = Core/ChargingEstimate.swift; sourceTree = "<group>"; };
 		7779420C66BEEB0F9F0F67E1 /* UserFacingError.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/UserFacingError.swift; sourceTree = "<group>"; };
+		79B182570EB477C22BC30E83 /* ExperienceExport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExperienceExport.swift; path = Core/ExperienceExport.swift; sourceTree = "<group>"; };
 		79E6553C89E34442D30915FB /* ShortcutLink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/ShortcutLink.swift; sourceTree = "<group>"; };
 		7A6DDC24EBF5668BCBD8BEED /* PhoneKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PhoneKeyStore.swift; path = Core/PhoneKeyStore.swift; sourceTree = "<group>"; };
 		7C2152C155718D7560834660 /* ToqdasWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasWidget.swift; path = Widget/ToqdasWidget.swift; sourceTree = "<group>"; };
 		7E3943ADA53E9864A4A558C3 /* VoiceCommand.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceCommand.swift; path = Core/VoiceCommand.swift; sourceTree = "<group>"; };
 		8428BFAC48F08C28AD7042E3 /* ToqdasWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ToqdasWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		84CB7A88A6525A18CF92F242 /* ProximityAutomation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityAutomation.swift; path = Core/ProximityAutomation.swift; sourceTree = "<group>"; };
+		85040453788C961DCF9A0558 /* ShareSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ShareSheet.swift; path = App/ShareSheet.swift; sourceTree = "<group>"; };
 		87E9AD0C3188E52B427A89BA /* DashboardTheme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DashboardTheme.swift; path = App/DashboardTheme.swift; sourceTree = "<group>"; };
 		8CC9E78D87168C951A60BEB0 /* ProtocolModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProtocolModels.swift; path = Core/ProtocolModels.swift; sourceTree = "<group>"; };
 		916E3FFCE5A36274CE3483A4 /* BLEProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLEProtocol.swift; path = Core/BLEProtocol.swift; sourceTree = "<group>"; };
@@ -207,6 +212,7 @@
 		A77B299F1794FD935939C1DB /* BLEDiagnosticReport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLEDiagnosticReport.swift; path = Core/BLEDiagnosticReport.swift; sourceTree = "<group>"; };
 		A8F5C039B6839EF0057AFFCF /* EPDKCatalog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = EPDKCatalog.swift; path = Core/EPDKCatalog.swift; sourceTree = "<group>"; };
 		ADCC400D8DED656A26C6193E /* BleFailure.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleFailure.swift; path = Core/BleFailure.swift; sourceTree = "<group>"; };
+		B0F108ED96A711430BDEFE7D /* ReadOnlyIntents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ReadOnlyIntents.swift; path = App/ReadOnlyIntents.swift; sourceTree = "<group>"; };
 		B678CEE9819DFD44926ECBFA /* ProximityAutomation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityAutomation.swift; path = Core/ProximityAutomation.swift; sourceTree = "<group>"; };
 		C061F6A300F0531443087282 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = Widget/Info.plist; sourceTree = "<group>"; };
 		C11A721D89663BA3DDF6D624 /* ExperienceFormat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExperienceFormat.swift; path = Core/ExperienceFormat.swift; sourceTree = "<group>"; };
@@ -364,6 +370,9 @@
 				25F82CB31C36B958F0F583EC /* App */,
 				F4B6B8B65CC65D8E84FA3C40 /* ChargingBudget.swift */,
 				C1A42FB182A4519BD0CEAC78 /* ChargingBudgetNotifier.swift */,
+				79B182570EB477C22BC30E83 /* ExperienceExport.swift */,
+				85040453788C961DCF9A0558 /* ShareSheet.swift */,
+				B0F108ED96A711430BDEFE7D /* ReadOnlyIntents.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -633,6 +642,9 @@
 				C23920B6B06B730C7550F679 /* EnergyPricing.swift in Sources */,
 				A5CDF76839DDCD594CF8BD6E /* ChargingBudget.swift in Sources */,
 				2BF1CD9C45EF795C8AECF7E4 /* ChargingBudgetNotifier.swift in Sources */,
+				9D1008E50FEF7644DB889AD8 /* ExperienceExport.swift in Sources */,
+				02285C5AD352AD6649DAF2D7 /* ShareSheet.swift in Sources */,
+				EAA0C16D8CE47F8D226A1670 /* ReadOnlyIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
