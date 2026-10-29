@@ -64,7 +64,18 @@ struct WatchGarageView: View {
         if snapshot?.recovering == true { return "iPhone bağlantıyı yeniden kuruyor…" }
         if !link.reachable { return "iPhone’a ulaşılamıyor" }
         if snapshot?.ready != true { return "Dijital anahtar hazır değil" }
-        return telemetryFresh(at: now) ? "Telemetri güncel" : "İmzalı telemetri eski"
+        return telemetryFresh(at: now) ? "Telemetri güncel" : "İmzalı telemetri eski (\(dataAgeText(at: now)))"
+    }
+
+    private func dataAgeText(at now: Date) -> String {
+        guard let age = telemetryAge(at: now) else { return "süre bilinmiyor" }
+        if age < 60 { return "\(Int(age)) sn önce" }
+        if age < 3600 { return "\(Int(age / 60)) dk önce" }
+        return "\(Int(age / 3600)) sa önce"
+    }
+
+    private func needsRefresh(at now: Date) -> Bool {
+        snapshot != nil && !telemetryFresh(at: now) && link.reachable
     }
 
     var body: some View {
@@ -94,6 +105,17 @@ struct WatchGarageView: View {
                         Text(detailLine)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                    }
+
+                    if needsRefresh(at: now) {
+                        Button {
+                            link.requestRefresh()
+                        } label: {
+                            Label("Veriyi yenile", systemImage: "arrow.clockwise")
+                                .font(.caption2)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.orange)
                     }
 
                     if snapshot?.proximityEnabled == true {

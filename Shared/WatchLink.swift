@@ -122,6 +122,8 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
 
     /// iPhone tarafında ayarlanır; istek ana iş parçacığında işlenir.
     var commandHandler: ((WatchCommandRequest, @escaping (WatchCommandResult) -> Void) -> Void)?
+    /// Saatten gelen "veriyi yenile" isteği; iPhone yeni snapshot yayınlar.
+    var refreshHandler: (() -> Void)?
 
     private var context: [String: Any] = ["schema": 1]
 
@@ -210,6 +212,27 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
         }
     }
 
+    /// Saatten "güncel veri gönder" isteği. Kuyruk yok: yalnızca telefon
+    /// erişilebilirse gönderilir; cevap gelmezse durum metni bilgilendirir.
+    func requestRefresh() {
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        guard session.activationState == .activated else {
+            status = "Saat bağlantısı henüz hazır değil."
+            return
+        }
+        guard session.isReachable else {
+            status = "iPhone uykuda ya da ulaşılamıyor; veri yenilenemiyor."
+            return
+        }
+        status = "Güncel veri isteniyor…"
+        session.sendMessage(["type": "refresh"], replyHandler: { _ in }, errorHandler: { [weak self] error in
+            DispatchQueue.main.async {
+                self?.status = "Veri isteği iletilemedi: \(error.localizedDescription)"
+            }
+        })
+    }
+
     private func report(_ result: WatchCommandResult) {
         lastResult = result
         status = result.message
@@ -291,6 +314,17 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
 
     func session(_ session: WCSession, didReceiveMessage message: [String: Any],
                  replyHandler: @escaping ([String: Any]) -> Void) {
+        if message["type"] as? String == "refresh" {
+            guard !isWatch else {
+                replyHandler(["type": "refreshUnavailable"])
+                return
+            }
+            DispatchQueue.main.async { [weak self] in
+                self?.refreshHandler?()
+                replyHandler(["type": "refreshQueued", "at": Date().timeIntervalSince1970])
+            }
+            return
+        }
         guard message["type"] as? String == "command",
               let data = message["payload"] as? Data,
               let request = try? JSONDecoder().decode(WatchCommandRequest.self, from: data) else {

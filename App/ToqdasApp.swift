@@ -110,6 +110,10 @@ final class GarageModel: ObservableObject {
             self.handleWatchCommand(request, reply: reply)
         }
 
+        watch.refreshHandler = { [weak self] in
+            Task { @MainActor in self?.publishWatchSnapshot() }
+        }
+
         ble.$telemetry
             .throttle(for: .seconds(3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] _ in

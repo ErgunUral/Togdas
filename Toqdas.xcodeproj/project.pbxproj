@@ -24,6 +24,7 @@
 		36DD25841A82F4389882937E /* DashboardCustomization.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C5FB0BE9CCF79E283AA6A0 /* DashboardCustomization.swift */; };
 		3715AD858D6A911D69C3A040 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 48BBBF59B97A8AC6EBD8A68C /* Foundation.framework */; };
 		39C551789B97C67A4836B06B /* GRPCProto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02AC29F97B99B77107E2C112 /* GRPCProto.swift */; };
+		3CFC99DA36C6C806BF54ED03 /* ProximityCalibrationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1AF44C17D3FE981C19A1A8C /* ProximityCalibrationSheet.swift */; };
 		404ABC4D3DD42DABB1BE60AC /* LockConfirmationSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CA21BA085F722911635017 /* LockConfirmationSound.swift */; };
 		4317E884109146BF8BB94813 /* VoiceCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E3943ADA53E9864A4A558C3 /* VoiceCommand.swift */; };
 		49808D4581BF8AB41A118BD0 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916E3FFCE5A36274CE3483A4 /* BLEProtocol.swift */; };
@@ -198,6 +199,7 @@
 		D3A6D5A34D02E0858EF62F82 /* GRPCProto.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = GRPCProto.swift; path = Core/GRPCProto.swift; sourceTree = "<group>"; };
 		D725525960BD3380276BA218 /* EPDKStationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = EPDKStationService.swift; path = App/EPDKStationService.swift; sourceTree = "<group>"; };
 		E11854A761FC25AD5CF9F967 /* BLEProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLEProtocol.swift; path = Core/BLEProtocol.swift; sourceTree = "<group>"; };
+		E1AF44C17D3FE981C19A1A8C /* ProximityCalibrationSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App/ProximityCalibrationSheet.swift; sourceTree = "<group>"; };
 		E35C78E8C2EE645434866DA5 /* VehicleWidgetSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VehicleWidgetSnapshot.swift; path = Shared/VehicleWidgetSnapshot.swift; sourceTree = "<group>"; };
 		E5026366159A018B56620748 /* WatchLink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchLink.swift; path = Shared/WatchLink.swift; sourceTree = "<group>"; };
 		E97AC49AE2ABA02AA6D304E9 /* ToggAPI.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToggAPI.swift; path = App/ToggAPI.swift; sourceTree = "<group>"; };
@@ -246,6 +248,7 @@
 			isa = PBXGroup;
 			children = (
 				962EAB5F4FCFF9ABEB3F0D6E /* MaintenanceNotifier.swift */,
+				E1AF44C17D3FE981C19A1A8C /* ProximityCalibrationSheet.swift */,
 			);
 			name = App;
 			sourceTree = "<group>";
@@ -583,6 +586,7 @@
 				78635F3C036060F244481CA3 /* MaintenanceNotifier.swift in Sources */,
 				B2A064C07BBD72E85430FC2E /* TirePressurePolicy.swift in Sources */,
 				7F07DCC632694FBA974C45D4 /* WidgetRefreshPolicy.swift in Sources */,
+				3CFC99DA36C6C806BF54ED03 /* ProximityCalibrationSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

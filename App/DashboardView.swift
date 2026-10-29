@@ -95,6 +95,7 @@ struct DashboardView: View {
     @State private var proximityRSSISamples: [Int] = []
     @State private var proximityStatus = "Ölçüm bekleniyor"
     @State private var showProximityConfirmation = false
+    @State private var showProximityGuide = false
     private var drivingStats: DrivingStatsStore { DrivingStatsStore(vin: vehicle.vin) }
     private var maintenanceStore: MaintenanceStore { MaintenanceStore(vin: vehicle.vin) }
     @State private var maintenanceTitle = ""
@@ -433,6 +434,21 @@ struct DashboardView: View {
         .sheet(isPresented: $showBLESetupGuide) {
             BLESetupGuideSheet(ble: ble)
         }
+        .sheet(isPresented: $showProximityGuide) {
+            ProximityCalibrationSheet(
+                vin: vehicle.vin,
+                currentRSSI: ble.rssi,
+                rssiAge: ble.rssiUpdatedAt.map { Date().timeIntervalSince($0) },
+                bleReady: ble.state.isReady,
+                nearSample: proximityNearSample,
+                farSample: proximityFarSample,
+                calibrationValid: proximityCalibration?.isValid == true,
+                profile: proximityProfile,
+                onCaptureNear: { captureProximitySample(isNear: true) },
+                onCaptureFar: { captureProximitySample(isNear: false) },
+                onReset: resetProximityCalibration
+            )
+        }
         .sheet(isPresented: $showCommands) {
             NavigationStack {
                 CommandView(vehicle: vehicle, api: model.api)
@@ -732,6 +748,15 @@ struct DashboardView: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(.white)
                 Spacer()
+                Button {
+                    showProximityGuide = true
+                } label: {
+                    Image(systemName: "questionmark.circle")
+                        .font(.system(size: 16))
+                        .foregroundStyle(ToggTheme.teal)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Yakınlık kalibrasyon rehberi")
                 Toggle("", isOn: Binding(
                     get: { proximityEnabled },
                     set: { enabled in
@@ -1049,6 +1074,7 @@ struct DashboardView: View {
                     if !item.done {
                         Button("Tamam") { completeMaintenance(item, odometer: odometer) }
                             .font(.system(size: 10, weight: .semibold)).buttonStyle(.bordered)
+                            .accessibilityLabel("\(item.title) bakımını tamamlandı olarak işaretle")
                     }
                     Button {
                         deleteMaintenance(item)
@@ -1056,7 +1082,9 @@ struct DashboardView: View {
                         Image(systemName: "trash").font(.system(size: 10))
                     }
                     .buttonStyle(.plain).foregroundStyle(ToggTheme.muted)
+                    .accessibilityLabel("\(item.title) bakımını sil")
                 }
+                .accessibilityElement(children: .contain)
             }
 
             Divider().overlay(ToggTheme.muted.opacity(0.2))
@@ -1078,10 +1106,12 @@ struct DashboardView: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(ToggTheme.teal)
                 .disabled(maintenanceTitle.trimmingCharacters(in: .whitespaces).isEmpty || Double(maintenanceDueKm) == nil)
+                .accessibilityLabel("Bakım ekle")
             }
 
             if let maintenanceError {
                 Text(maintenanceError).font(.system(size: 9)).foregroundStyle(ToggTheme.pink)
+                    .accessibilityLabel("Hata: \(maintenanceError)")
             } else {
                 Text("Bakım km'sine 500 km kalınca uygulama açıkken bildirim gönderilir.")
                     .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
@@ -1205,6 +1235,8 @@ struct DashboardView: View {
         .foregroundStyle(color)
         .padding(.horizontal, 10).padding(.vertical, 6)
         .background(Capsule().fill(color.opacity(0.15)))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
     }
 
     private func doorTile(index: Int, open: Bool) -> some View {
@@ -1326,6 +1358,16 @@ struct DashboardView: View {
     }
 
     @MainActor
+    private func resetProximityCalibration() {
+        proximityNearSample = nil
+        proximityFarSample = nil
+        proximityGate = nil
+        UserDefaults.standard.removeObject(forKey: proximityNearKey)
+        UserDefaults.standard.removeObject(forKey: proximityFarKey)
+        proximityStatus = "Ölçümler sıfırlandı. Yeniden yakın ve uzak ölçüm alın."
+        if proximityEnabled { setProximityEnabled(false) }
+    }
+
     private func captureProximitySample(isNear: Bool) {
         guard ble.state.isReady, let current = ble.rssi else {
             proximityStatus = "Ölçüm için dijital anahtar hazır ve bağlı olmalı."
@@ -2582,6 +2624,18 @@ private struct VehicleVisualCard: View {
                         .stroke(ToggTheme.outline.opacity(0.5), lineWidth: 1)
                 )
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Araç durumu")
+        .accessibilityValue(accessibilitySummary)
+    }
+
+    private var accessibilitySummary: String {
+        let lockText = lockBadge.text.lowercased()
+        let rangeText = range > 0 ? "\(range) kilometre menzil" : "menzil bilgisi yok"
+        let batteryText = battery > 0 ? "batarya yüzde \(battery)" : "batarya bilgisi yok"
+        let odometerText = odometer.map { "kilometre \(Int($0.rounded()))" } ?? "kilometre bilgisi yok"
+        let temperatureText = outsideTemperature.map { "dış sıcaklık \(Int($0.rounded())) derece" } ?? "dış sıcaklık bilgisi yok"
+        return [lockText, rangeText, batteryText, odometerText, temperatureText].joined(separator: ", ")
     }
 }
 
@@ -2623,6 +2677,10 @@ private struct QuickActionButton: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(active ? "\(subtitle), açık" : subtitle)
+        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -2997,6 +3055,22 @@ private struct VehicleHealthCard: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
         .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.surfaceVariant))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(position.title)
+        .accessibilityValue(tireAccessibilityValue(reading, severity: severity))
+    }
+
+    private func tireAccessibilityValue(_ reading: TireReading?, severity: TirePressurePolicy.Severity?) -> String {
+        guard let reading, let psi = reading.pressurePSI else { return "basınç bilgisi yok" }
+        let pressure = String(format: "%.1f PSI", psi)
+        let temperature = reading.temperatureC.map { ", \(Int($0.rounded())) derece" } ?? ""
+        let warning: String
+        switch severity {
+        case .critical: warning = ", kritik düşük basınç"
+        case .low: warning = ", düşük basınç"
+        case nil: warning = ""
+        }
+        return pressure + temperature + warning
     }
 
     private func statBox(title: String, value: String, icon: String, color: Color) -> some View {
@@ -3011,6 +3085,9 @@ private struct VehicleHealthCard: View {
         .padding(14)
         .frame(maxWidth: .infinity)
         .background(RoundedRectangle(cornerRadius: 16).fill(ToggTheme.surfaceVariant))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(value)
     }
 
     private func warningBox(title: String, warning: Bool?) -> some View {
@@ -3029,6 +3106,9 @@ private struct VehicleHealthCard: View {
         .padding(14)
         .frame(maxWidth: .infinity)
         .background(RoundedRectangle(cornerRadius: 16).fill(ToggTheme.surfaceVariant))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(warning == nil ? "bilgi yok" : (active ? "uyarı var" : "uyarı yok"))
     }
 }
 
