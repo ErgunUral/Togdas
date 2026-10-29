@@ -24,7 +24,7 @@ enum DashboardCard: String, CaseIterable, Codable, Hashable, Identifiable {
         case .quickActions: "Kapı, bagaj ve iklim hızlı erişimi"
         case .proximity: "RSSI kalibrasyonu ve otomasyon durumu"
         case .technical: "Bağlantı, telemetri ve tanı kayıtları"
-        case .premiumControls: "Sentry/valet/konfor önizlemeleri"
+        case .premiumControls: "Yan cam komutları ve desteklenmeyen özellikler"
         case .chargingShortcut: "Şarj hesaplayıcısı ve istasyonlara geçiş"
         }
     }

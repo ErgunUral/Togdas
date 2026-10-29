@@ -149,8 +149,6 @@ struct DashboardView: View {
     @State private var lastLockSoundCount: Int?
 
     // Önizleme durumları (henüz araca bağlı değil)
-    @State private var sentryMode = true
-    @State private var sunroofOpen = false
     @State private var climateOn = false
     @State private var climateKnown = false
     @State private var climateStatusAt: Date?
@@ -506,13 +504,7 @@ struct DashboardView: View {
             if layout == .technical { technicalOverview }
             if layout != .minimal && layout != .sport { proximityCard }
             if layout != .minimal {
-                PremiumControlsSection(
-                    sentryMode: $sentryMode,
-                    
-                    
-                    sunroofOpen: $sunroofOpen,
-                    onWindowCommand: requestWindowCommand
-                )
+                PremiumControlsSection(onWindowCommand: requestWindowCommand)
             }
             if layout == .sport { proximityCard }
             geofenceCard
@@ -2759,25 +2751,12 @@ private struct QuickActionButton: View {
 // MARK: - Premium kontroller
 
 private struct PremiumControlsSection: View {
-    @Binding var sentryMode: Bool
-    @Binding var sunroofOpen: Bool
     let onWindowCommand: (DashboardCommand) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Akıllı Konfor & Güvenlik Sistemleri")
+            Text("Cam ve Güvenlik")
                 .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
-
-            HStack(spacing: 12) {
-                modeCard(title: "Nöbetçi (Sentry) Güvenlik",
-                         subtitle: sentryMode ? "Kameralar Aktif" : "Kapalı",
-                         icon: "shield.lefthalf.filled",
-                         isOn: $sentryMode, color: ToggTheme.green)
-                
-                         
-                         
-                         
-            }
 
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 10) {
@@ -2790,51 +2769,54 @@ private struct PremiumControlsSection: View {
                         onWindowCommand(.windowsClose)
                     }
                 }
-                windowButton(title: "Panoramik cam tavan",
-                             subtitle: sunroofOpen ? "Önizleme: açık" : "Önizleme: kapalı",
-                             icon: "sun.max.fill", color: ToggTheme.teal) {
-                    sunroofOpen.toggle()
+
+                HStack(spacing: 10) {
+                    Image(systemName: "sun.max")
+                        .font(.system(size: 17)).foregroundStyle(ToggTheme.muted)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Panoramik cam tavan").font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white)
+                        Text("Araç protokolünde komut yok").font(.system(size: 10))
+                            .foregroundStyle(ToggTheme.muted)
+                    }
+                    Spacer()
+                    Text("Desteklenmiyor")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(ToggTheme.muted)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Capsule().fill(ToggTheme.muted.opacity(0.15)))
                 }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.surfaceVariant))
+
+                HStack(spacing: 10) {
+                    Image(systemName: "shield.lefthalf.filled")
+                        .font(.system(size: 17)).foregroundStyle(ToggTheme.muted)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Nöbetçi (Sentry) güvenlik").font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white)
+                        Text("Araç API'sinde açma/kapama yok").font(.system(size: 10))
+                            .foregroundStyle(ToggTheme.muted)
+                    }
+                    Spacer()
+                    Text("Desteklenmiyor")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(ToggTheme.muted)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Capsule().fill(ToggTheme.muted.opacity(0.15)))
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.surfaceVariant))
             }
             .padding(18)
             .toggCardBackground(24)
 
-            Text("Yan cam komutları onay ister; araç cam konumunu BLE ile doğrulamıyor. Panoramik tavan ve güvenlik ayarları önizlemedir.")
+            Text("Yan cam komutları onay ister; araç cam konumunu BLE ile doğrulamıyor. Panoramik tavan ve sentry bu uygulamada komut olarak sunulmaz.")
                 .font(.caption2).foregroundStyle(ToggTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
         }
-    }
-
-    private func modeCard(title: String, subtitle: String, icon: String,
-                          isOn: Binding<Bool>, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                ZStack {
-                    Circle().fill(isOn.wrappedValue ? color.opacity(0.2) : ToggTheme.surfaceVariant)
-                        .frame(width: 34, height: 34)
-                    Image(systemName: icon)
-                        .font(.system(size: 16))
-                        .foregroundStyle(isOn.wrappedValue ? color : ToggTheme.muted)
-                }
-                Spacer()
-                Toggle("", isOn: isOn).labelsHidden().tint(color)
-            }
-            Text(title)
-                .font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
-                .lineLimit(2).minimumScaleFactor(0.8)
-            Text(subtitle)
-                .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
-                .lineLimit(1).minimumScaleFactor(0.7)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(isOn.wrappedValue ? color.opacity(0.12) : ToggTheme.surface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(isOn.wrappedValue ? color.opacity(0.5) : ToggTheme.outline.opacity(0.3), lineWidth: 1)
-                )
-        )
     }
 
     private func windowButton(title: String, subtitle: String, icon: String,
