@@ -77,6 +77,7 @@
 		CEA7D2F28564C0B062687354 /* BLEDiagnosticReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77B299F1794FD935939C1DB /* BLEDiagnosticReport.swift */; };
 		D0D3EBBC07E547E4F38B394C /* BleFailure.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCC400D8DED656A26C6193E /* BleFailure.swift */; };
 		D2DE9EA95690B36CD04395B3 /* VoiceIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FA11CF63088BBE37B16DB9B /* VoiceIntent.swift */; };
+		D500538ED1997BA67DB8D6F0 /* GeofencePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 580F6C5BEBBE0C89A99F0AA7 /* GeofencePolicy.swift */; };
 		D6AA9DF540144737E024004C /* VehicleWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35C78E8C2EE645434866DA5 /* VehicleWidgetSnapshot.swift */; };
 		D787F93A9C3C8DFC11EADD0F /* EPDKStationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D725525960BD3380276BA218 /* EPDKStationService.swift */; };
 		D819F5C5DA9AE3C250363DC8 /* VoiceSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E45DE33039E4153D8937E37 /* VoiceSession.swift */; };
@@ -170,6 +171,7 @@
 		4E893B70F3216DCD1099B811 /* ToqdasApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasApp.swift; path = App/ToqdasApp.swift; sourceTree = "<group>"; };
 		4F9120A9A9B3C30156968E6B /* ToqdasWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; name = ToqdasWidget.entitlements; path = Widget/ToqdasWidget.entitlements; sourceTree = "<group>"; };
 		55695E170544648784C555E6 /* ExperienceFormat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExperienceFormat.swift; path = Core/ExperienceFormat.swift; sourceTree = "<group>"; };
+		580F6C5BEBBE0C89A99F0AA7 /* GeofencePolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/GeofencePolicy.swift; sourceTree = "<group>"; };
 		61B0937BFEE69314B58DD6FD /* BluetoothDiscovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothDiscovery.swift; path = Shared/BluetoothDiscovery.swift; sourceTree = "<group>"; };
 		65CA21BA085F722911635017 /* LockConfirmationSound.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LockConfirmationSound.swift; path = App/LockConfirmationSound.swift; sourceTree = "<group>"; };
 		726267B05D0DDF66575C2144 /* VoiceSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceSheet.swift; path = App/VoiceSheet.swift; sourceTree = "<group>"; };
@@ -357,6 +359,7 @@
 				215F2C49326A1FA6F27313DF /* TirePressurePolicy.swift */,
 				A726A6BC8538C30D64031109 /* WidgetRefreshPolicy.swift */,
 				7779420C66BEEB0F9F0F67E1 /* UserFacingError.swift */,
+				580F6C5BEBBE0C89A99F0AA7 /* GeofencePolicy.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -599,6 +602,7 @@
 				84C01423028B7B78968A0D58 /* UserFacingError.swift in Sources */,
 				A109CC28F6CAA2BDEC125112 /* UserFacingError+App.swift in Sources */,
 				32034D131B511BABE4A5D6A2 /* ErrorBanner.swift in Sources */,
+				D500538ED1997BA67DB8D6F0 /* GeofencePolicy.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

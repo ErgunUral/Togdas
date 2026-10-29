@@ -68,6 +68,7 @@ struct DashboardView: View {
     @State private var busy = false
     @State private var error: String?
     @State private var facingError: UserFacingError?
+    @State private var geofenceNotice: String?
     @State private var showCommands = false
     @State private var showDetail = false
     @State private var showDiscovery = false
@@ -910,27 +911,87 @@ struct DashboardView: View {
     }
 
     private var geofenceCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("Geofence (Ev/iş)", systemImage: "location.circle")
-                .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+        let readiness = model.geofence.readiness
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Geofence (Ev/iş)", systemImage: "location.circle")
+                    .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                Spacer()
+                Text(geofenceStatusBadge)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(model.geofence.enabled ? ToggTheme.green : ToggTheme.muted)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Capsule().fill((model.geofence.enabled ? ToggTheme.green : ToggTheme.muted).opacity(0.15)))
+            }
+
             Toggle("Geofence aktif", isOn: Binding(
                 get: { model.geofence.enabled },
-                set: { model.geofence.setEnabled($0) }
+                set: { newValue in
+                    if !model.geofence.setEnabled(newValue), newValue {
+                        geofenceNotice = readiness.message
+                    } else {
+                        geofenceNotice = nil
+                    }
+                }
             ))
             .tint(ToggTheme.teal)
-            Button("Ev konumunu şu anki konuma ayarla") {
-                model.geofence.requestAuthorization()
-                model.geofence.setHomeToCurrentLocation()
+            .disabled(!readiness.canEnable && !model.geofence.enabled)
+            .accessibilityHint(readiness.canEnable ? "Bölgeye girince açma, çıkınca kilitleme" : readiness.message)
+
+            HStack(spacing: 8) {
+                Button(model.geofence.homeCoordinate == nil ? "Ev konumunu ayarla" : "Ev konumunu güncelle") {
+                    model.geofence.setHomeToCurrentLocation()
+                }
+                .font(.system(size: 11, weight: .semibold)).buttonStyle(.bordered)
+
+                if model.geofence.homeCoordinate != nil {
+                    Button("Konumu sil") { model.geofence.clearHomeLocation() }
+                        .font(.system(size: 11)).buttonStyle(.bordered).tint(ToggTheme.pink)
+                }
             }
-            .font(.caption).buttonStyle(.bordered)
+
+            HStack {
+                Text("Bölge yarıçapı").font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                Slider(
+                    value: Binding(
+                        get: { model.geofence.radiusMeters },
+                        set: { model.geofence.setRadius($0) }
+                    ),
+                    in: GeofencePolicy.minimumRadiusMeters...GeofencePolicy.maximumRadiusMeters,
+                    step: 10
+                )
+                .tint(ToggTheme.teal)
+                Text("\(Int(model.geofence.radiusMeters)) m")
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.white)
+            }
+
             if let coord = model.geofence.homeCoordinate {
                 Text("Ev: \(coord.latitude, specifier: "%.5f"), \(coord.longitude, specifier: "%.5f")")
                     .font(.system(size: 10, design: .monospaced)).foregroundStyle(ToggTheme.muted)
             }
-            Text("Evde açma, uzakta kilitleme. Arka planda çalışır; komutlar READY koşuluna tabidir.")
+
+            if let error = model.geofence.lastError {
+                Text(error).font(.system(size: 9)).foregroundStyle(ToggTheme.pink)
+            } else if let notice = geofenceNotice ?? (!readiness.canEnable ? readiness.message : nil) {
+                Text(notice).font(.system(size: 9)).foregroundStyle(ToggTheme.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(readiness.message).font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+            }
+
+            Text("Konum yalnızca cihazda kullanılır. Arka planda komut gönderilmez; bölgeye girince/çıkınca uygulama uyanır ve komut READY + taze telemetri koşuluna tabidir.")
                 .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(18).toggCardBackground()
+    }
+
+    private var geofenceStatusBadge: String {
+        if model.geofence.enabled {
+            return model.geofence.isMonitoring ? "İZLENİYOR" : "BEKLİYOR"
+        }
+        return "KAPALI"
     }
 
     private func consumptionText(_ stats: DrivingStats) -> String {
