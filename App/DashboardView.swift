@@ -901,6 +901,12 @@ struct DashboardView: View {
         .padding(18).toggCardBackground()
     }
 
+    private func consumptionText(_ stats: DrivingStats) -> String {
+        guard stats.daysWithData > 0 else { return "—" }
+        let value = String(format: "%.1f", stats.consumptionKWhPer100km)
+        return stats.consumptionIsMeasured ? "\(value) kWh/100 km" : "\(value) kWh/100 km (varsayılan)"
+    }
+
     private func monthTitle(_ month: String) -> String {
         let parts = month.split(separator: "-")
         guard parts.count == 2, let monthNumber = Int(parts[1]), (1...12).contains(monthNumber) else { return month }
@@ -930,7 +936,7 @@ struct DashboardView: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("\(String(format: "%.0f", stats.estimatedCostTRY)) ₺")
                         .font(.system(size: 22, weight: .bold)).foregroundStyle(ToggTheme.orange)
-                    Text("\(String(format: "%.1f", stats.estimatedKWh)) kWh tahmini")
+                    Text("\(String(format: "%.1f", stats.estimatedKWh)) kWh \(stats.consumptionIsMeasured ? "" : "tahmini")")
                         .font(.caption).foregroundStyle(ToggTheme.muted)
                 }
             }
@@ -941,9 +947,17 @@ struct DashboardView: View {
                 Text(stats.daysWithData > 0 ? "\(Int(weekKm.rounded())) km" : "—")
                     .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
             }
+            HStack {
+                Text("Tüketim").font(.caption).foregroundStyle(ToggTheme.muted)
+                Spacer()
+                Text(consumptionText(stats))
+                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+            }
             Text(stats.daysWithData > 1
-                 ? "Odometer okumalarından hesaplanır. Maliyet 17 kWh/100 km ve 10 ₺/kWh varsayımıyla (kayıp yok)."
-                 : "Yeterli veri yok. Birkaç günlük odometer okumasından sonra km ve maliyet hesaplanır.")
+                 ? (stats.consumptionIsMeasured
+                    ? "Tüketim batarya yüzdesi farkından ölçülür (88,5 kWh batarya). Maliyet 10 ₺/kWh, kayıp yok."
+                    : "Tüketim için yeterli batarya ölçümü yok; 17 kWh/100 km varsayılanı kullanılıyor. Maliyet 10 ₺/kWh, kayıp yok.")
+                 : "Yeterli veri yok. Birkaç günlük odometer ve batarya okumasından sonra km, tüketim ve maliyet hesaplanır.")
                 .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
         }
         .padding(18).toggCardBackground()
@@ -2258,7 +2272,9 @@ struct DashboardView: View {
             try Task.checkCancellation()
             telemetry = parsed
             updatedAt = parsed.vehicleUpdatedAt ?? Date()
-            if let odo = parsed.odometerKM { drivingStats.record(odometer: odo) }
+            if let odo = parsed.odometerKM {
+                drivingStats.record(odometer: odo, batteryPercent: parsed.batteryPercent)
+            }
             checkTirePressure(parsed.tires)
             model.noteCloudTelemetry(parsed)
         } catch is CancellationError {
