@@ -99,15 +99,6 @@ struct DashboardView: View {
     @State private var showProximityConfirmation = false
     @State private var showProximityGuide = false
     private var drivingStats: DrivingStatsStore { DrivingStatsStore(vin: vehicle.vin) }
-    private var maintenanceStore: MaintenanceStore { MaintenanceStore(vin: vehicle.vin) }
-    private var chargingBudgetStore: ChargingSpendStore { ChargingSpendStore(vin: vehicle.vin) }
-    @State private var maintenanceTitle = ""
-    @State private var maintenanceDueKm = ""
-    @State private var maintenanceItems: [MaintenanceItem] = []
-    @State private var maintenanceError: String?
-    @State private var chargingBudgetLimit = 0.0
-    @State private var chargingSpentTRY: Double?
-    @State private var chargingBudgetUpdatedAt: Date?
 
 
     private func checkTirePressure(_ tires: [TireReading]) {
@@ -294,10 +285,6 @@ struct DashboardView: View {
         .task { await climateLoop() }
         .task { await prefetchCertificate() }
         .task { loadProximitySettings() }
-        .onAppear { reloadChargingBudget() }
-        .onChange(of: showExperience) { presented in
-            if !presented { reloadChargingBudget() }
-        }
         }
         .onReceive(ble.$state) { state in
             print("[BLE] state -> \(state.description)")
@@ -517,8 +504,8 @@ struct DashboardView: View {
             if layout == .sport { proximityCard }
             geofenceCard
             drivingStatsCard
-            chargingBudgetCard
-            maintenanceCard
+            ChargingBudgetCard(vin: vehicle.vin)
+            MaintenanceCard(vin: vehicle.vin, odometer: telemetry?.odometerKM)
             if layout != .sport { quickActions }
             chargingOverviewLink
         }
@@ -1059,235 +1046,6 @@ struct DashboardView: View {
                 .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
         }
         .padding(18).toggCardBackground()
-    }
-
-    // MARK: - Şarj bütçesi
-
-    private var budgetLimitBinding: Binding<Double> {
-        Binding(
-            get: { chargingBudgetLimit },
-            set: { newValue in
-                chargingBudgetLimit = newValue
-                let store = chargingBudgetStore
-                store.setMonthlyLimit(newValue)
-                guard newValue > 0 else { return }
-                ChargingBudgetNotifier.notifyIfNeeded(budget: store.budget(), vin: vehicle.vin, store: store)
-            }
-        )
-    }
-
-    private var chargingBudgetCard: some View {
-        let budget = ChargingBudget(limitTRY: chargingBudgetLimit, spentTRY: chargingSpentTRY ?? 0)
-        let hasSpend = chargingSpentTRY != nil
-        let hasLimit = chargingBudgetLimit > 0
-        let tint: Color = budget.status == .exceeded ? ToggTheme.pink
-            : (budget.status == .nearLimit ? ToggTheme.orange : ToggTheme.teal)
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label("Şarj Bütçesi", systemImage: "gauge.with.dots.needle.50percent")
-                    .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
-                Spacer()
-                Text(monthTitle(ChargingSpendStore.monthString()))
-                    .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
-            }
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(hasSpend ? ChargingBudget.money(budget.spentTRY) : "—")
-                    .font(.system(size: 24, weight: .bold)).foregroundStyle(hasSpend ? tint : ToggTheme.muted)
-                    .monospacedDigit()
-                if hasLimit {
-                    Text("/ \(ChargingBudget.money(chargingBudgetLimit))")
-                        .font(.system(size: 12, weight: .semibold)).foregroundStyle(ToggTheme.muted)
-                }
-                Spacer()
-                if hasLimit, hasSpend {
-                    Text(budget.percentText)
-                        .font(.system(size: 13, weight: .bold)).foregroundStyle(tint)
-                        .monospacedDigit()
-                }
-            }
-            if hasLimit, hasSpend {
-                ProgressView(value: budget.ratio)
-                    .tint(tint)
-                Text(budget.message)
-                    .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            VStack(spacing: 4) {
-                HStack {
-                    Text("Aylık limit").font(.system(size: 11)).foregroundStyle(ToggTheme.muted)
-                    Spacer()
-                    Text(hasLimit ? ChargingBudget.money(chargingBudgetLimit) : "Kapalı")
-                        .font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
-                        .monospacedDigit()
-                }
-                Slider(value: budgetLimitBinding, in: 0...30_000, step: 500)
-                    .tint(ToggTheme.teal)
-                    .accessibilityLabel("Aylık şarj bütçesi limiti")
-                    .accessibilityValue(hasLimit ? ChargingBudget.money(chargingBudgetLimit) : "Kapalı")
-            }
-            if !hasSpend {
-                Text("Bu ay harcama verisi yok. Seyahatname → Şarj → Bu ay görünümü açıldığında sunucudan gelen gerçek tutar buraya işlenir.")
-                    .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else if let updated = chargingBudgetUpdatedAt {
-                Text("Son güncelleme: \(budgetUpdatedText(updated)). Harcama sunucunun gerçek şarj toplamıdır; tahmin değildir.")
-                    .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Text("Bütçe yalnız uyarı amaçlıdır; ödeme veya otomatik kesinti yapılmaz. %80 ve %100 eşiklerinde ayda bir bildirim gönderilir.")
-                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(18).toggCardBackground()
-    }
-
-    private func budgetUpdatedText(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMM HH:mm"
-        return formatter.string(from: date)
-    }
-
-    private func reloadChargingBudget() {
-        let store = chargingBudgetStore
-        chargingBudgetLimit = store.monthlyLimit()
-        let snapshot = store.snapshot()
-        chargingSpentTRY = snapshot?.amountTRY
-        chargingBudgetUpdatedAt = snapshot?.updatedAt
-    }
-
-    private func reloadMaintenance() {
-        maintenanceItems = maintenanceStore.items
-        guard let odometer = telemetry?.odometerKM else { return }
-        let due = maintenanceStore.items.filter { !$0.done && $0.remainingKm(currentOdometer: odometer) <= 500 }
-        guard !due.isEmpty else { return }
-        MaintenanceNotifier.notify(items: due, odometer: odometer, vin: vehicle.vin)
-    }
-
-    private func addMaintenance() {
-        let trimmed = maintenanceTitle.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        guard let km = Double(maintenanceDueKm.replacingOccurrences(of: ",", with: ".")), km > 0 else {
-            maintenanceError = "Geçerli bir km girin."
-            return
-        }
-        if let current = telemetry?.odometerKM, km <= current {
-            maintenanceError = "Bakım km'si mevcut km'den büyük olmalı (\(Int(current.rounded())) km)."
-            return
-        }
-        maintenanceError = nil
-        maintenanceStore.add(title: trimmed, dueKm: km)
-        maintenanceTitle = ""
-        maintenanceDueKm = ""
-        MaintenanceNotifier.requestAuthorization()
-        reloadMaintenance()
-    }
-
-    private func completeMaintenance(_ item: MaintenanceItem, odometer: Double?) {
-        maintenanceStore.markDone(item.id, atOdometer: odometer)
-        MaintenanceNotifier.cancel(itemIDs: [item.id], vin: vehicle.vin)
-        reloadMaintenance()
-    }
-
-    private func deleteMaintenance(_ item: MaintenanceItem) {
-        maintenanceStore.remove(item.id)
-        MaintenanceNotifier.cancel(itemIDs: [item.id], vin: vehicle.vin)
-        reloadMaintenance()
-    }
-
-    private func isOverdue(_ item: MaintenanceItem, odometer: Double?) -> Bool {
-        guard let odometer else { return false }
-        return item.dueKm <= odometer
-    }
-
-    private func maintenanceSubtitle(_ item: MaintenanceItem, odometer: Double?) -> String {
-        if item.done {
-            if let km = item.completedAtKm { return "Tamamlandı · \(Int(km.rounded())) km" }
-            return "Tamamlandı"
-        }
-        guard let odometer else { return "Bakım: \(Int(item.dueKm.rounded())) km · güncel km bilinmiyor" }
-        let remaining = item.remainingKm(currentOdometer: odometer)
-        if remaining <= 0 { return "Gecikti · \(Int((odometer - item.dueKm).rounded())) km geçti" }
-        return "Bakım: \(Int(item.dueKm.rounded())) km · \(Int(remaining.rounded())) km kaldı"
-    }
-
-    private var maintenanceCard: some View {
-        let odometer = telemetry?.odometerKM
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label("Bakım Hatırlatıcıları", systemImage: "wrench.and.screwdriver")
-                    .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
-                Spacer()
-                if let odometer {
-                    Text("\(Int(odometer.rounded())) km").font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
-                }
-            }
-
-            if maintenanceItems.isEmpty {
-                Text("Henüz bakım kaydı yok. Aşağıdan ekleyin.")
-                    .font(.caption2).foregroundStyle(ToggTheme.muted)
-            }
-
-            ForEach(maintenanceItems) { item in
-                HStack(spacing: 8) {
-                    Image(systemName: item.done ? "checkmark.circle.fill" : (isOverdue(item, odometer: odometer) ? "exclamationmark.triangle.fill" : "circle"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(item.done ? ToggTheme.green : (isOverdue(item, odometer: odometer) ? ToggTheme.orange : ToggTheme.muted))
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(item.title).font(.caption).strikethrough(item.done).foregroundStyle(item.done ? ToggTheme.muted : .white)
-                        Text(maintenanceSubtitle(item, odometer: odometer))
-                            .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
-                    }
-                    Spacer()
-                    if !item.done {
-                        Button("Tamam") { completeMaintenance(item, odometer: odometer) }
-                            .font(.system(size: 10, weight: .semibold)).buttonStyle(.bordered)
-                            .accessibilityLabel("\(item.title) bakımını tamamlandı olarak işaretle")
-                    }
-                    Button {
-                        deleteMaintenance(item)
-                    } label: {
-                        Image(systemName: "trash").font(.system(size: 10))
-                    }
-                    .buttonStyle(.plain).foregroundStyle(ToggTheme.muted)
-                    .accessibilityLabel("\(item.title) bakımını sil")
-                }
-                .accessibilityElement(children: .contain)
-            }
-
-            Divider().overlay(ToggTheme.muted.opacity(0.2))
-
-            HStack(spacing: 6) {
-                TextField("Bakım adı", text: $maintenanceTitle)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.caption)
-                TextField("km", text: $maintenanceDueKm)
-                    .keyboardType(.numberPad)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.caption)
-                    .frame(width: 78)
-                Button {
-                    addMaintenance()
-                } label: {
-                    Image(systemName: "plus.circle.fill").font(.system(size: 20))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(ToggTheme.teal)
-                .disabled(maintenanceTitle.trimmingCharacters(in: .whitespaces).isEmpty || Double(maintenanceDueKm) == nil)
-                .accessibilityLabel("Bakım ekle")
-            }
-
-            if let maintenanceError {
-                Text(maintenanceError).font(.system(size: 9)).foregroundStyle(ToggTheme.pink)
-                    .accessibilityLabel("Hata: \(maintenanceError)")
-            } else {
-                Text("Bakım km'sine 500 km kalınca uygulama açıkken bildirim gönderilir.")
-                    .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
-            }
-        }
-        .padding(18).toggCardBackground()
-        .onAppear { reloadMaintenance() }
-        .onChange(of: telemetry?.odometerKM) { _ in reloadMaintenance() }
     }
 
     var technicalOverview: some View {

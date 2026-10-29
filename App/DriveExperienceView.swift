@@ -735,6 +735,7 @@ struct DriveExperienceView: View {
         guard let spend = ExperienceFormat.chargeSpend(from: data) else { return }
         let store = ChargingSpendStore(vin: vehicle.vin)
         store.record(amountTRY: spend, month: month)
+        NotificationCenter.default.post(name: .chargingBudgetDidChange, object: nil)
         #if DEBUG
         if diagnosticsEnabled {
             print("[BUDGET] month=\(month) spend=\(spend) limit=\(store.monthlyLimit()) cached=\(store.snapshot()?.amountTRY ?? -1)")
