@@ -20,14 +20,7 @@ final class GarageModel: ObservableObject {
     let link: BleLinkCoordinator
     let geofence = GeofenceManager()
     private var watchCancellables = Set<AnyCancellable>()
-    private var cloudBatteryPercent: Double?
-    private var cloudRangeKM: Double?
-    private var cloudOutsideTemperatureC: Double?
-    private var cloudAuxiliaryBatteryPercent: Double?
-    private var cloudOdometerKM: Double?
-    private var cloudChargingState: String?
-    private var cloudUpdatedAt: Date?
-    private var cloudFetchTask: Task<Void, Never>?
+    let cloud = CloudTelemetryStore()
     private var lastWidgetReloadAt = Date.distantPast
 
     init() {
@@ -165,23 +158,23 @@ final class GarageModel: ObservableObject {
 
     /// Pano yenilemesi bulut telemetrisini saate de yazar. Eksik alan nil kalır.
     func noteCloudTelemetry(_ telemetry: VehicleTelemetry) {
-        cloudBatteryPercent = telemetry.batteryPercent
-        cloudRangeKM = telemetry.rangeKM
-        cloudOutsideTemperatureC = telemetry.outsideTemperatureC
-        cloudAuxiliaryBatteryPercent = telemetry.auxiliaryBatteryPercent
-        cloudOdometerKM = telemetry.odometerKM
-        cloudChargingState = telemetry.chargingState
-        cloudUpdatedAt = telemetry.vehicleUpdatedAt ?? Date()
+        cloud.batteryPercent = telemetry.batteryPercent
+        cloud.rangeKM = telemetry.rangeKM
+        cloud.outsideTemperatureC = telemetry.outsideTemperatureC
+        cloud.auxiliaryBatteryPercent = telemetry.auxiliaryBatteryPercent
+        cloud.odometerKM = telemetry.odometerKM
+        cloud.chargingState = telemetry.chargingState
+        cloud.updatedAt = telemetry.vehicleUpdatedAt ?? Date()
         publishWatchSnapshot()
     }
 
     private func refreshCloudIfStale() {
         guard signedIn, let vin = selectedVin,
               let vehicle = vehicles.first(where: { $0.vin == vin }) else { return }
-        if let cloudUpdatedAt, Date().timeIntervalSince(cloudUpdatedAt) < 120 { return }
-        guard cloudFetchTask == nil else { return }
-        cloudFetchTask = Task { [weak self] in
-            defer { Task { @MainActor in self?.cloudFetchTask = nil } }
+        if let updatedAt = cloud.updatedAt, Date().timeIntervalSince(updatedAt) < 120 { return }
+        guard cloud.fetchTask == nil else { return }
+        cloud.fetchTask = Task { [weak self] in
+            defer { Task { @MainActor in self?.cloud.fetchTask = nil } }
             guard let self else { return }
             do {
                 let response = try await self.api.details(for: vehicle)
@@ -297,12 +290,12 @@ final class GarageModel: ObservableObject {
             bleState: ble.state.description,
             updatedAt: Date().timeIntervalSince1970,
             telemetryAge: age,
-            batteryPercent: cloudBatteryPercent,
-            rangeKM: cloudRangeKM,
-            outsideTemperatureC: cloudOutsideTemperatureC,
-            auxiliaryBatteryPercent: cloudAuxiliaryBatteryPercent,
-            odometerKM: cloudOdometerKM,
-            chargingState: cloudChargingState,
+            batteryPercent: cloud.batteryPercent,
+            rangeKM: cloud.rangeKM,
+            outsideTemperatureC: cloud.outsideTemperatureC,
+            auxiliaryBatteryPercent: cloud.auxiliaryBatteryPercent,
+            odometerKM: cloud.odometerKM,
+            chargingState: cloud.chargingState,
             proximityEnabled: UserDefaults.standard.bool(forKey: "toqdas.proximity.enabled.\(vin)"),
             recovering: link.silentRecovery
         ))
@@ -314,29 +307,61 @@ final class GarageModel: ObservableObject {
     private func publishWidgetSnapshot() {
         guard let vin = selectedVin,
               let vehicle = vehicles.first(where: { $0.vin == vin }) else {
+            let hadSnapshot = VehicleWidgetSnapshotStore.load() != nil
             VehicleWidgetSnapshotStore.clear()
-            reloadWidgetIfNeeded()
+            if hadSnapshot { requestWidgetReload(contentChanged: true) }
             return
         }
 
-        VehicleWidgetSnapshotStore.save(VehicleWidgetSnapshot(
+        let previous = VehicleWidgetSnapshotStore.load()
+        let snapshot = VehicleWidgetSnapshot(
             vehicleName: vehicle.title,
             locked: ble.telemetry?.isLocked,
-            batteryPercent: cloudBatteryPercent,
-            rangeKM: cloudRangeKM,
+            batteryPercent: cloud.batteryPercent,
+            rangeKM: cloud.rangeKM,
             bleReady: ble.state.isReady,
             bleUpdatedAt: ble.telemetry?.receivedAt,
-            cloudUpdatedAt: cloudUpdatedAt,
+            cloudUpdatedAt: cloud.updatedAt,
             savedAt: Date()
-        ))
-        reloadWidgetIfNeeded()
+        )
+        VehicleWidgetSnapshotStore.save(snapshot)
+        requestWidgetReload(contentChanged: Self.widgetContentChanged(previous: previous, current: snapshot))
+    }
+
+    /// Widget'ta görünen alanlar değişti mi? `savedAt`/`cloudUpdatedAt` her
+    /// yoklamada değiştiği için karşılaştırmaya dahil edilmez.
+    static func widgetContentChanged(previous: VehicleWidgetSnapshot?, current: VehicleWidgetSnapshot?) -> Bool {
+        guard let previous, let current else { return true }
+        return previous.vehicleName != current.vehicleName
+            || previous.locked != current.locked
+            || previous.batteryPercent != current.batteryPercent
+            || previous.rangeKM != current.rangeKM
+            || previous.bleReady != current.bleReady
+    }
+
+    /// Bulut telemetrisi özeti. GarageModel'den ayrılarak sorumluluk bölündü.
+    final class CloudTelemetryStore {
+        var batteryPercent: Double?
+        var rangeKM: Double?
+        var outsideTemperatureC: Double?
+        var auxiliaryBatteryPercent: Double?
+        var odometerKM: Double?
+        var chargingState: String?
+        var updatedAt: Date?
+        var fetchTask: Task<Void, Never>?
     }
 
     /// WidgetKit yenilemelerini uygulama içi BLE telemetrisinden daha seyrek
     /// ister; iOS yine de kendi pil/yenileme politikasını uygular.
-    private func reloadWidgetIfNeeded() {
-        guard Date().timeIntervalSince(lastWidgetReloadAt) >= 60 else { return }
-        lastWidgetReloadAt = Date()
+    private func requestWidgetReload(contentChanged: Bool) {
+        let now = Date()
+        guard WidgetRefreshPolicy.shouldReload(
+            isFirstPublish: lastWidgetReloadAt == .distantPast,
+            contentChanged: contentChanged,
+            lastReloadAt: lastWidgetReloadAt == .distantPast ? nil : lastWidgetReloadAt,
+            now: now
+        ) else { return }
+        lastWidgetReloadAt = now
         WidgetCenter.shared.reloadTimelines(ofKind: VehicleWidgetSnapshot.widgetKind)
     }
 }

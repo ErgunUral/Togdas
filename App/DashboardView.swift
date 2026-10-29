@@ -1,6 +1,7 @@
 import LocalAuthentication
 import SwiftUI
 import UIKit
+import UserNotifications
 
 enum DashboardTab: String, CaseIterable, Identifiable {
     case overview, climate, charging, health
@@ -94,6 +95,46 @@ struct DashboardView: View {
     @State private var proximityRSSISamples: [Int] = []
     @State private var proximityStatus = "Ölçüm bekleniyor"
     @State private var showProximityConfirmation = false
+    private var drivingStats: DrivingStatsStore { DrivingStatsStore(vin: vehicle.vin) }
+    private var maintenanceStore: MaintenanceStore { MaintenanceStore(vin: vehicle.vin) }
+    @State private var maintenanceTitle = ""
+    @State private var maintenanceDueKm = ""
+    @State private var maintenanceItems: [MaintenanceItem] = []
+    @State private var maintenanceError: String?
+
+
+    private func checkTirePressure(_ tires: [TireReading]) {
+        let policy = TirePressureSettings().policy
+        let alerts = policy.alerts(for: tires)
+        guard !alerts.isEmpty else { return }
+
+        // Aynı lastik için günde bir kez bildirim.
+        let calendar = Calendar.current
+        let vin = vehicle.vin
+        var notifiedAny = false
+        for alert in alerts {
+            let key = "toqdas.tire.notified.\(vin).\(alert.position.rawValue).\(alert.severity)"
+            let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
+            guard !calendar.isDate(last, inSameDayAs: Date()) else { continue }
+            UserDefaults.standard.set(Date(), forKey: key)
+            notifiedAny = true
+        }
+        guard notifiedAny else { return }
+
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        let critical = alerts.contains { $0.severity == .critical }
+        let content = UNMutableNotificationContent()
+        content.title = critical ? "Kritik lastik basıncı" : "Lastik basıncı uyarısı"
+        let detail = alerts
+            .sorted { $0.pressurePSI < $1.pressurePSI }
+            .map { "\($0.position.title) \(String(format: "%.0f", $0.pressurePSI)) PSI" }
+            .joined(separator: ", ")
+        content.body = "\(detail). Eşik: \(Int(policy.lowThresholdPSI.rounded())) PSI."
+        content.sound = .default
+        let req = UNNotificationRequest(identifier: "tire-pressure-\(vin)", content: content, trigger: nil)
+        center.add(req)
+    }
     @State private var proximityAutoOffEnabled = false
     @State private var proximityAutoOffMinutes = 30
     @State private var proximityAutoOffCustomText = "30"
@@ -106,7 +147,6 @@ struct DashboardView: View {
 
     // Önizleme durumları (henüz araca bağlı değil)
     @State private var sentryMode = true
-    @State private var valetMode = false
     @State private var sunroofOpen = false
     @State private var climateOn = false
     @State private var climateKnown = false
@@ -444,7 +484,7 @@ struct DashboardView: View {
             if layout != .minimal {
                 PremiumControlsSection(
                     sentryMode: $sentryMode,
-                    valetMode: $valetMode,
+                    
                     
                     sunroofOpen: $sunroofOpen,
                     onWindowCommand: requestWindowCommand
@@ -452,6 +492,8 @@ struct DashboardView: View {
             }
             if layout == .sport { proximityCard }
             geofenceCard
+            drivingStatsCard
+            maintenanceCard
             if layout != .sport { quickActions }
             chargingOverviewLink
         }
@@ -857,6 +899,183 @@ struct DashboardView: View {
                 .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
         }
         .padding(18).toggCardBackground()
+    }
+
+    private func monthTitle(_ month: String) -> String {
+        let parts = month.split(separator: "-")
+        guard parts.count == 2, let monthNumber = Int(parts[1]), (1...12).contains(monthNumber) else { return month }
+        let names = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                     "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+        return "\(names[monthNumber - 1]) \(parts[0])"
+    }
+
+    private var drivingStatsCard: some View {
+        let stats = drivingStats.monthlyStats()
+        let weekKm = drivingStats.last7DaysKm()
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("Sürüş İstatistikleri", systemImage: "chart.bar.fill")
+                    .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                Spacer()
+                Text(monthTitle(stats.month)).font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+            }
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(Int(stats.km.rounded())) km")
+                        .font(.system(size: 22, weight: .bold)).foregroundStyle(ToggTheme.teal)
+                    Text("Bu ay · \(stats.daysWithData) gün veri")
+                        .font(.caption).foregroundStyle(ToggTheme.muted)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(String(format: "%.0f", stats.estimatedCostTRY)) ₺")
+                        .font(.system(size: 22, weight: .bold)).foregroundStyle(ToggTheme.orange)
+                    Text("\(String(format: "%.1f", stats.estimatedKWh)) kWh tahmini")
+                        .font(.caption).foregroundStyle(ToggTheme.muted)
+                }
+            }
+            Divider().overlay(ToggTheme.muted.opacity(0.2))
+            HStack {
+                Text("Son 7 gün").font(.caption).foregroundStyle(ToggTheme.muted)
+                Spacer()
+                Text(stats.daysWithData > 0 ? "\(Int(weekKm.rounded())) km" : "—")
+                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+            }
+            Text(stats.daysWithData > 1
+                 ? "Odometer okumalarından hesaplanır. Maliyet 17 kWh/100 km ve 10 ₺/kWh varsayımıyla (kayıp yok)."
+                 : "Yeterli veri yok. Birkaç günlük odometer okumasından sonra km ve maliyet hesaplanır.")
+                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+        }
+        .padding(18).toggCardBackground()
+    }
+
+    private func reloadMaintenance() {
+        maintenanceItems = maintenanceStore.items
+        guard let odometer = telemetry?.odometerKM else { return }
+        let due = maintenanceStore.items.filter { !$0.done && $0.remainingKm(currentOdometer: odometer) <= 500 }
+        guard !due.isEmpty else { return }
+        MaintenanceNotifier.notify(items: due, odometer: odometer, vin: vehicle.vin)
+    }
+
+    private func addMaintenance() {
+        let trimmed = maintenanceTitle.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        guard let km = Double(maintenanceDueKm.replacingOccurrences(of: ",", with: ".")), km > 0 else {
+            maintenanceError = "Geçerli bir km girin."
+            return
+        }
+        if let current = telemetry?.odometerKM, km <= current {
+            maintenanceError = "Bakım km'si mevcut km'den büyük olmalı (\(Int(current.rounded())) km)."
+            return
+        }
+        maintenanceError = nil
+        maintenanceStore.add(title: trimmed, dueKm: km)
+        maintenanceTitle = ""
+        maintenanceDueKm = ""
+        MaintenanceNotifier.requestAuthorization()
+        reloadMaintenance()
+    }
+
+    private func completeMaintenance(_ item: MaintenanceItem, odometer: Double?) {
+        maintenanceStore.markDone(item.id, atOdometer: odometer)
+        MaintenanceNotifier.cancel(itemIDs: [item.id], vin: vehicle.vin)
+        reloadMaintenance()
+    }
+
+    private func deleteMaintenance(_ item: MaintenanceItem) {
+        maintenanceStore.remove(item.id)
+        MaintenanceNotifier.cancel(itemIDs: [item.id], vin: vehicle.vin)
+        reloadMaintenance()
+    }
+
+    private func isOverdue(_ item: MaintenanceItem, odometer: Double?) -> Bool {
+        guard let odometer else { return false }
+        return item.dueKm <= odometer
+    }
+
+    private func maintenanceSubtitle(_ item: MaintenanceItem, odometer: Double?) -> String {
+        if item.done {
+            if let km = item.completedAtKm { return "Tamamlandı · \(Int(km.rounded())) km" }
+            return "Tamamlandı"
+        }
+        guard let odometer else { return "Bakım: \(Int(item.dueKm.rounded())) km · güncel km bilinmiyor" }
+        let remaining = item.remainingKm(currentOdometer: odometer)
+        if remaining <= 0 { return "Gecikti · \(Int((odometer - item.dueKm).rounded())) km geçti" }
+        return "Bakım: \(Int(item.dueKm.rounded())) km · \(Int(remaining.rounded())) km kaldı"
+    }
+
+    private var maintenanceCard: some View {
+        let odometer = telemetry?.odometerKM
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Bakım Hatırlatıcıları", systemImage: "wrench.and.screwdriver")
+                    .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                Spacer()
+                if let odometer {
+                    Text("\(Int(odometer.rounded())) km").font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                }
+            }
+
+            if maintenanceItems.isEmpty {
+                Text("Henüz bakım kaydı yok. Aşağıdan ekleyin.")
+                    .font(.caption2).foregroundStyle(ToggTheme.muted)
+            }
+
+            ForEach(maintenanceItems) { item in
+                HStack(spacing: 8) {
+                    Image(systemName: item.done ? "checkmark.circle.fill" : (isOverdue(item, odometer: odometer) ? "exclamationmark.triangle.fill" : "circle"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(item.done ? ToggTheme.green : (isOverdue(item, odometer: odometer) ? ToggTheme.orange : ToggTheme.muted))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(item.title).font(.caption).strikethrough(item.done).foregroundStyle(item.done ? ToggTheme.muted : .white)
+                        Text(maintenanceSubtitle(item, odometer: odometer))
+                            .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                    }
+                    Spacer()
+                    if !item.done {
+                        Button("Tamam") { completeMaintenance(item, odometer: odometer) }
+                            .font(.system(size: 10, weight: .semibold)).buttonStyle(.bordered)
+                    }
+                    Button {
+                        deleteMaintenance(item)
+                    } label: {
+                        Image(systemName: "trash").font(.system(size: 10))
+                    }
+                    .buttonStyle(.plain).foregroundStyle(ToggTheme.muted)
+                }
+            }
+
+            Divider().overlay(ToggTheme.muted.opacity(0.2))
+
+            HStack(spacing: 6) {
+                TextField("Bakım adı", text: $maintenanceTitle)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.caption)
+                TextField("km", text: $maintenanceDueKm)
+                    .keyboardType(.numberPad)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.caption)
+                    .frame(width: 78)
+                Button {
+                    addMaintenance()
+                } label: {
+                    Image(systemName: "plus.circle.fill").font(.system(size: 20))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(ToggTheme.teal)
+                .disabled(maintenanceTitle.trimmingCharacters(in: .whitespaces).isEmpty || Double(maintenanceDueKm) == nil)
+            }
+
+            if let maintenanceError {
+                Text(maintenanceError).font(.system(size: 9)).foregroundStyle(ToggTheme.pink)
+            } else {
+                Text("Bakım km'sine 500 km kalınca uygulama açıkken bildirim gönderilir.")
+                    .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+            }
+        }
+        .padding(18).toggCardBackground()
+        .onAppear { reloadMaintenance() }
+        .onChange(of: telemetry?.odometerKM) { _ in reloadMaintenance() }
     }
 
     var technicalOverview: some View {
@@ -2039,6 +2258,8 @@ struct DashboardView: View {
             try Task.checkCancellation()
             telemetry = parsed
             updatedAt = parsed.vehicleUpdatedAt ?? Date()
+            if let odo = parsed.odometerKM { drivingStats.record(odometer: odo) }
+            checkTirePressure(parsed.tires)
             model.noteCloudTelemetry(parsed)
         } catch is CancellationError {
             return
@@ -2393,7 +2614,6 @@ private struct QuickActionButton: View {
 
 private struct PremiumControlsSection: View {
     @Binding var sentryMode: Bool
-    @Binding var valetMode: Bool
     @Binding var sunroofOpen: Bool
     let onWindowCommand: (DashboardCommand) -> Void
 
@@ -2407,10 +2627,10 @@ private struct PremiumControlsSection: View {
                          subtitle: sentryMode ? "Kameralar Aktif" : "Kapalı",
                          icon: "shield.lefthalf.filled",
                          isOn: $sentryMode, color: ToggTheme.green)
-                modeCard(title: "Valet / Sürücü Sınırı",
-                         subtitle: valetMode ? "Maks 70 km/h kilitli" : "Devre dışı",
-                         icon: "key.fill",
-                         isOn: $valetMode, color: ToggTheme.orange)
+                
+                         
+                         
+                         
             }
 
             VStack(alignment: .leading, spacing: 12) {
@@ -2617,6 +2837,13 @@ private struct VehicleHealthCard: View {
     let chargingState: String
     let updatedAt: Date?
 
+    @State private var showTireSettings = false
+    @State private var tireLowThreshold = TirePressurePolicy.default.lowThresholdPSI
+
+    private var tirePressureAvailable: Bool {
+        tires.contains { $0.pressurePSI != nil }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 12) {
@@ -2634,13 +2861,34 @@ private struct VehicleHealthCard: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Lastik Basınçları (TPMS - PSI)")
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                HStack {
+                    Text("Lastik Basınçları (TPMS - PSI)")
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                    Spacer()
+                    Button {
+                        withAnimation(.snappy) { showTireSettings.toggle() }
+                    } label: {
+                        Label("Eşik", systemImage: "slider.horizontal.3")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(ToggTheme.teal)
+                }
                 HStack(spacing: 10) {
                     tireBox(.frontLeft)
                     tireBox(.frontRight)
                     tireBox(.rearLeft)
                     tireBox(.rearRight)
+                }
+                if showTireSettings {
+                    tireThresholdEditor
+                } else {
+                    Text(tireThresholdSummary)
+                        .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                }
+                if !tirePressureAvailable {
+                    Text("Lastik basıncı verisi şu an gelmiyor. Araç uyanıkken tekrar deneyin; eksik değer 0 PSI olarak gösterilmez.")
+                        .font(.system(size: 9)).foregroundStyle(ToggTheme.orange)
                 }
             }
 
@@ -2673,13 +2921,57 @@ private struct VehicleHealthCard: View {
         .toggCardBackground()
     }
 
+    private var tireThresholdSummary: String {
+        let policy = TirePressureSettings().policy
+        return "Uyarı eşiği \(Int(policy.lowThresholdPSI.rounded())) PSI · kritik \(Int(policy.criticalThresholdPSI.rounded())) PSI"
+    }
+
+    private var tireThresholdEditor: some View {
+        let policy = TirePressureSettings().policy
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Uyarı eşiği").font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                Spacer()
+                Text("\(Int(tireLowThreshold.rounded())) PSI")
+                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(ToggTheme.teal)
+            }
+            Slider(
+                value: $tireLowThreshold,
+                in: TirePressurePolicy.minimumAllowedThreshold...TirePressurePolicy.maximumAllowedThreshold,
+                step: 1
+            ) { editing in
+                if !editing { saveTireThreshold() }
+            }
+            .tint(ToggTheme.teal)
+            Text("Kritik eşik otomatik olarak \(Int(max(TirePressurePolicy.minimumAllowedThreshold, tireLowThreshold - 4).rounded())) PSI olur. Değerler PSI'dır.")
+                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+            Button("Varsayılana dön (\(Int(TirePressurePolicy.default.lowThresholdPSI)) PSI)") {
+                tireLowThreshold = TirePressurePolicy.default.lowThresholdPSI
+                saveTireThreshold()
+            }
+            .font(.system(size: 10)).buttonStyle(.bordered)
+        }
+        .onAppear { tireLowThreshold = policy.lowThresholdPSI }
+    }
+
+    private func saveTireThreshold() {
+        let policy = TirePressurePolicy(
+            lowThresholdPSI: tireLowThreshold,
+            criticalThresholdPSI: tireLowThreshold - 4
+        )
+        TirePressureSettings().policy = policy
+    }
+
     private func tireBox(_ position: TirePosition) -> some View {
         let reading = tires.first { $0.position == position }
+        let severity = reading.flatMap { TirePressureSettings().policy.severity(for: $0) }
+        let tint: Color = severity == .critical ? ToggTheme.pink : (severity == .low ? ToggTheme.orange : .white)
         return VStack(spacing: 4) {
-            Image(systemName: "car.side.fill")
-                .font(.system(size: 15)).foregroundStyle(ToggTheme.teal)
+            Image(systemName: severity == nil ? "car.side.fill" : "exclamationmark.triangle.fill")
+                .font(.system(size: 15))
+                .foregroundStyle(severity == nil ? ToggTheme.teal : tint)
             Text(reading?.pressurePSI.map { String(format: "%.1f PSI", $0) } ?? "— PSI")
-                .font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
+                .font(.system(size: 13, weight: .bold)).foregroundStyle(tint)
                 .lineLimit(1).minimumScaleFactor(0.7)
             Text(reading?.temperatureC.map { "\(Int($0.rounded()))°C" } ?? "—°C")
                 .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
