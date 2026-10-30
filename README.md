@@ -82,6 +82,9 @@ It overwrites project settings; preserve manual project changes before running i
   cloud battery %, range, outside temperature, 12 V battery, odometer and charging state when
   the server returns them; missing values render as "—", never as 0).
   The snapshot is not live vehicle telemetry. No credentials or key material are transferred.
+  The watch also keeps the last display-only snapshot and vehicle names in its own
+  `UserDefaults`; after a relaunch or while the iPhone is unreachable it shows the last known
+  values with their age, but commands stay disabled.
 - Watch lock/unlock requests: the watch sends a command ID, target VIN, creation time and a
   15-second expiry with `sendMessage`; the watch confirms each request and checks current
   telemetry freshness. The iPhone rechecks time window, VIN, READY, fresh signed telemetry
@@ -263,9 +266,10 @@ taşınır. Araç anahtarı kaybolursa arayüzdeki **Dijital anahtarı yeniden e
 4. Verify separate Watch public-key/certificate registration without replacing the
    existing phone relationship; private keys remain on their generating device.
 5. Watch lock/unlock now runs as a foreground request over WatchConnectivity with command
-   ID, expiry, acknowledgement and fresh telemetry readback. Independent Watch
-   certificate/key registration (without replacing the phone relationship) is still open;
-   private keys must remain on their generating device.
+   ID, expiry, acknowledgement and fresh telemetry readback. The watch caches only the last
+   display snapshot, so it can show last-known values without the iPhone; commands still
+   require the phone. Independent Watch certificate/key registration (without replacing the
+   phone relationship) is still open; private keys must remain on their generating device.
 6. Add proximity evaluation in observation-only mode: filtered RSSI, hysteresis,
    dwell time, stale sample rejection and suppression of repeated decisions.
 7. Evaluate background discovery/reconnection on physical supported watches;

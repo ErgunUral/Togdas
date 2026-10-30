@@ -237,6 +237,9 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   5xx/429 için sınırlı geri çekilme uygulanıyor. 401 alınan yetkili istek bir kez
   oturum yenilemesiyle tekrarlanıyor; POST komutları ağ hatasında otomatik
   tekrarlanmıyor.
+- Saat, son gösterim anlık görüntüsünü kendi `UserDefaults` alanında saklıyor;
+  iPhone erişilemezken son bilinen değerleri yaşıyla gösteriyor. Komutlar hâlâ
+  iPhone bağlantısı ve taze telemetri gerektiriyor.
 
 ## 9. İlkeler
 

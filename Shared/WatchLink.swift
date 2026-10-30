@@ -126,6 +126,11 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
     var refreshHandler: (() -> Void)?
 
     private var context: [String: Any] = ["schema": 1]
+    private enum CacheKey {
+        static let snapshot = "toqdas.watch.snapshot.v1"
+        static let names = "toqdas.watch.vehicleNames.v1"
+        static let updatedAt = "toqdas.watch.updatedAt.v1"
+    }
 
     private var isWatch: Bool {
         #if os(watchOS)
@@ -137,15 +142,60 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
 
     override init() {
         super.init()
+        loadCachedState()
         guard WCSession.isSupported() else { return }
         WCSession.default.delegate = self
         WCSession.default.activate()
+    }
+
+    /// Saat, iPhone erişilemezken son bilinen anlık görüntüyü gösterebilsin.
+    /// Yalnızca gösterim verisi saklanır; anahtar, token veya komut kuyruğu yok.
+    private func loadCachedState() {
+        guard isWatch else { return }
+        let defaults = UserDefaults.standard
+        if let data = defaults.data(forKey: CacheKey.snapshot),
+           let decoded = try? JSONDecoder().decode(WatchSnapshot.self, from: data) {
+            snapshot = decoded
+        }
+        if let names = defaults.stringArray(forKey: CacheKey.names) {
+            vehicleNames = names
+        }
+        if let stamp = defaults.object(forKey: CacheKey.updatedAt) as? Double {
+            updatedAt = Date(timeIntervalSince1970: stamp)
+        }
+        if snapshot != nil {
+            status = "Son bilinen veri yüklendi; iPhone bekleniyor"
+        }
+    }
+
+    private func cache(_ context: [String: Any]) {
+        guard isWatch else { return }
+        let defaults = UserDefaults.standard
+        if let data = context["snapshot"] as? Data,
+           (try? JSONDecoder().decode(WatchSnapshot.self, from: data)) != nil {
+            defaults.set(data, forKey: CacheKey.snapshot)
+        }
+        if let names = context["vehicles"] as? [String] {
+            defaults.set(names, forKey: CacheKey.names)
+        }
+        if let stamp = context["updatedAt"] as? Double {
+            defaults.set(stamp, forKey: CacheKey.updatedAt)
+        }
+    }
+
+    private func clearCachedState() {
+        guard isWatch else { return }
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: CacheKey.snapshot)
+        defaults.removeObject(forKey: CacheKey.names)
+        defaults.removeObject(forKey: CacheKey.updatedAt)
     }
 
     // MARK: - iPhone tarafı
 
     func publish(names: [String]) {
         context["vehicles"] = names
+        context["signedOut"] = names.isEmpty
         context["updatedAt"] = Date().timeIntervalSince1970
         flush()
     }
@@ -153,6 +203,8 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
     func publish(snapshot: WatchSnapshot) {
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         context["snapshot"] = data
+        context["signedOut"] = false
+        context["updatedAt"] = Date().timeIntervalSince1970
         flush()
     }
 
@@ -241,6 +293,14 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
     // MARK: - Gelen veri
 
     private func accept(_ context: [String: Any]) {
+        if context["signedOut"] as? Bool == true {
+            snapshot = nil
+            vehicleNames = []
+            updatedAt = nil
+            clearCachedState()
+            status = "Telefondan çıkış yapıldı"
+            return
+        }
         if let names = context["vehicles"] as? [String] {
             vehicleNames = names
         }
@@ -251,6 +311,7 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
            let decoded = try? JSONDecoder().decode(WatchSnapshot.self, from: data) {
             snapshot = decoded
         }
+        cache(context)
         print("[WATCH] context received snapshot=\(snapshot != nil) names=\(vehicleNames.count) keys=\(context.keys.sorted())")
         if let snapshot {
             status = snapshot.ready ? "iPhone bağlı; komut hazır" : "iPhone bağlı; anahtar hazır değil"

@@ -65,7 +65,9 @@ struct WatchGarageView: View {
     private func connectionText(at now: Date) -> String {
         if snapshot == nil { return "iPhone’dan veri bekleniyor" }
         if snapshot?.recovering == true { return "iPhone bağlantıyı yeniden kuruyor…" }
-        if !link.reachable { return "iPhone’a ulaşılamıyor" }
+        if !link.reachable {
+            return "iPhone’a ulaşılamıyor · son veri \(dataAgeText(at: now))"
+        }
         if snapshot?.ready != true { return "Dijital anahtar hazır değil" }
         return telemetryFresh(at: now) ? "Telemetri güncel" : "İmzalı telemetri eski (\(dataAgeText(at: now)))"
     }
@@ -157,7 +159,9 @@ struct WatchGarageView: View {
                     }
                     .padding(.top, 2)
 
-                    Text(link.lastResult?.message ?? "İstek iPhone üzerinden iletilir. Kilit onayı araç telemetrisinden gelir.")
+                    Text(!link.reachable
+                        ? "iPhone’a ulaşılamıyor; son bilinen veri gösteriliyor. Komutlar kapalı."
+                        : (link.lastResult?.message ?? "İstek iPhone üzerinden iletilir. Kilit onayı araç telemetrisinden gelir."))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
