@@ -455,7 +455,7 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showCommands) {
             NavigationStack {
-                CommandView(vehicle: vehicle, api: model.api)
+                CommandView(vehicle: vehicle, api: model.api, linkStatus: model.linkStatus)
                     .environmentObject(ble)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {

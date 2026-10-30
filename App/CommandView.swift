@@ -3,6 +3,9 @@ import SwiftUI
 struct CommandView: View {
     let vehicle: Vehicle
     let api: ToggAPI
+    /// Bağlantı koordinatörünün son durumu. Otomatik kimlik doğrulama
+    /// reddedildiğinde nedeni burada görünür; komutlar sessizce kapanmaz.
+    var linkStatus: String = ""
 
     @EnvironmentObject private var ble: BleConnection
     @State private var message = ""
@@ -45,6 +48,11 @@ struct CommandView: View {
 
     private var canAuthenticate: Bool { ble.state.isCertificate || ble.state.isChallenge }
     private var commandsEnabled: Bool { ble.canSendVehicleCommands && !busy }
+    private var ownerTransferSuggested: Bool {
+        ownerTransferRequired
+            || linkStatus.contains("Sahip anahtarını")
+            || linkStatus.contains("başka bir telefon anahtarına bağlı")
+    }
 
     var body: some View {
         List {
@@ -55,6 +63,11 @@ struct CommandView: View {
 
             Section("Bluetooth") {
                 Text(ble.state.description)
+                if !linkStatus.isEmpty, !ble.state.isReady, linkStatus != ble.state.description {
+                    Text(linkStatus)
+                        .font(.caption)
+                        .foregroundStyle(linkStatus.contains("başarısız") ? .orange : .secondary)
+                }
                 if ble.needsRepair {
                     VStack(alignment: .leading, spacing: 6) {
                         Label("Eşleşme sıfırlanmalı", systemImage: "exclamationmark.triangle.fill")
@@ -96,7 +109,7 @@ struct CommandView: View {
                     Text("Bu işlem için önce araca bağlanın.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                if ownerTransferRequired {
+                if ownerTransferSuggested {
                     Text("Araç eski telefon anahtarına bağlı. Sahip anahtarını bu iPhone'a taşımak, eski telefonun dijital anahtarını geçersiz kılar.")
                         .font(.caption).foregroundStyle(.orange)
                     Button(role: .destructive) {
@@ -365,6 +378,7 @@ struct CommandView: View {
     }
 
     private var commandGateMessage: String {
+        if !ble.state.isReady, !linkStatus.isEmpty { return linkStatus }
         guard ble.state.isReady else { return "Komutlar, araç kimliği doğrulandıktan sonra etkinleşir." }
         guard ble.hasFreshSignedTelemetry else { return "Komut için 15 saniyeden yeni imzalı araç durumu gerekli." }
         return "Kilit durumu bilinmiyor; araç komutları güvenlik için kapalı."
