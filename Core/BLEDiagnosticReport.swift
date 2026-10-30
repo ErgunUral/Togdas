@@ -153,8 +153,12 @@ struct BLEDiagnosticReport: Equatable {
         return .unknown
     }
 
+    private static let rssiRegex = try? NSRegularExpression(
+        pattern: #"(?i)RSSI\s*[:=]?\s*(-?\d+)\s*dBm"#
+    )
+
     private static func rssi(in message: String) -> Int? {
-        guard let regex = try? NSRegularExpression(pattern: #"(?i)RSSI\s*[:=]?\s*(-?\d+)\s*dBm"#),
+        guard let regex = rssiRegex,
               let match = regex.firstMatch(in: message, range: NSRange(message.startIndex..., in: message)),
               let range = Range(match.range(at: 1), in: message) else { return nil }
         return Int(message[range])

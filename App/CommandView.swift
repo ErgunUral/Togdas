@@ -17,6 +17,10 @@ struct CommandView: View {
     @State private var shareStatus = ""
     @State private var shareError: String?
     @State private var showShareConfirmation = false
+    /// Rapor yalnızca tanı olayları değiştiğinde yeniden hesaplanır. Daha önce
+    /// her `body` değerlendirmesinde 15 kez hesaplanıyordu; BLE olayları
+    /// sıklaştığında ana iş parçacığını doldurup uygulamayı sonlandırabiliyordu.
+    @State private var diagnosticReport = BLEDiagnosticReport(events: [])
 
     enum PendingCommand: String, Identifiable {
         case unlock, lock, trunkOpen, trunkClose, driveAuthorize
@@ -41,7 +45,6 @@ struct CommandView: View {
 
     private var canAuthenticate: Bool { ble.state.isCertificate || ble.state.isChallenge }
     private var commandsEnabled: Bool { ble.canSendVehicleCommands && !busy }
-    private var diagnosticReport: BLEDiagnosticReport { BLEDiagnosticReport(events: ble.diagnosticEvents) }
 
     var body: some View {
         List {
@@ -266,6 +269,9 @@ struct CommandView: View {
         }
         .navigationTitle("Araç komutları")
         .onReceive(ble.$lastEvent) { message = $0 }
+        .onReceive(ble.$diagnosticEvents) { events in
+            diagnosticReport = BLEDiagnosticReport(events: events)
+        }
         .alert("Komut gönderilsin mi?", isPresented: Binding(
             get: { pending != nil },
             set: { if !$0 { pending = nil } }
@@ -285,7 +291,10 @@ struct CommandView: View {
         } message: {
             Text("Yalnızca bu VIN için telefon açık anahtarı ve davet imzası gönderilir. Araç sahipliği değişmez; Trumore araç sahibinin onayı beklenir. Aynı davet otomatik tekrarlanmaz.")
         }
-        .onAppear { if shareVIN.isEmpty { shareVIN = vehicle.vin } }
+        .onAppear {
+            diagnosticReport = BLEDiagnosticReport(events: ble.diagnosticEvents)
+            if shareVIN.isEmpty { shareVIN = vehicle.vin }
+        }
     }
 
     private var isValidShareVIN: Bool {

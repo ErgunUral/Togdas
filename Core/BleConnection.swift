@@ -9,7 +9,7 @@ private func bleLog(_ message: String) {
 
 private enum BLEDiagnosticStore {
     private static let key = "toqdas.ble.diagnostics.v1"
-    private static let limit = 500
+    static let limit = 500
 
     static func load() -> [BLEDiagnosticEvent] {
         guard let data = UserDefaults.standard.data(forKey: key),
@@ -165,8 +165,8 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
             safeMessage = message
         }
         diagnosticEvents.append(BLEDiagnosticEvent(id: UUID(), timestamp: Date(), message: safeMessage))
-        if diagnosticEvents.count > 200 {
-            diagnosticEvents.removeFirst(diagnosticEvents.count - 200)
+        if diagnosticEvents.count > BLEDiagnosticStore.limit {
+            diagnosticEvents.removeFirst(diagnosticEvents.count - BLEDiagnosticStore.limit)
         }
         BLEDiagnosticStore.save(diagnosticEvents)
         bleLog("tanı: \(safeMessage)")

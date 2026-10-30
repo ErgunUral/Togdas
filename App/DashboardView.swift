@@ -326,6 +326,9 @@ struct DashboardView: View {
             if ProcessInfo.processInfo.arguments.contains("-openChargingTab") {
                 tab = .charging
             }
+            if ProcessInfo.processInfo.arguments.contains("-openCommands") {
+                showCommands = true
+            }
             if ProcessInfo.processInfo.arguments.contains("-autoDigitalKey"), ble.state.isDisconnected {
                 keepBLEConnected = true
                 model.link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
