@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.014 satır.
 - `Core`: 38 Swift dosyası, yaklaşık 7.451 satır.
-- `Tests`: 34 dosya, 286 test.
+- `Tests`: 34 dosya, 288 test.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.429 satır, 16 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.

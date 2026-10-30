@@ -148,6 +148,37 @@ final class BLEProtocolTests: XCTestCase {
 }
 
 extension BLEProtocolTests {
+    /// Android `BleProtocol.kt` ile aynı sabit baytlar. Bu değerler değişirse
+    /// araç eski/yeni yazılım uyumluluğu ayrıca doğrulanmalıdır.
+    func testWireConstantsMatchAndroid() {
+        XCTAssertEqual(BLEProtocol.certificateHeader, Data([0x21, 0x01, 0xef, 0x00, 0xf7, 0x00, 0x02, 0x00]))
+        XCTAssertEqual(BLEProtocol.certificateNext, Data([0x21, 0x02, 0x08, 0x00, 0xf7, 0x00, 0x02, 0x00]))
+        XCTAssertEqual(BLEProtocol.certificateAck, Data([0x10, 0x01, 0xef, 0x00, 0x02, 0x00, 0x00, 0x00]))
+        XCTAssertEqual(BLEProtocol.certificateFrame2Ack, Data([0x10, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        XCTAssertEqual(BLEProtocol.challengeRequest, Data([0x10, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]))
+        XCTAssertEqual(BLEProtocol.vehicleKeyRequest, Data([0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]))
+        XCTAssertEqual(BLEProtocol.challengeHeader, Data([0x27, 0x01, 0x0a, 0x00, 0x0a, 0x00, 0x01, 0x00]))
+        XCTAssertEqual(BLEProtocol.phoneProofHeader, Data([0x22, 0x01, 0x4a, 0x00, 0x4a, 0x00, 0x01, 0x00]))
+        XCTAssertEqual(BLEProtocol.phoneAck, Data([0x11, 0x02, 0x4a, 0x00, 0x01, 0x00, 0x00, 0x00]))
+        XCTAssertEqual(BLEProtocol.carProofRequest, Data([0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        XCTAssertEqual(BLEProtocol.carProofHeader, Data([0x22, 0x01, 0x50, 0x00, 0x50, 0x00, 0x01, 0x00]))
+        XCTAssertEqual(BLEProtocol.ready, Data([0x11, 0x02, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        XCTAssertEqual(BLEProtocol.commandNonce, Data([0x13, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]))
+        XCTAssertEqual(BLEProtocol.commandHeader, Data([0x23, 0x01, 0x52, 0x00, 0x52, 0x00, 0x01, 0x00]))
+        XCTAssertEqual(BLEProtocol.commandAck, Data([0x12, 0x02, 0x52, 0x00, 0x01, 0x00, 0x00, 0x00]))
+    }
+
+    /// Sertifika çerçevelerinin başlık + gövde yerleşimi bayt düzeyinde sabit.
+    func testCertificateFramesExactLayout() throws {
+        let certificate = Data((0..<247).map { UInt8($0) })
+        let frames = try BLEProtocol.certificateFrames(certificate)
+        XCTAssertEqual(frames[0].prefix(8), BLEProtocol.certificateHeader)
+        XCTAssertEqual(Array(frames[0][8..<12]), [0, 1, 2, 3])
+        XCTAssertEqual(frames[0].last, 238)
+        XCTAssertEqual(frames[1].prefix(8), BLEProtocol.certificateNext)
+        XCTAssertEqual(Array(frames[1].dropFirst(8)), Array(239..<247))
+    }
+
     func testCertificateFramesReassembleExactly() throws {
         let certificate = Data((0..<247).map { UInt8($0 & 0xff) })
         let frames = try BLEProtocol.certificateFrames(certificate)
