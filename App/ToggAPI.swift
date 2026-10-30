@@ -764,12 +764,69 @@ struct CertificateRecord {
                 normalized = packet
             }
             guard let expiry = BLEProtocol.certificateEndDate(normalized), expiry > Date() else { continue }
-            return CertificateRecord(
+            let record = CertificateRecord(
                 certificateBase64: normalized.base64EncodedString(),
                 carPublicKey: candidate.carKey
             )
+            if record.carPublicKey.isEmpty {
+                debugLogResponseShape(root, vin: vin)
+            }
+            return record
         }
+        debugLogResponseShape(root, vin: vin)
         return nil
+    }
+
+    /// Sertifika yanıtında araç anahtarı yoksa alan adlarını teşhis eder.
+    /// Yalnızca anahtar adları ve değer uzunlukları yazılır; hassas değerler
+    /// (sertifika, telefon anahtarı, araç anahtarı) loglanmaz.
+    private static func debugLogResponseShape(_ root: Any, vin: String) {
+        #if DEBUG
+        let suffix = String(vin.suffix(4))
+        if let object = root as? [String: Any] {
+            print("[CERT][DEBUG] vin=…\(suffix) rootKeys=\(object.keys.sorted())")
+        } else if let array = root as? [Any] {
+            print("[CERT][DEBUG] vin=…\(suffix) rootArrayCount=\(array.count)")
+        } else {
+            print("[CERT][DEBUG] vin=…\(suffix) rootType=\(type(of: root))")
+        }
+
+        var certObjectKeys: [String]?
+        var longStringPaths: [String] = []
+        var visited = 0
+
+        func walk(_ node: Any, path: String, depth: Int) {
+            guard depth <= 8, visited < 400 else { return }
+            visited += 1
+            if let object = node as? [String: Any] {
+                if certObjectKeys == nil,
+                   certificateKeys.contains(where: { object[$0] is String }) {
+                    certObjectKeys = object.keys.sorted()
+                }
+                for key in object.keys.sorted() {
+                    let childPath = path.isEmpty ? key : "\(path).\(key)"
+                    walk(object[key] as Any, path: childPath, depth: depth + 1)
+                }
+            } else if let array = node as? [Any] {
+                for (index, value) in array.enumerated() where index < 50 {
+                    walk(value, path: "\(path)[\(index)]", depth: depth + 1)
+                }
+            } else if let string = node as? String {
+                let length = string.count
+                if (60...400).contains(length), longStringPaths.count < 30 {
+                    longStringPaths.append("\(path)(len=\(length))")
+                }
+            }
+        }
+
+        walk(root, path: "", depth: 0)
+        if let certObjectKeys {
+            print("[CERT][DEBUG] certObjectKeys=\(certObjectKeys)")
+        } else {
+            print("[CERT][DEBUG] certObjectKeys=bulunamadı")
+        }
+        print("[CERT][DEBUG] longStringPaths=\(longStringPaths)")
+        #endif
     }
 
     /// GetAllCertificates yanıtında önce VIN ve telefon anahtarına bağlanan
