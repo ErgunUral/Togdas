@@ -6,7 +6,7 @@
 ## Bağlam
 
 Toqdas iOS; iPhone, watchOS ve widget hedeflerini tek Xcode projesinde taşıyor.
-Uygulama çalışıyor ve 296 test geçiyor. Ancak `DashboardView` 3.208 satır,
+Uygulama çalışıyor ve 301 test geçiyor. Ancak `DashboardView` 3.208 satır,
 `BleConnection` 1.445 satır ve `GarageModel` birçok platform servisini birlikte
 yönetiyor. Sıfırdan yeniden yazım; BLE protokolü, sertifika akışı ve saha
 doğrulamalarını riske atar.

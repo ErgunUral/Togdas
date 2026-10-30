@@ -35,6 +35,18 @@ final class NoRedirects: NSObject, URLSessionTaskDelegate {
     }
 }
 
+private struct HTTPStatusError: Error {
+    let statusCode: Int
+    let path: String
+    let retryAfter: TimeInterval?
+
+    var userMessage: String {
+        statusCode == 401
+            ? "Oturum kabul edilmedi; yeniden giriş yapın."
+            : "Servis hatası: HTTP \(statusCode) (\(path))"
+    }
+}
+
 @MainActor
 final class ToggAPI {
     private let store = SessionStore()
@@ -73,20 +85,73 @@ final class ToggAPI {
     }
 
     private func send(_ request: URLRequest) async throws -> Data {
+        var request = request
+        let method = request.httpMethod?.uppercased() ?? "GET"
+        // POST'lar (sertifika üretimi, komutlar) ağ hatasında otomatik
+        // tekrarlanmaz; yalnızca GET/HEAD ve 401 sonrası oturum yenilemesi
+        // güvenle tekrar denenir.
+        let canRetryTransport = method == "GET" || method == "HEAD"
+        var didAuthRetry = false
+        var lastError: Error?
+
+        for attempt in 0..<NetworkRetryPolicy.maxAttempts {
+            do {
+                return try await perform(request)
+            } catch let statusError as HTTPStatusError {
+                lastError = statusError
+                if statusError.statusCode == 401,
+                   !didAuthRetry,
+                   request.value(forHTTPHeaderField: "Authorization") != nil {
+                    didAuthRetry = true
+                    print("[HTTP] 401; oturum yenileniyor \(request.url?.path ?? "?")")
+                    let refreshed = try await token(forceRefresh: true)
+                    request.setValue("Bearer \(refreshed)", forHTTPHeaderField: "Authorization")
+                    continue
+                }
+                guard canRetryTransport,
+                      NetworkRetryPolicy.shouldRetry(statusCode: statusError.statusCode),
+                      attempt + 1 < NetworkRetryPolicy.maxAttempts else {
+                    throw AppError.message(statusError.userMessage)
+                }
+                let delay = NetworkRetryPolicy.delay(
+                    afterAttempt: attempt,
+                    retryAfter: statusError.retryAfter
+                )
+                print("[HTTP] yeniden deneme \(attempt + 2)/\(NetworkRetryPolicy.maxAttempts) HTTP \(statusError.statusCode) \(request.url?.path ?? "?") bekleme=\(String(format: "%.1f", delay))s")
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            } catch let urlError as URLError {
+                lastError = urlError
+                guard canRetryTransport,
+                      NetworkRetryPolicy.shouldRetry(urlError),
+                      attempt + 1 < NetworkRetryPolicy.maxAttempts else {
+                    throw urlError
+                }
+                let delay = NetworkRetryPolicy.delay(afterAttempt: attempt)
+                print("[HTTP] yeniden deneme \(attempt + 2)/\(NetworkRetryPolicy.maxAttempts) URLError \(urlError.code.rawValue) \(request.url?.path ?? "?") bekleme=\(String(format: "%.1f", delay))s")
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            } catch {
+                throw error
+            }
+        }
+
+        if let statusError = lastError as? HTTPStatusError {
+            throw AppError.message(statusError.userMessage)
+        }
+        throw lastError ?? AppError.message("Servis isteği tamamlanamadı.")
+    }
+
+    private func perform(_ request: URLRequest) async throws -> Data {
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse else { throw AppError.message("Servis yanıtı geçersiz.") }
         print("[HTTP] \(http.statusCode) \(request.httpMethod ?? "?") \(request.url?.path ?? "?")")
         guard (200...299).contains(http.statusCode) else {
-            var body = Data()
-            do {
-                for try await byte in bytes {
-                    if body.count >= 2048 { break }
-                    body.append(byte)
-                }
-            } catch {}
             // Error bodies can echo account/VIN data; never copy them into device logs.
             print("[HTTP] \(http.statusCode) \(request.url?.path ?? "?") yanıt gövdesi gizlendi")
-            throw AppError.message(http.statusCode == 401 ? "Oturum kabul edilmedi; yeniden giriş yapın." : "Servis hatası: HTTP \(http.statusCode) (\(request.url?.path ?? "bilinmeyen adres"))")
+            throw HTTPStatusError(
+                statusCode: http.statusCode,
+                path: request.url?.path ?? "bilinmeyen adres",
+                retryAfter: NetworkRetryPolicy.retryAfter(from: http)
+            )
         }
         var data = Data()
         for try await byte in bytes {
@@ -120,9 +185,9 @@ final class ToggAPI {
         try store.save(tokens)
     }
 
-    private func token() async throws -> String {
+    private func token(forceRefresh: Bool = false) async throws -> String {
         guard let tokens = try store.load() else { throw AppError.message("Önce Togg ID ile giriş yapın.") }
-        if tokens.expiresAt.timeIntervalSinceNow > 60 { return tokens.access }
+        if !forceRefresh, tokens.expiresAt.timeIntervalSinceNow > 60 { return tokens.access }
         if let refreshTask { return try await refreshTask.value.access }
         guard let refresh = tokens.refresh, !refresh.isEmpty else {
             throw AppError.message("Oturum süresi doldu; yeniden giriş yapın.")

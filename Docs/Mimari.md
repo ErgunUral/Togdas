@@ -9,8 +9,8 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 Ölçülen başlangıç noktası:
 
 - `App`: 29 Swift dosyası, yaklaşık 11.014 satır.
-- `Core`: 40 Swift dosyası, yaklaşık 7.603 satır.
-- `Tests`: 36 dosya, 296 test.
+- `Core`: 41 Swift dosyası, yaklaşık 7.662 satır.
+- `Tests`: 37 dosya, 301 test.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -233,6 +233,10 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 - `CertificateLifecycle` eklendi; sertifika son 24 saatte yenilenmeye çalışılıyor,
   yenileme başarısız olursa süresi dolana kadar önbellekteki sertifika kullanılıyor.
   `CommandView` kalan süreyi ve yenileme gereksinimini gösteriyor.
+- `NetworkRetryPolicy` eklendi; GET/HEAD isteklerinde geçici ağ hataları ve
+  5xx/429 için sınırlı geri çekilme uygulanıyor. 401 alınan yetkili istek bir kez
+  oturum yenilemesiyle tekrarlanıyor; POST komutları ağ hatasında otomatik
+  tekrarlanmıyor.
 
 ## 9. İlkeler
 
