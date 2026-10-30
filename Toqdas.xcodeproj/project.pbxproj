@@ -64,11 +64,13 @@
 		78B95720E4FE860F8E25C1EC /* GaragePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A90646A8F064CC74B8E1653 /* GaragePreferences.swift */; };
 		7E875253402EDC3321B82860 /* DrivingStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC006C81C7126BBE30BCB1B1 /* DrivingStats.swift */; };
 		7F07DCC632694FBA974C45D4 /* WidgetRefreshPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A726A6BC8538C30D64031109 /* WidgetRefreshPolicy.swift */; };
+		8217A8028B65C709C214133D /* CertificateLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE1205A21B8B73285145929 /* CertificateLifecycle.swift */; };
 		823335EA740E4FC7B19FAE90 /* ToggAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97AC49AE2ABA02AA6D304E9 /* ToggAPI.swift */; };
 		83F4F96E9B37426E2E33EF7E /* PhoneKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A6DDC24EBF5668BCBD8BEED /* PhoneKeyStore.swift */; };
 		84C01423028B7B78968A0D58 /* UserFacingError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7779420C66BEEB0F9F0F67E1 /* UserFacingError.swift */; };
 		84EC9E4A9D7717FE89ABB007 /* CarShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4758C2FBFB7F0D2C07357E0A /* CarShortcuts.swift */; };
 		86D0885E4002411D6A889565 /* ChargingStationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08AD3BFEDDDC63D034E95BD7 /* ChargingStationsView.swift */; };
+		8C228C7F0ECBB433F549135B /* CertificateLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE1205A21B8B73285145929 /* CertificateLifecycle.swift */; };
 		9422B7EDFA3FC3FD65E4472C /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD57A3E8A9EC43D30D8A077 /* DashboardView.swift */; };
 		94FE6F5C1DDA16FEC6B03FB1 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 9628B0944C04A12BD08FD196 /* AppIcon.icon */; };
 		9CBC366849E488FE1A0AC93C /* WatchLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5026366159A018B56620748 /* WatchLink.swift */; };
@@ -260,6 +262,7 @@
 		F4B6B8B65CC65D8E84FA3C40 /* ChargingBudget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingBudget.swift; path = Core/ChargingBudget.swift; sourceTree = "<group>"; };
 		F77C813FDF07671FEDDAE0CE /* VoiceCommandPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceCommandPolicy.swift; path = Core/VoiceCommandPolicy.swift; sourceTree = "<group>"; };
 		F9EB3AE99CA2F29A0F4ED1B7 /* VoiceCommandParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceCommandParser.swift; path = Core/VoiceCommandParser.swift; sourceTree = "<group>"; };
+		FBE1205A21B8B73285145929 /* CertificateLifecycle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CertificateLifecycle.swift; path = Core/CertificateLifecycle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -408,6 +411,7 @@
 				F2B401D4137AF270012CEBA2 /* BLEIssue.swift */,
 				05046024F855B991FC795F0F /* BLECommandReceipt.swift */,
 				11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */,
+				FBE1205A21B8B73285145929 /* CertificateLifecycle.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -617,6 +621,7 @@
 				75D7F622F4CCA6F3E070A9E5 /* BLEIssue.swift in Sources */,
 				B7539723A4119F46D96C5661 /* BLECommandReceipt.swift in Sources */,
 				417996F78A66EC40C130758D /* BLECommandHistoryStore.swift in Sources */,
+				8C228C7F0ECBB433F549135B /* CertificateLifecycle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -695,6 +700,7 @@
 				C1E9684BED2CB7468F3EF3B3 /* BLEIssue.swift in Sources */,
 				2FFCEF6B7245489DA25310B1 /* BLECommandReceipt.swift in Sources */,
 				119EAD8F111DE7DE3BF64BA3 /* BLECommandHistoryStore.swift in Sources */,
+				8217A8028B65C709C214133D /* CertificateLifecycle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

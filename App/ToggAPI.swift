@@ -442,7 +442,7 @@ final class ToggAPI {
         }
         guard let certificateData = Data(base64Encoded: record.certificateBase64),
               let expiry = BLEProtocol.certificateEndDate(certificateData),
-              expiry > Date().addingTimeInterval(86_400) else {
+              CertificateLifecycle(expiresAt: expiry).state == .valid else {
             throw AppError.message("Paylaşılan sertifika süresi geçmiş veya geçersiz.")
         }
 
@@ -613,8 +613,29 @@ final class ToggAPI {
         // hiçbir şey yapmaz ve araç anahtarı sunucudan hiç istenmez.
         if !overwriteOwner,
            let cached = CertificateCache.loadCertificate(vin: vin, phonePublicKeyHex: phonePublicKeyHex) {
-            print("[CERT] cached certificate used len=\(cached.certificateBase64.count) carKey=\(cached.carPublicKey.isEmpty ? "yok" : "var")")
-            guard cached.carPublicKey.isEmpty else {
+            let lifecycle = CertificateLifecycle(certificateBase64: cached.certificateBase64)
+            print("[CERT] cached certificate used len=\(cached.certificateBase64.count) carKey=\(cached.carPublicKey.isEmpty ? "yok" : "var") status=\(lifecycle?.state.rawValue ?? "bilinmiyor")")
+            if !cached.carPublicKey.isEmpty {
+                guard lifecycle?.needsRefresh == true else {
+                    return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: cached.carPublicKey)
+                }
+                // Son 24 saat: yeni sertifika almayı dene. Ağ yoksa hâlâ
+                // geçerli olan önbellek sertifikası kullanılmaya devam eder.
+                print("[CERT] cached certificate needs refresh; requesting new certificate")
+                if let data = try? await getCertificate(phonePublicKey: phonePublicKeyHex, vin: vin),
+                   let fresh = try? CertificateRecord.parse(data, vin: vin, excluding: phonePublicKeyHex),
+                   !fresh.certificateBase64.isEmpty {
+                    CertificateCache.save(
+                        certificateBase64: fresh.certificateBase64,
+                        carPublicKey: fresh.carPublicKey,
+                        vin: vin,
+                        phonePublicKeyHex: phonePublicKeyHex
+                    )
+                    let carKey = fresh.carPublicKey.isEmpty ? cached.carPublicKey : fresh.carPublicKey
+                    print("[CERT] certificate refreshed len=\(fresh.certificateBase64.count) carKeyPresent=\(!carKey.isEmpty)")
+                    return CertificateRecord(certificateBase64: fresh.certificateBase64, carPublicKey: carKey)
+                }
+                print("[CERT] refresh failed; using still-valid cached certificate")
                 return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: cached.carPublicKey)
             }
             // Sertifika var ama araç açık anahtarı yok: el sıkışma araç anahtarı

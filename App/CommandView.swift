@@ -20,6 +20,7 @@ struct CommandView: View {
     @State private var shareStatus = ""
     @State private var shareError: String?
     @State private var showShareConfirmation = false
+    @State private var certificateLifecycle: CertificateLifecycle?
     /// Rapor yalnızca tanı olayları değiştiğinde yeniden hesaplanır. Daha önce
     /// her `body` değerlendirmesinde 15 kez hesaplanıyordu; BLE olayları
     /// sıklaştığında ana iş parçacığını doldurup uygulamayı sonlandırabiliyordu.
@@ -148,6 +149,19 @@ struct CommandView: View {
                 if !ble.carPublicKeyHex.isEmpty {
                     Text("Araç anahtarı: \(ble.carPublicKeyHex.prefix(16))…")
                         .font(.caption).monospaced()
+                }
+                if let lifecycle = certificateLifecycle {
+                    HStack {
+                        Text("Sertifika")
+                        Spacer()
+                        Text(lifecycle.summary)
+                            .foregroundStyle(lifecycle.state == .expired ? .orange : .secondary)
+                    }
+                    .font(.caption)
+                    if lifecycle.needsRefresh {
+                        Text("Bağlantı sırasında yenilenmeye çalışılır; yenilenemezse süresi dolana kadar kullanılır.")
+                            .font(.caption2).foregroundStyle(.orange)
+                    }
                 }
                 Button {
                     Task { await authenticate() }
@@ -357,11 +371,23 @@ struct CommandView: View {
         .onAppear {
             diagnosticReport = BLEDiagnosticReport(events: ble.diagnosticEvents)
             if shareVIN.isEmpty { shareVIN = vehicle.vin }
+            refreshCertificateLifecycle()
         }
     }
 
     private var isValidShareVIN: Bool {
         shareVIN.range(of: "^[A-HJ-NPR-Z0-9]{17}$", options: .regularExpression) != nil
+    }
+
+    private func refreshCertificateLifecycle() {
+        guard let phoneKey = PhoneKeyStore.publicKeyHex(for: vehicle.vin) else {
+            certificateLifecycle = nil
+            return
+        }
+        certificateLifecycle = CertificateCache.cachedLifecycle(
+            vin: vehicle.vin,
+            phonePublicKeyHex: phoneKey
+        )
     }
 
     @MainActor
@@ -386,7 +412,10 @@ struct CommandView: View {
         shareBusy = true
         shareError = nil
         shareStatus = ""
-        defer { shareBusy = false }
+        defer {
+            shareBusy = false
+            refreshCertificateLifecycle()
+        }
         do {
             let record = try await api.readSharedCertificate(vin: shareVIN)
             shareStatus = record.carPublicKey.isEmpty
@@ -408,7 +437,10 @@ struct CommandView: View {
         busy = true
         error = nil
         ownerTransferRequired = false
-        defer { busy = false }
+        defer {
+            busy = false
+            refreshCertificateLifecycle()
+        }
         do {
             try await ble.authenticate(vehicle: vehicle, api: api, overwriteOwner: overwriteOwner)
         } catch CertificateServiceError.ownerTransferRequired {

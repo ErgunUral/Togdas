@@ -304,6 +304,22 @@ enum CertificateCache {
         return (certificate, carPublicKey)
     }
 
+    /// Önbellekteki sertifikanın yaşam döngüsünü döndürür. Süresi dolmuş
+    /// sertifika da raporlanır; silme kararı `loadCertificate` içinde verilir.
+    static func cachedLifecycle(vin: String, phonePublicKeyHex: String) -> CertificateLifecycle? {
+        guard let payload = readPayload(vin: vin) ?? migrateLegacy(vin: vin),
+              let certificate = payload["certificate"] as? String,
+              let data = Data(base64Encoded: certificate),
+              data.count == 247,
+              let phoneKey = try? BLEProtocol.publicKey(Data(hexBytes: phonePublicKeyHex) ?? Data()),
+              let bound = try? BLEProtocol.boundCertificate(
+                data, vin: vin, devicePublicKey: phoneKey.x963Representation),
+              let end = BLEProtocol.certificateEndDate(bound) else {
+            return nil
+        }
+        return CertificateLifecycle(expiresAt: end)
+    }
+
     static func save(certificateBase64: String, carPublicKey: String, vin: String, phonePublicKeyHex: String) {
         guard isValid(certificateBase64: certificateBase64, vin: vin, phonePublicKeyHex: phonePublicKeyHex) else { return }
         // Sunucu yanıtlarında araç anahtarı boş gelebiliyor. Boş değerle
@@ -419,6 +435,8 @@ enum CertificateCache {
               let end = BLEProtocol.certificateEndDate(certificate) else {
             return false
         }
-        return end > Date().addingTimeInterval(86_400)
+        // 24 saatten az kalan sertifika da kullanılabilir; yenileme kararı
+        // `CertificateLifecycle` tarafından verilir.
+        return CertificateLifecycle(expiresAt: end).isUsable
     }
 }
