@@ -4,7 +4,7 @@ import XCTest
 /// BLE durum makinesinin kapı semantiği: komut yalnızca `.ready` iken gider.
 final class BleConnectionStateTests: XCTestCase {
     private let allStates: [BleConnection.State] = [
-        .disconnected, .connecting, .discovering, .certificate, .challenge, .authenticated, .ready, .failed("hata")
+        .disconnected, .connecting, .discovering, .certificate, .challenge, .authenticated, .ready, .failed(.unknown("hata"))
     ]
 
     func testOnlyReadyAllowsCommands() {
@@ -23,12 +23,19 @@ final class BleConnectionStateTests: XCTestCase {
         }
     }
 
-    func testFailedCarriesSourceMessage() {
-        guard case .failed(let message) = BleConnection.State.failed("zaman aşımı") else {
+    func testFailedCarriesTypedIssue() {
+        guard case .failed(let issue) = BleConnection.State.failed(.vehicleKeyMissing) else {
             return XCTFail("failed ilişkili değer taşımalı")
         }
-        XCTAssertEqual(message, "zaman aşımı")
-        XCTAssertEqual(BleConnection.State.failed("zaman aşımı").description, "Hata: zaman aşımı")
+        XCTAssertEqual(issue, .vehicleKeyMissing)
+        XCTAssertEqual(BleConnection.State.failed(.vehicleKeyMissing).description, "Hata: Araç eşleştirmesi gerekiyor")
+    }
+
+    func testTypedIssueMessagesRemainUserFacing() {
+        XCTAssertEqual(BLEIssue.radioUnavailable.message, "Bluetooth kapalı veya izin yok.")
+        XCTAssertEqual(BLEIssue.pairingLost.message, "Eşleşme hatası")
+        XCTAssertEqual(BLEIssue.connectionFailed("zaman aşımı").message, "Bağlantı hatası: zaman aşımı")
+        XCTAssertEqual(BLEIssue.handshakeTimeout("Araç sertifikayı yanıtlamadı.").message, "Araç sertifikayı yanıtlamadı.")
     }
 
     func testEveryStateHasVisibleDescription() {

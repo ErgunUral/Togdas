@@ -9,8 +9,8 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 Ölçülen başlangıç noktası:
 
 - `App`: 29 Swift dosyası, yaklaşık 11.014 satır.
-- `Core`: 36 Swift dosyası, yaklaşık 7.284 satır.
-- `Tests`: 33 dosya, 282 test.
+- `Core`: 37 Swift dosyası, yaklaşık 7.365 satır.
+- `Tests`: 33 dosya, 283 test.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.379 satır, 14 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -223,6 +223,8 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   hâlâ servis/karakteristik keşfi, yazma kuyruğu ve el sıkışmayı taşıyor.
 - `BLETransporting` protokolü ve `FakeBLETransport` ile radyo/tarama testleri
   eklendi.
+- `BLEIssue` eklendi; `BleConnection.State.failed` artık serbest metin yerine
+  tipli hata nedeni taşıyor.
 
 ## 9. İlkeler
 

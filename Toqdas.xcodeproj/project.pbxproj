@@ -54,6 +54,7 @@
 		6B2A8CA6FB6C2740A49CF9C6 /* BLETransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F06C7FDD9F07822CEB4D3FA /* BLETransport.swift */; };
 		6BF28097151D2C7B8F6304AC /* VehicleWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35C78E8C2EE645434866DA5 /* VehicleWidgetSnapshot.swift */; };
 		72015D96D5A141216F935C2E /* BleFailure.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCC400D8DED656A26C6193E /* BleFailure.swift */; };
+		75D7F622F4CCA6F3E070A9E5 /* BLEIssue.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B401D4137AF270012CEBA2 /* BLEIssue.swift */; };
 		76475D2E0285CC3A1895A043 /* BleAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DB38BAF3BBC341BD7A379E7 /* BleAuth.swift */; };
 		768BE458489998C0C6392676 /* WatchLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8E453F271AC262C7B58756 /* WatchLink.swift */; };
 		78635F3C036060F244481CA3 /* MaintenanceNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962EAB5F4FCFF9ABEB3F0D6E /* MaintenanceNotifier.swift */; };
@@ -86,6 +87,7 @@
 		BD0BBD5CD2C6D7F467B88621 /* VoiceCommandParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9EB3AE99CA2F29A0F4ED1B7 /* VoiceCommandParser.swift */; };
 		BF53BD6546D08A2846ACEC12 /* MaintenanceReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAEA7A0F42D1E9CE5507E25 /* MaintenanceReminder.swift */; };
 		BFFC90F44D1902601A16ADD4 /* ProximityDetectionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17BD712EE0834958833A382D /* ProximityDetectionMonitor.swift */; };
+		C1E9684BED2CB7468F3EF3B3 /* BLEIssue.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B401D4137AF270012CEBA2 /* BLEIssue.swift */; };
 		C23920B6B06B730C7550F679 /* EnergyPricing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CDCAC4C8F3596E99B43B8E6 /* EnergyPricing.swift */; };
 		C3138A75FBF2E06A836D72EF /* EPDKCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F5C039B6839EF0057AFFCF /* EPDKCatalog.swift */; };
 		C5AEEBEBF92A0F6E9BBE9DE6 /* BLECommandPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19744B31775E323987033834 /* BLECommandPolicy.swift */; };
@@ -248,6 +250,7 @@
 		E97AC49AE2ABA02AA6D304E9 /* ToggAPI.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToggAPI.swift; path = App/ToggAPI.swift; sourceTree = "<group>"; };
 		EA44742AB17EF2BB229C2C0B /* BleTelemetry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleTelemetry.swift; path = Core/BleTelemetry.swift; sourceTree = "<group>"; };
 		ED85292C3B4DC74E070D4819 /* LoginCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LoginCoordinator.swift; path = App/LoginCoordinator.swift; sourceTree = "<group>"; };
+		F2B401D4137AF270012CEBA2 /* BLEIssue.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLEIssue.swift; path = Core/BLEIssue.swift; sourceTree = "<group>"; };
 		F4B6B8B65CC65D8E84FA3C40 /* ChargingBudget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingBudget.swift; path = Core/ChargingBudget.swift; sourceTree = "<group>"; };
 		F77C813FDF07671FEDDAE0CE /* VoiceCommandPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceCommandPolicy.swift; path = Core/VoiceCommandPolicy.swift; sourceTree = "<group>"; };
 		F9EB3AE99CA2F29A0F4ED1B7 /* VoiceCommandParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceCommandParser.swift; path = Core/VoiceCommandParser.swift; sourceTree = "<group>"; };
@@ -396,6 +399,7 @@
 				4F09661B230F595973341DA9 /* Localizable.xcstrings */,
 				1FC000EFC9F6259DC15B3CDA /* TurkishFormat.swift */,
 				5F06C7FDD9F07822CEB4D3FA /* BLETransport.swift */,
+				F2B401D4137AF270012CEBA2 /* BLEIssue.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -602,6 +606,7 @@
 				0062635A8B24E32231FAE0F0 /* EnergyPricing.swift in Sources */,
 				1E28C93D9BA3BFA279C7C17D /* BleTelemetry.swift in Sources */,
 				17BB4A312D672A325B161295 /* BLETransport.swift in Sources */,
+				75D7F622F4CCA6F3E070A9E5 /* BLEIssue.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -677,6 +682,7 @@
 				06F1A723038A48755E84F117 /* TurkishFormat.swift in Sources */,
 				E2E0A1B2C3D4E5F60718293A /* E2EHarness.swift in Sources */,
 				6B2A8CA6FB6C2740A49CF9C6 /* BLETransport.swift in Sources */,
+				C1E9684BED2CB7468F3EF3B3 /* BLEIssue.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

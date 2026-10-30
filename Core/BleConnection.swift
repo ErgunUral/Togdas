@@ -12,7 +12,7 @@ private func bleLog(_ message: String) {
 /// doğrulandıktan (READY) sonra gönderilir.
 final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     enum State {
-        case disconnected, connecting, discovering, certificate, challenge, authenticated, ready, failed(String)
+        case disconnected, connecting, discovering, certificate, challenge, authenticated, ready, failed(BLEIssue)
     }
 
     @Published private(set) var state = State.disconnected {
@@ -187,7 +187,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             beginScanPhase(0)
         case .poweredOff, .unauthorized, .unsupported:
             lastEvent = "Bluetooth kullanılamıyor"
-            state = .failed("Bluetooth kapalı veya izin yok.")
+            state = .failed(.radioUnavailable)
             wantsScan = false
         default:
             lastEvent = "Bluetooth hazırlanıyor…"
@@ -361,7 +361,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             startCertificateFrames()
         } else {
             waitingForInitialKeyRequest = true
-            armTimeout(6, "Araç sertifika isteği göndermedi.")
+            armTimeout(6, .handshakeTimeout("Araç sertifika isteği göndermedi."))
             armInitialRequestFallback()
         }
     }
@@ -390,7 +390,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         keyRequestPending = false
         certificateWritesFinished = false
         guard commandChar != nil, !certificateFrames.isEmpty else {
-            state = .failed("Sertifika çerçevesi hazırlanamadı.")
+            state = .failed(.certificatePreparationFailed)
             return
         }
         // Resmî akış: önce 1. çerçeve yazılır ve `1001ef…` onayı beklenir,
@@ -399,7 +399,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         certificateFrameIndex = 0
         sendNextCertificateFrame()
         lastEvent = "Sertifika araca sunuluyor…"
-        armTimeout(10, "Araç sertifikayı yanıtlamadı.")
+        armTimeout(10, .handshakeTimeout("Araç sertifikayı yanıtlamadı."))
     }
 
     private func sendNextCertificateFrame() {
@@ -457,7 +457,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             await MainActor.run {
                 guard !self.state.isReady else { return }
                 self.pairingRequired = true
-                self.state = .failed("Araç eşleştirmesi gerekiyor")
+                self.state = .failed(.vehicleKeyMissing)
                 self.lastEvent = "Araç doğrulama anahtarı yok. Araç ekranından dijital anahtar eşleştirmesini başlatın."
                 self.recordDiagnostic("vehicleKeyMissing · araç doğrulama anahtarı gönderilmedi")
             }
@@ -702,7 +702,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         }
         print("[BLE] challenge request len=\(packet[2])")
         enqueue(packet, to: commandChar)
-        armTimeout(8, "Araç kimlik doğrulama sorusu göndermedi.")
+        armTimeout(8, .handshakeTimeout("Araç kimlik doğrulama sorusu göndermedi."))
     }
 
     /// Android ile aynı ad eşleşmesi: "MY T-SAS <VIN>", "<son 8>" veya "<son 6>".
@@ -741,7 +741,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
                 }
                 self.transport.stopScan()
                 self.wantsScan = false
-                self.state = .failed("Araç bulunamadı")
+                self.state = .failed(.vehicleNotFound)
                 self.failureSummary = "Araç bulunamadı · araç yakında mı?"
                 self.lastEvent = "Araç bulunamadı. Araç ve iPhone Bluetooth'unun açık olduğundan, aracın yakınında olduğundan emin olup yeniden dene."
                 self.recordDiagnostic("scan_exhausted · iki evre de sonuçsuz")
@@ -777,7 +777,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
                 guard self.state.isConnecting else { return }
                 self.lastPeripheral = nil
                 self.lastPeripheralVIN = ""
-                self.state = .failed("Araç bağlantısı zaman aşımı")
+                self.state = .failed(.connectionTimeout)
                 self.lastEvent = "Araç bağlantısı kurulamadı; yeniden taranacak"
                 self.recordDiagnostic("gatt_timeout_connect · doğrudan bağlanma zaman aşımı")
             }
@@ -829,7 +829,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         guard error == nil, let services = peripheral.services else {
             print("[BLE] service discovery error: \(String(describing: error))")
             noteFailure(.serviceDiscovery)
-            state = .failed("Servis keşif hatası")
+            state = .failed(.serviceDiscoveryFailed)
             lastEvent = "Araç servisleri bulunamadı; yeniden denenecek"
             return
         }
@@ -848,7 +848,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         guard peripheral === self.peripheral else { return }
         guard error == nil else {
             print("[BLE] characteristic discovery error: \(String(describing: error))")
-            state = .failed("Karakteristik keşif hatası"); return
+            state = .failed(.characteristicDiscoveryFailed); return
         }
         for char in service.characteristics ?? [] {
             print("[BLE] char \(char.uuid.uuidString) \(characteristicCaps(char))")
@@ -889,12 +889,12 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             print("[BLE] write error \(characteristic.uuid.uuidString) len=\(lastWrittenLength) \(error)")
             if let guidance = pairingGuidance(error) {
                 needsRepair = true
-                state = .failed("Eşleşme hatası")
+                state = .failed(.pairingLost)
                 lastEvent = guidance
                 return
             }
             lastEvent = "Yazma hatası: \(error.localizedDescription)"
-            state = .failed("Yazma hatası")
+            state = .failed(.writeFailed)
             return
         }
         print("[BLE] wrote \(lastWrittenLength)B \(characteristic.uuid.uuidString)")
@@ -1058,7 +1058,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         do {
             let key = try BLEProtocol.vehicleKeyFrame(packet)
             if let expectedCarKey, expectedCarKey != key.x963Representation {
-                state = .failed("Araç anahtarı sunucu kaydıyla eşleşmiyor")
+                state = .failed(.vehicleKeyMismatch)
                 lastEvent = state.description
                 return
             }
@@ -1084,7 +1084,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             let challenge = try BLEProtocol.challenge(packet)
             currentChallenge = challenge
             guard let phoneKey else {
-                state = .failed("Telefon anahtarı yok")
+                state = .failed(.phoneKeyMissing)
                 return
             }
             let signature = try PhoneKeyStore.sign(challenge, with: phoneKey)
@@ -1093,10 +1093,10 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             lastEvent = "Kimlik doğrulama sorusu imzalanıyor"
             waitingForPhoneAck = true
             if let commandChar { enqueue(proof, to: commandChar) }
-            armTimeout(8, "Araç telefon imzasını yanıtlamadı.")
+            armTimeout(8, .handshakeTimeout("Araç telefon imzasını yanıtlamadı."))
         } catch {
             disarmTimeout()
-            state = .failed("Kimlik doğrulama hatası: \(error.localizedDescription)")
+            state = .failed(.authenticationFailed(error.localizedDescription))
             lastEvent = state.description
         }
     }
@@ -1111,7 +1111,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         }
         guard result == errSecSuccess else {
             disarmTimeout()
-            state = .failed("Güvenli rastgele sayı üretilemedi")
+            state = .failed(.secureRandomFailed)
             return
         }
         phoneNonce = nonce
@@ -1120,12 +1120,12 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             enqueue(BLEProtocol.challengeHeader + nonce, to: commandChar)
             enqueue(BLEProtocol.carProofRequest, to: commandChar)
         }
-        armTimeout(8, "Araç doğrulama kanıtı göndermedi.")
+        armTimeout(8, .handshakeTimeout("Araç doğrulama kanıtı göndermedi."))
     }
 
     private func acceptCarProof(_ packet: Data) {
         guard waitingForCarProof, let nonce = phoneNonce, let trustedCarKey else {
-            state = .failed("Araç imzası için anahtar veya soru yok")
+            state = .failed(.carProofUnavailable)
             return
         }
         do {
@@ -1138,7 +1138,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             lastEvent = "Araç kimliği doğrulandı; komutlar hazır"
         } catch {
             disarmTimeout()
-            state = .failed("Araç imzası doğrulanamadı")
+            state = .failed(.carProofInvalid)
             lastEvent = state.description
         }
     }
@@ -1197,15 +1197,15 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     // MARK: - Zaman aşımı ve sinyal
 
-    private func armTimeout(_ seconds: Double, _ message: String) {
+    private func armTimeout(_ seconds: Double, _ issue: BLEIssue) {
         disarmTimeout()
         timeoutTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             guard !Task.isCancelled, let self else { return }
             await MainActor.run {
                 guard !self.state.isReady else { return }
-                self.state = .failed(message)
-                self.lastEvent = message
+                self.state = .failed(issue)
+                self.lastEvent = issue.message
             }
         }
     }
@@ -1273,11 +1273,11 @@ extension BleConnection: BLETransportDelegate {
             wantsScan = false
             cancelScanTimeout()
             self.transport.stopScan()
-            state = .failed("Bluetooth kapalı")
+            state = .failed(.radioOff)
             noteFailure(.radioOff)
         case .unauthorized:
             lastEvent = "Bluetooth izni yok"
-            state = .failed("Bluetooth izni yok")
+            state = .failed(.bluetoothUnauthorized)
             noteFailure(.radioOff)
         default:
             break
@@ -1326,12 +1326,12 @@ extension BleConnection: BLETransportDelegate {
         if let guidance = pairingGuidance(error) {
             needsRepair = true
             noteFailure(.pairingLost)
-            state = .failed("Eşleşme hatası")
+            state = .failed(.pairingLost)
             lastEvent = guidance
             return
         }
         noteFailure(BleFailureClassifier.classify(error))
-        state = .failed("Bağlantı hatası: \(error?.localizedDescription ?? "bilinmiyor")")
+        state = .failed(.connectionFailed(error?.localizedDescription ?? "bilinmiyor"))
         lastEvent = state.description
     }
 
@@ -1348,7 +1348,7 @@ extension BleConnection: BLETransportDelegate {
         stop(keepTelemetry: true)
         if let guidance = pairingGuidance(error) {
             needsRepair = true
-            state = .failed("Eşleşme hatası")
+            state = .failed(.pairingLost)
             lastEvent = guidance
             return
         }
@@ -1373,7 +1373,7 @@ extension BleConnection.State {
         case .challenge: return "Kimlik doğrulama sorusu"
         case .authenticated: return "Kimlik doğrulanıyor"
         case .ready: return "Komut hazır"
-        case .failed(let message): return "Hata: \(message)"
+        case .failed(let issue): return "Hata: \(issue.message)"
         }
     }
 }
