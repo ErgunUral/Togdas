@@ -7,22 +7,6 @@ private func bleLog(_ message: String) {
     NSLog("[ToqdasBLE] %@", message)
 }
 
-private enum BLEDiagnosticStore {
-    private static let key = "toqdas.ble.diagnostics.v1"
-    static let limit = 500
-
-    static func load() -> [BLEDiagnosticEvent] {
-        guard let data = UserDefaults.standard.data(forKey: key),
-              let events = try? JSONDecoder().decode([BLEDiagnosticEvent].self, from: data) else { return [] }
-        return Array(events.suffix(limit))
-    }
-
-    static func save(_ events: [BLEDiagnosticEvent]) {
-        guard let data = try? JSONEncoder().encode(Array(events.suffix(limit))) else { return }
-        UserDefaults.standard.set(data, forKey: key)
-    }
-}
-
 /// BLE taşıma + dijital anahtar el sıkışması.
 /// Paket biçimleri Garajm/BleProtocol.kt ile aynıdır. Komutlar ancak araç kimliği
 /// doğrulandıktan (READY) sonra gönderilir.
@@ -142,7 +126,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
 
     /// Common UI gate for lock/unlock and watch commands.
     var canSendVehicleCommands: Bool {
-        BLECommandPolicy.rejectionReason(code: 2, linkReady: state.isReady, telemetry: telemetry) == nil
+        BLECommandPolicy.rejection(code: 2, linkReady: state.isReady, telemetry: telemetry) == nil
             && commandChar != nil && phoneKey != nil
     }
 
@@ -509,9 +493,9 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
 
     @discardableResult
     private func sendCommand(code: UInt8, action: String) -> Bool {
-        if let reason = BLECommandPolicy.rejectionReason(code: code, linkReady: state.isReady, telemetry: telemetry) {
-            lastEvent = reason
-            recordDiagnostic("command_gate_rejected · \(action): \(reason)")
+        if let rejection = BLECommandPolicy.rejection(code: code, linkReady: state.isReady, telemetry: telemetry) {
+            lastEvent = rejection.message
+            recordDiagnostic("command_gate_rejected · \(action): \(rejection.diagnosticCode)")
             return false
         }
         guard commandChar != nil else {

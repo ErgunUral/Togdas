@@ -40,4 +40,45 @@ final class BLECommandPolicyTests: XCTestCase {
             XCTAssertNil(BLECommandPolicy.rejectionReason(code: UInt8(code), linkReady: true, telemetry: state, now: now))
         }
     }
+
+    func testTypedRejectionReasons() {
+        let now = Date()
+        XCTAssertEqual(
+            BLECommandPolicy.rejection(code: 2, linkReady: false, telemetry: nil, now: now),
+            .linkNotReady
+        )
+        XCTAssertEqual(
+            BLECommandPolicy.rejection(code: 2, linkReady: true, telemetry: nil, now: now),
+            .telemetryMissing
+        )
+        XCTAssertEqual(
+            BLECommandPolicy.rejection(
+                code: 2,
+                linkReady: true,
+                telemetry: telemetry(receivedAt: now.addingTimeInterval(-15)),
+                now: now
+            ),
+            .telemetryStale
+        )
+        XCTAssertEqual(
+            BLECommandPolicy.rejection(
+                code: 1,
+                linkReady: true,
+                telemetry: telemetry(locked: 0, receivedAt: now),
+                now: now
+            ),
+            .lockStateUnknown
+        )
+    }
+
+    func testTypedRejectionCodesAndMessagesAreStable() {
+        XCTAssertEqual(BLECommandRejection.linkNotReady.diagnosticCode, "link_not_ready")
+        XCTAssertEqual(BLECommandRejection.telemetryMissing.diagnosticCode, "telemetry_missing")
+        XCTAssertEqual(BLECommandRejection.telemetryStale.diagnosticCode, "telemetry_stale")
+        XCTAssertEqual(BLECommandRejection.lockStateUnknown.diagnosticCode, "lock_state_unknown")
+        XCTAssertEqual(
+            BLECommandRejection.linkNotReady.message,
+            "Dijital anahtar hazır değil; komut gönderilmedi."
+        )
+    }
 }

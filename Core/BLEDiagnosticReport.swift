@@ -1,5 +1,23 @@
 import Foundation
 
+/// Yerel tanı olaylarının kalıcı halkası. BLE taşımasından bağımsızdır; ileride
+/// `BLEDiagnostics` servisine taşınacak ilk sınır.
+enum BLEDiagnosticStore {
+    private static let key = "toqdas.ble.diagnostics.v1"
+    static let limit = 500
+
+    static func load() -> [BLEDiagnosticEvent] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let events = try? JSONDecoder().decode([BLEDiagnosticEvent].self, from: data) else { return [] }
+        return Array(events.suffix(limit))
+    }
+
+    static func save(_ events: [BLEDiagnosticEvent]) {
+        guard let data = try? JSONEncoder().encode(Array(events.suffix(limit))) else { return }
+        UserDefaults.standard.set(data, forKey: key)
+    }
+}
+
 /// Son bir saatlik BLE sayaç özeti. Kaynak, VIN'i redakte edilmiş yerel olay
 /// günlüğüdür; tanı özeti kimlik bilgisi veya ham paket içermez.
 struct BLEDiagnosticReport: Equatable {
