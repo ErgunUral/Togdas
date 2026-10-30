@@ -9,8 +9,8 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 Ölçülen başlangıç noktası:
 
 - `App`: 29 Swift dosyası, yaklaşık 11.014 satır.
-- `Core`: 41 Swift dosyası, yaklaşık 7.662 satır.
-- `Tests`: 37 dosya, 301 test.
+- `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
+- `Tests`: 37 dosya, 302 test.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -243,6 +243,10 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 - Erişilebilirlik: alt sekmeler seçili durumu VoiceOver'a bildiriyor, sertifika
   durumu etiket/değer olarak okunuyor ve sesli asistan nabzı Hareketi Azalt
   açıkken duruyor. Ayrıntılar `Docs/Erisilebilirlik.md` içinde.
+- Lokalizasyon: kullanıcıya gösterilen ondalıklar `TurkishFormat.decimal` ile
+  virgüllü, binlikler noktalı; `ExperienceFormat` ve kritik kartlar aynı kaynağı
+  kullanıyor. Teknik/protokol biçimleri `en_US_POSIX` olarak ayrıldı. Ayrıntılar
+  `Docs/Lokalizasyon.md` içinde.
 
 ## 9. İlkeler
 

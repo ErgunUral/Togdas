@@ -29,7 +29,7 @@ final class EnergyPricingTests: XCTestCase {
     }
 
     func testPriceTextUsesTwoDecimals() {
-        XCTAssertEqual(EnergyPricing(pricePerKWh: 10).priceText, "10.00 ₺/kWh")
+        XCTAssertEqual(EnergyPricing(pricePerKWh: 10).priceText, "10,00 ₺/kWh")
     }
 }
 
@@ -56,7 +56,7 @@ final class ExperienceCostMetricsTests: XCTestCase {
         XCTAssertTrue(cost?.value.contains("850") ?? false, "85 kWh × 10 ₺ = 850 ₺")
         XCTAssertTrue(cost?.value.contains("≈") ?? false, "Tahmin olduğu işaretlenmeli")
         XCTAssertNotNil(perKM)
-        XCTAssertTrue(perKM?.value.contains("1.70") ?? false, "850 ₺ / 500 km = 1,70 ₺/km")
+        XCTAssertTrue(perKM?.value.contains("1,70") ?? false, "850 ₺ / 500 km = 1,70 ₺/km")
     }
 
     func testNoCostMetricsWithoutPrice() throws {
@@ -105,7 +105,7 @@ final class ChargeSpendingTests: XCTestCase {
             period.metrics.first { $0.label == label }?.value
         }
         XCTAssertEqual(value("Şarj sayısı"), "4")
-        XCTAssertEqual(value("Seans başına"), "10.0 kWh")
+        XCTAssertEqual(value("Seans başına"), "10,0 kWh")
         XCTAssertEqual(value("Tahmini maliyet"), "≈ 400 ₺")
         XCTAssertEqual(value("Seans başına tutar"), "≈ 100 ₺")
         // Sunucu toplam tutar döndürmediği için "Toplam harcama" uydurulmaz.
@@ -118,8 +118,8 @@ final class ChargeSpendingTests: XCTestCase {
          "charges": []}
         """
         let period = try XCTUnwrap(ExperienceFormat.period(from: data(json), kind: .charges, pricePerKWh: 10))
-        XCTAssertEqual(period.metrics.first { $0.label == "Toplam harcama" }?.value, "285.00 ₺")
-        XCTAssertEqual(period.metrics.first { $0.label == "Seans başına tutar" }?.value, "142.50 ₺")
+        XCTAssertEqual(period.metrics.first { $0.label == "Toplam harcama" }?.value, "285,00 ₺")
+        XCTAssertEqual(period.metrics.first { $0.label == "Seans başına tutar" }?.value, "142,50 ₺")
         // Sunucu gerçek tutar verdiyse tahmini maliyet gösterilmez.
         XCTAssertNil(period.metrics.first { $0.label == "Tahmini maliyet" })
     }
@@ -128,7 +128,7 @@ final class ChargeSpendingTests: XCTestCase {
         let period = try XCTUnwrap(ExperienceFormat.period(from: data(periodJSON), kind: .charges,
                                                           pricePerKWh: 10))
         let withServerCost = try XCTUnwrap(period.records.first { $0.id == "c2" })
-        XCTAssertEqual(withServerCost.metrics.first { $0.label == "Tutar" }?.value, "95.00 ₺")
+        XCTAssertEqual(withServerCost.metrics.first { $0.label == "Tutar" }?.value, "95,00 ₺")
         XCTAssertNil(withServerCost.metrics.first { $0.label == "Tahmini tutar" })
 
         let estimated = try XCTUnwrap(period.records.first { $0.id == "c1" })
@@ -158,7 +158,7 @@ final class ChargeSpendingTests: XCTestCase {
         {"charge_id": "c2", "kwh_added": 10, "total_price": 95}
         """
         let detail = try XCTUnwrap(ExperienceFormat.detail(from: data(json), kind: .charges, pricePerKWh: 10))
-        XCTAssertTrue(detail.notes.contains { $0.contains("Servisteki maliyet: 95.00") })
+        XCTAssertTrue(detail.notes.contains { $0.contains("Servisteki maliyet: 95,00") })
         XCTAssertFalse(detail.notes.contains { $0.contains("Tahmini tutar") })
     }
 }
@@ -180,7 +180,7 @@ extension ChargeSpendingTests {
         {"charge_id": "c7", "kwh_added": 10, "cost": 14.98}
         """
         let detail = try XCTUnwrap(ExperienceFormat.detail(from: data(json), kind: .charges, pricePerKWh: 10))
-        XCTAssertFalse(detail.notes.contains { $0.contains("Servisteki maliyet: 14.98") })
+        XCTAssertFalse(detail.notes.contains { $0.contains("Servisteki maliyet: 14,98") })
         XCTAssertTrue(detail.notes.contains { $0.contains("Tahmini tutar") && $0.contains("100") })
     }
 }

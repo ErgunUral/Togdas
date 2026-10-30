@@ -126,7 +126,7 @@ struct DashboardView: View {
         content.title = critical ? "Kritik lastik basıncı" : "Lastik basıncı uyarısı"
         let detail = alerts
             .sorted { $0.pressurePSI < $1.pressurePSI }
-            .map { "\($0.position.title) \(String(format: "%.0f", $0.pressurePSI)) PSI" }
+            .map { "\($0.position.title) \(TurkishFormat.decimal($0.pressurePSI, digits: 0)) PSI" }
             .joined(separator: ", ")
         content.body = "\(detail). Eşik: \(Int(policy.lowThresholdPSI.rounded())) PSI."
         content.sound = .default
@@ -222,7 +222,7 @@ struct DashboardView: View {
         guard let near = proximityNearSample, let far = proximityFarSample else { return nil }
         return ProximityCalibration(nearSample: near, farSample: far)
     }
-    private var climateTemperatureText: String { String(format: "%.1f°C", targetTemperature) }
+    private var climateTemperatureText: String { "\(TurkishFormat.decimal(targetTemperature, digits: 1))°C" }
     private var displayClimateOn: Bool { climatePending ?? climateOn }
     private var climateStatusFresh: Bool {
         guard climateKnown, let measuredAt = climateStatusAt else { return false }
@@ -987,7 +987,7 @@ struct DashboardView: View {
 
     private func consumptionText(_ stats: DrivingStats) -> String {
         guard stats.daysWithData > 0 else { return "—" }
-        let value = String(format: "%.1f", stats.consumptionKWhPer100km)
+        let value = TurkishFormat.decimal(stats.consumptionKWhPer100km, digits: 1)
         return stats.consumptionIsMeasured ? "\(value) kWh/100 km" : "\(value) kWh/100 km (varsayılan)"
     }
 
@@ -1022,9 +1022,9 @@ struct DashboardView: View {
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(String(format: "%.0f", stats.estimatedCostTRY)) ₺")
+                    Text("\(TurkishFormat.decimal(stats.estimatedCostTRY, digits: 0)) ₺")
                         .font(.system(size: 22, weight: .bold)).foregroundStyle(ToggTheme.orange)
-                    Text("\(String(format: "%.1f", stats.estimatedKWh)) kWh \(stats.consumptionIsMeasured ? "" : "tahmini")")
+                    Text("\(TurkishFormat.decimal(stats.estimatedKWh, digits: 1)) kWh \(stats.consumptionIsMeasured ? "" : "tahmini")")
                         .font(.caption).foregroundStyle(ToggTheme.muted)
                 }
             }
@@ -1819,7 +1819,7 @@ struct DashboardView: View {
     }
 
     private func voiceDecimal(_ value: Double) -> String {
-        String(format: "%.1f", value).replacingOccurrences(of: ".", with: ",")
+        TurkishFormat.decimal(value, digits: 1)
     }
 
     private func requestWindowCommand(_ command: DashboardCommand) {
@@ -2770,7 +2770,7 @@ private struct ClimateCard: View {
                     .disabled(busy)
                 Spacer()
                 VStack(spacing: 2) {
-                    Text(String(format: "%.1f°C", temperature))
+                    Text("\(TurkishFormat.decimal(temperature, digits: 1))°C")
                         .font(.system(size: 38, weight: .black))
                         .foregroundStyle(isOn ? ToggTheme.cyan : ToggTheme.muted)
                     Text("Hedef Sıcaklık")
@@ -2795,7 +2795,7 @@ private struct ClimateCard: View {
                 .buttonStyle(.plain)
                 .disabled(busy)
             } else {
-                Text("Klima açılırken hedef \(String(format: "%.1f", temperature))°C uygulanır.")
+                Text("Klima açılırken hedef \(TurkishFormat.decimal(temperature, digits: 1))°C uygulanır.")
                     .font(.caption2).foregroundStyle(ToggTheme.muted)
             }
 
@@ -2970,7 +2970,7 @@ private struct VehicleHealthCard: View {
             Image(systemName: severity == nil ? "car.side.fill" : "exclamationmark.triangle.fill")
                 .font(.system(size: 15))
                 .foregroundStyle(severity == nil ? ToggTheme.teal : tint)
-            Text(reading?.pressurePSI.map { String(format: "%.1f PSI", $0) } ?? "— PSI")
+            Text(reading?.pressurePSI.map { "\(TurkishFormat.decimal($0, digits: 1)) PSI" } ?? "— PSI")
                 .font(.system(size: 13, weight: .bold)).foregroundStyle(tint)
                 .lineLimit(1).minimumScaleFactor(0.7)
             Text(reading?.temperatureC.map { "\(Int($0.rounded()))°C" } ?? "—°C")
@@ -2988,7 +2988,7 @@ private struct VehicleHealthCard: View {
 
     private func tireAccessibilityValue(_ reading: TireReading?, severity: TirePressurePolicy.Severity?) -> String {
         guard let reading, let psi = reading.pressurePSI else { return "basınç bilgisi yok" }
-        let pressure = String(format: "%.1f PSI", psi)
+        let pressure = "\(TurkishFormat.decimal(psi, digits: 1)) PSI"
         let temperature = reading.temperatureC.map { ", \(Int($0.rounded())) derece" } ?? ""
         let warning: String
         switch severity {

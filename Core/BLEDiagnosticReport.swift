@@ -144,7 +144,7 @@ struct BLEDiagnosticReport: Equatable {
             "RSSI örnek: \(rssiSamples.count) · \(rssiSummary)",
             "Telemetri doğrulama hatası: \(telemetryVerificationFailures) · eski GATT RSSI: \(staleGATTRSSISamples)",
             "Yakınlık yeni oturum sıfırlaması: \(proximityFreshCycleResets)",
-            "Oluşturulma: \(generatedAt.formatted(date: .abbreviated, time: .standard))"
+            "Oluşturulma: \(TurkishFormat.date(generatedAt, format: "d MMM yyyy HH:mm:ss"))"
         ] + failures).joined(separator: "\n")
     }
 

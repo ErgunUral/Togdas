@@ -123,7 +123,7 @@ enum EPDKStationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .rateLimited(let date):
-            return "EPDK saatlik sorgu sınırı. Yeniden deneme: \(date.formatted(date: .omitted, time: .shortened))."
+            return "EPDK saatlik sorgu sınırı. Yeniden deneme: \(TurkishFormat.date(date, format: "HH:mm"))."
         case .http(let code): return "EPDK HTTP \(code) yanıtı verdi."
         case .unsupportedEncoding: return "EPDK desteklenmeyen yanıt sıkıştırması kullandı."
         case .responseTooLarge: return "EPDK kataloğu izin verilen boyutu aşıyor."

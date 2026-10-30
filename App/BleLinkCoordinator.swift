@@ -214,7 +214,7 @@ final class BleLinkCoordinator: ObservableObject {
         reconnecting = true
         status = hasConnectedOnce ? "Bağlantı yeniden kuruluyor…" : "Araç aranıyor…"
         ble.recordDiagnostic(
-            "ble_reconnect · \(String(format: "%.1f", delay)) sn sonra deneme \(attempt)/\(BleReconnectPolicy.maxAttempts)"
+            "ble_reconnect · \(TurkishFormat.decimal(delay, digits: 1)) sn sonra deneme \(attempt)/\(BleReconnectPolicy.maxAttempts)"
         )
         reconnectTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))

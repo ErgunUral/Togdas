@@ -181,6 +181,17 @@ final class TurkishFormatTests: XCTestCase {
         XCTAssertEqual(TurkishFormat.money(.nan), "— ₺")
     }
 
+    func testDecimalUsesTurkishSeparators() {
+        XCTAssertEqual(TurkishFormat.decimal(12.3, digits: 1), "12,3")
+        XCTAssertEqual(TurkishFormat.decimal(1234.5, digits: 1), "1.234,5")
+        XCTAssertEqual(TurkishFormat.decimal(12.345, digits: 2), "12,35")
+        XCTAssertEqual(TurkishFormat.decimal(-120, digits: 0), "-120")
+        XCTAssertEqual(TurkishFormat.decimal(-0.04, digits: 1), "0,0")
+        XCTAssertEqual(TurkishFormat.decimal(0.004, digits: 2), "0,00")
+        XCTAssertEqual(TurkishFormat.decimal(nil, digits: 1), "—")
+        XCTAssertEqual(TurkishFormat.decimal(.infinity, digits: 1), "—")
+    }
+
     func testDateFormatUsesTurkishMonthNames() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Europe/Istanbul")!

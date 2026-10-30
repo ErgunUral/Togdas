@@ -204,17 +204,17 @@ enum ExperienceFormat {
 
     static func whole(_ value: Double?) -> String {
         guard let value, value.isFinite else { return "—" }
-        return String(format: "%.0f", value)
+        return TurkishFormat.decimal(value, digits: 0)
     }
 
     static func oneDecimal(_ value: Double?) -> String {
         guard let value, value.isFinite else { return "—" }
-        return String(format: "%.1f", value)
+        return TurkishFormat.decimal(value, digits: 1)
     }
 
     static func twoDecimals(_ value: Double?) -> String {
         guard let value, value.isFinite else { return "—" }
-        return String(format: "%.2f", value)
+        return TurkishFormat.decimal(value, digits: 2)
     }
 
     static func distance(_ value: Double?) -> String? {

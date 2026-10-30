@@ -90,6 +90,7 @@
 		AF7550342ECF8FBD1B0124AD /* BleLinkCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1886C2A1192CEB680C24EB80 /* BleLinkCoordinator.swift */; };
 		B2A064C07BBD72E85430FC2E /* TirePressurePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 215F2C49326A1FA6F27313DF /* TirePressurePolicy.swift */; };
 		B7539723A4119F46D96C5661 /* BLECommandReceipt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05046024F855B991FC795F0F /* BLECommandReceipt.swift */; };
+		B902A0E9D7F0D2BA13AC0A4B /* TurkishFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC000EFC9F6259DC15B3CDA /* TurkishFormat.swift */; };
 		B9248AF314332B5D7B812329 /* EPDKCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F5C039B6839EF0057AFFCF /* EPDKCatalog.swift */; };
 		BD0BBD5CD2C6D7F467B88621 /* VoiceCommandParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9EB3AE99CA2F29A0F4ED1B7 /* VoiceCommandParser.swift */; };
 		BF53BD6546D08A2846ACEC12 /* MaintenanceReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAEA7A0F42D1E9CE5507E25 /* MaintenanceReminder.swift */; };
@@ -627,6 +628,7 @@
 				417996F78A66EC40C130758D /* BLECommandHistoryStore.swift in Sources */,
 				8C228C7F0ECBB433F549135B /* CertificateLifecycle.swift in Sources */,
 				1D1C6C9F3531B15BBE7062B5 /* NetworkRetryPolicy.swift in Sources */,
+				B902A0E9D7F0D2BA13AC0A4B /* TurkishFormat.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -11,7 +11,7 @@ final class ChargingEstimateTests: XCTestCase {
         )
         XCTAssertEqual(estimate.energyKWh, 53.1, accuracy: 0.001)
         XCTAssertEqual(estimate.cost, 531, accuracy: 0.001)
-        XCTAssertEqual(estimate.energyText, "53.1 kWh")
+        XCTAssertEqual(estimate.energyText, "53,1 kWh")
         XCTAssertEqual(estimate.costText, "531 ₺")
     }
 
@@ -24,7 +24,7 @@ final class ChargingEstimateTests: XCTestCase {
         )
         XCTAssertEqual(estimate.energyKWh, 0)
         XCTAssertEqual(estimate.cost, 0)
-        XCTAssertEqual(estimate.energyText, "0.0 kWh")
+        XCTAssertEqual(estimate.energyText, "0,0 kWh")
         XCTAssertEqual(estimate.costText, "0 ₺")
     }
 

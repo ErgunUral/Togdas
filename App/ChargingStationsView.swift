@@ -61,7 +61,7 @@ private struct VisibleEPDKStation: Identifiable {
         guard let distanceKM else { return nil }
         return distanceKM < 1
             ? "\(Int((distanceKM * 1_000).rounded())) m"
-            : String(format: "%.1f km", distanceKM)
+            : "\(TurkishFormat.decimal(distanceKM, digits: 1)) km"
     }
 
     var mapItem: MKMapItem? {

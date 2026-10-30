@@ -773,7 +773,7 @@ final class VoiceAssistant: NSObject, ObservableObject {
                   let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
                 try? FileManager.default.removeItem(at: url)
                 try? session.setActive(false, options: .notifyOthersOnDeactivation)
-                return String(format: "Kayıt dosyası boş (meter %.1f dB, dosya %d bayt).", meterPeak, size)
+                return "Kayıt dosyası boş (meter \(TurkishFormat.decimal(Double(meterPeak), digits: 1)) dB, dosya \(size) bayt)."
             }
             try file.read(into: buffer)
 
@@ -790,7 +790,7 @@ final class VoiceAssistant: NSObject, ObservableObject {
 
             let verdict = peak >= 0.0005 ? "ses var" : "sessiz"
             VoiceLog.debug("kayıt testi: \(verdict), tepe \(String(format: "%.4f", peak)), meter \(String(format: "%.1f", meterPeak)) dB")
-            return String(format: "Kayıt testi: %@ · tepe %.4f (%.1f dB) · %.1f sn · meter %.1f dB", verdict, peak, decibels, duration, meterPeak)
+            return "Kayıt testi: \(verdict) · tepe \(TurkishFormat.decimal(Double(peak), digits: 4)) (\(TurkishFormat.decimal(Double(decibels), digits: 1)) dB) · \(TurkishFormat.decimal(duration, digits: 1)) sn · meter \(TurkishFormat.decimal(Double(meterPeak), digits: 1)) dB"
         } catch {
             VoiceLog.debug("kayıt testi: hata \(error.localizedDescription)")
             try? FileManager.default.removeItem(at: url)
