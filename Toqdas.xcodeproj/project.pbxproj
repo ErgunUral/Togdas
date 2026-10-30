@@ -17,6 +17,7 @@
 		0A1BA7EB98D1CA3AC13C7E03 /* KeySharing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 225E7DB7A647E687C254D937 /* KeySharing.swift */; };
 		0E38E0360A699B6A77485B81 /* BleConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116E891E8D1E2CBDE901BDC5 /* BleConnection.swift */; };
 		104A62617E10CDC2B0B03B56 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11854A761FC25AD5CF9F967 /* BLEProtocol.swift */; };
+		119EAD8F111DE7DE3BF64BA3 /* BLECommandHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */; };
 		17BB4A312D672A325B161295 /* BLETransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F06C7FDD9F07822CEB4D3FA /* BLETransport.swift */; };
 		1C6DA13A06FA16344F363701 /* ServiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39F9C8F8DE63FDCFB5C37C9 /* ServiceView.swift */; };
 		1E0C5A4A13F1AC06C06B1447 /* BleReconnectPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25AE24F767FA57184C0C3002 /* BleReconnectPolicy.swift */; };
@@ -38,6 +39,7 @@
 		3CFC99DA36C6C806BF54ED03 /* ProximityCalibrationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1AF44C17D3FE981C19A1A8C /* ProximityCalibrationSheet.swift */; };
 		3E573134388F2997403C7038 /* ShortcutLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E6553C89E34442D30915FB /* ShortcutLink.swift */; };
 		404ABC4D3DD42DABB1BE60AC /* LockConfirmationSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CA21BA085F722911635017 /* LockConfirmationSound.swift */; };
+		417996F78A66EC40C130758D /* BLECommandHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */; };
 		4317E884109146BF8BB94813 /* VoiceCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E3943ADA53E9864A4A558C3 /* VoiceCommand.swift */; };
 		49808D4581BF8AB41A118BD0 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916E3FFCE5A36274CE3483A4 /* BLEProtocol.swift */; };
 		4A200B0668C4514398BB6591 /* MaintenanceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80908C7EBEE8D40DBD5416C3 /* MaintenanceCard.swift */; };
@@ -173,6 +175,7 @@
 		0E5B168E2FCE69E64569A1F8 /* Toqdas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Toqdas.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0EA6278A026A65A776D46227 /* VoiceAssistant.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceAssistant.swift; path = App/VoiceAssistant.swift; sourceTree = "<group>"; };
 		116E891E8D1E2CBDE901BDC5 /* BleConnection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleConnection.swift; path = Core/BleConnection.swift; sourceTree = "<group>"; };
+		11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLECommandHistoryStore.swift; path = Core/BLECommandHistoryStore.swift; sourceTree = "<group>"; };
 		17BD712EE0834958833A382D /* ProximityDetectionMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityDetectionMonitor.swift; path = App/ProximityDetectionMonitor.swift; sourceTree = "<group>"; };
 		1886C2A1192CEB680C24EB80 /* BleLinkCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleLinkCoordinator.swift; path = App/BleLinkCoordinator.swift; sourceTree = "<group>"; };
 		19744B31775E323987033834 /* BLECommandPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLECommandPolicy.swift; path = Core/BLECommandPolicy.swift; sourceTree = "<group>"; };
@@ -404,6 +407,7 @@
 				5F06C7FDD9F07822CEB4D3FA /* BLETransport.swift */,
 				F2B401D4137AF270012CEBA2 /* BLEIssue.swift */,
 				05046024F855B991FC795F0F /* BLECommandReceipt.swift */,
+				11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -612,6 +616,7 @@
 				17BB4A312D672A325B161295 /* BLETransport.swift in Sources */,
 				75D7F622F4CCA6F3E070A9E5 /* BLEIssue.swift in Sources */,
 				B7539723A4119F46D96C5661 /* BLECommandReceipt.swift in Sources */,
+				417996F78A66EC40C130758D /* BLECommandHistoryStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -689,6 +694,7 @@
 				6B2A8CA6FB6C2740A49CF9C6 /* BLETransport.swift in Sources */,
 				C1E9684BED2CB7468F3EF3B3 /* BLEIssue.swift in Sources */,
 				2FFCEF6B7245489DA25310B1 /* BLECommandReceipt.swift in Sources */,
+				119EAD8F111DE7DE3BF64BA3 /* BLECommandHistoryStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

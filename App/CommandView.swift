@@ -108,6 +108,34 @@ struct CommandView: View {
                 }
             }
 
+            if !ble.commandHistory.isEmpty {
+                Section {
+                    ForEach(ble.commandHistory.prefix(10)) { receipt in
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(receipt.summary)
+                                .font(.footnote)
+                                .foregroundStyle(receipt.phase.isFailure ? .orange : .primary)
+                            if let detail = receipt.detail, !detail.isEmpty {
+                                Text(detail)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Text(receipt.updatedAt.formatted(date: .omitted, time: .shortened))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                    Button("Komut geçmişini temizle", role: .destructive) {
+                        ble.clearCommandHistory()
+                    }
+                } header: {
+                    Text("Son komutlar")
+                } footer: {
+                    Text("Son 20 komut bu iPhone’da saklanır; anahtar, imza ve ham paket kaydedilmez.")
+                }
+            }
+
             Section("Dijital anahtar") {
                 if let key = PhoneKeyStore.publicKeyHex(for: vehicle.vin) {
                     Text("Telefon anahtarı: \(key.prefix(16))…")

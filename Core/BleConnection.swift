@@ -38,6 +38,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     /// hata gruplarının iOS karşılığı; ayrıntı `diagnosticEvents` içinde.
     @Published private(set) var failureSummary: String?
     @Published private(set) var lastCommandReceipt: BLECommandReceipt?
+    @Published private(set) var commandHistory = BLECommandHistoryStore.load()
     @Published private(set) var lockConfirmationCount = 0
     @Published private(set) var diagnosticEvents = BLEDiagnosticStore.load()
     private var lastLoggedTelemetrySummary: String?
@@ -223,6 +224,13 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     }
 
     func disconnect() { stop() }
+
+    /// Son komutları ve ekrandaki son komut kartını temizler.
+    func clearCommandHistory() {
+        commandHistory = []
+        lastCommandReceipt = nil
+        BLECommandHistoryStore.save([])
+    }
 
     /// Elle bağlantı kesildiğinde doğrudan yeniden bağlanma hedefini unutur.
     func forgetLastPeripheral() {
@@ -553,13 +561,16 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         phase: BLECommandReceipt.Phase,
         detail: String?
     ) {
-        lastCommandReceipt = BLECommandReceipt(
+        let receipt = BLECommandReceipt(
             code: code,
             action: action,
             phase: phase,
             detail: detail,
             updatedAt: Date()
         )
+        lastCommandReceipt = receipt
+        commandHistory = BLECommandHistoryStore.append(receipt, to: commandHistory)
+        BLECommandHistoryStore.save(commandHistory)
     }
 
     private func advanceCommandReceipt(_ phase: BLECommandReceipt.Phase, detail: String? = nil) {
@@ -568,6 +579,8 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         receipt.detail = detail
         receipt.updatedAt = Date()
         lastCommandReceipt = receipt
+        commandHistory = BLECommandHistoryStore.update(receipt, in: commandHistory)
+        BLECommandHistoryStore.save(commandHistory)
     }
 
     private func requestCommandNonce() {

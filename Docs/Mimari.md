@@ -9,10 +9,10 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 Ölçülen başlangıç noktası:
 
 - `App`: 29 Swift dosyası, yaklaşık 11.014 satır.
-- `Core`: 38 Swift dosyası, yaklaşık 7.451 satır.
-- `Tests`: 34 dosya, 288 test.
+- `Core`: 39 Swift dosyası, yaklaşık 7.526 satır.
+- `Tests`: 35 dosya, 291 test.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
-- `Core/BleConnection.swift`: 1.429 satır, 16 `@Published`.
+- `Core/BleConnection.swift`: 1.444 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
 
 Güçlü yanlar:
@@ -228,6 +228,8 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 - `BLECommandReceipt` eklendi; komutlar `sıraya alındı → gönderildi → araç
   aldı → doğrulandı/başarısız` aşamalarıyla izleniyor ve `CommandView` içinde
   gösteriliyor.
+- Son 20 komut `BLECommandHistoryStore` ile kalıcı saklanıyor; geçmiş
+  `CommandView` içinden görüntülenip temizlenebiliyor.
 
 ## 9. İlkeler
 
