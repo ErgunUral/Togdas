@@ -9,10 +9,10 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 Ölçülen başlangıç noktası:
 
 - `App`: 29 Swift dosyası, yaklaşık 11.014 satır.
-- `Core`: 35 Swift dosyası, yaklaşık 7.138 satır.
-- `Tests`: 32 dosya, 278 test.
+- `Core`: 36 Swift dosyası, yaklaşık 7.284 satır.
+- `Tests`: 33 dosya, 282 test.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
-- `Core/BleConnection.swift`: 1.406 satır, 14 `@Published`.
+- `Core/BleConnection.swift`: 1.379 satır, 14 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
 
 Güçlü yanlar:
@@ -215,7 +215,16 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 - Crash-free session ve CPU watchdog olayları.
 - En büyük dosya boyutu, build süresi ve test kapsamı.
 
-## 8. İlkeler
+## 8. İlerleme
+
+- `BLEDiagnosticStore` `BleConnection` içinden ayrıldı.
+- `BLECommandRejection` tipli hale getirildi.
+- `BLETransport` merkezi (central) yaşam döngüsü ayrıldı; `BleConnection`
+  hâlâ servis/karakteristik keşfi, yazma kuyruğu ve el sıkışmayı taşıyor.
+- `BLETransporting` protokolü ve `FakeBLETransport` ile radyo/tarama testleri
+  eklendi.
+
+## 9. İlkeler
 
 - Sıfırdan rewrite yok; strangler pattern benzeri kademeli geçiş.
 - Bir seferde tek sınır: önce BLE, sonra DI, sonra UI.

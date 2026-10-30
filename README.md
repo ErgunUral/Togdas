@@ -166,7 +166,7 @@ v2 çekirdeği:
   `Tests/VoiceSessionTests.swift`, `Tests/VoiceChatTests.swift`,
   `Tests/BleFailureTests.swift`, `Tests/EPDKCatalogTests.swift`,
   `Tests/BLEDiagnosticReportTests.swift`, `Tests/KeySharingTests.swift`,
-  `Tests/BLECommandPolicyTests.swift`: toplam 278 test.
+  `Tests/BLECommandPolicyTests.swift`: toplam 282 test.
 
 Sesli asistanı genişletme rehberi: `Docs/SesliKomut-Ekleme.md` (sohbet sorusu, salt
 okunur komut ve eylem ekleme adımları, değişmez kurallar).
@@ -290,7 +290,7 @@ new watchOS versions; observe documented runtime errors and test target versions
   `devicectl device install app --device <watch-udid> …/Debug-watchos/ToqdasWatch.app`.
   Installing through the iPhone's Watch app fails on free-provisioning teams
   (MIInstallerErrorDomain 111); use the direct devicectl path.
-- 278 Swift package tests: passed (Drive Experience şeması, biçimlendirme,
+- 282 Swift package tests: passed (Drive Experience şeması, biçimlendirme,
   sayfalama, BLE komut kapıları ve şarj hesaplama sınırları).
 - Dashboard UI: built and launched on the physical iPhone. Veri gelmeyen alanlar
   (ortalama tüketim, şarj kontrolleri) açıkça "önizleme" olarak işaretlidir.

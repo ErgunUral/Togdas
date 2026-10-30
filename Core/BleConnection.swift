@@ -10,7 +10,7 @@ private func bleLog(_ message: String) {
 /// BLE taşıma + dijital anahtar el sıkışması.
 /// Paket biçimleri Garajm/BleProtocol.kt ile aynıdır. Komutlar ancak araç kimliği
 /// doğrulandıktan (READY) sonra gönderilir.
-final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
+final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     enum State {
         case disconnected, connecting, discovering, certificate, challenge, authenticated, ready, failed(String)
     }
@@ -43,7 +43,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
     private var lastRSSIDiagnosticAt: Date?
     private var lastRSSIDiagnosticValue: Int?
 
-    private var central: CBCentralManager?
+    private let transport: any BLETransporting
     private var peripheral: CBPeripheral?
     private var commandChar: CBCharacteristic?
     private var telemetryChar: CBCharacteristic?
@@ -130,15 +130,16 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
             && commandChar != nil && phoneKey != nil
     }
 
-    override init() {
+    override convenience init() {
+        self.init(transport: BLETransport())
+    }
+
+    init(transport: any BLETransporting) {
+        self.transport = transport
         super.init()
         // Arka planda sistem uygulamayı sonlandırırsa bağlantı bilgisi geri
         // yüklenir; aksi halde her geri dönüşte sıfırdan tarama gerekiyordu.
-        central = CBCentralManager(
-            delegate: self,
-            queue: .main,
-            options: [CBCentralManagerOptionRestoreIdentifierKey: "com.toqdas.ios.central"]
-        )
+        transport.delegate = self
     }
 
     func recordDiagnostic(_ message: String) {
@@ -170,8 +171,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         needsRepair = false
         pairingRequired = false
         failureSummary = nil
-        guard let central else { return }
-        switch central.state {
+        switch transport.state {
         case .poweredOn:
             state = .connecting
             // Araç oturumu 60 sn'de kapatıyor; yeniden taramak yerine bilinen
@@ -211,10 +211,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         disarmTimeout()
         stopRSSI()
         connectedAt = nil
-        if let peripheral, peripheral.state == .connected {
-            central?.cancelPeripheralConnection(peripheral)
-        }
-        central?.stopScan()
+        transport.stop()
         resetSession()
         state = .disconnected
         lastEvent = keepTelemetry ? "Bağlantı yeniden kuruluyor…" : "Bağlantı durduruldu"
@@ -283,14 +280,14 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
     }
 
     func connect(to peripheral: CBPeripheral) {
-        guard central?.state == .poweredOn else { return }
+        guard transport.isRadioOn else { return }
         wantsScan = false
         needsRepair = false
         cancelScanTimeout()
-        central?.stopScan()
+        transport.stopScan()
         self.peripheral = peripheral
         peripheral.delegate = self
-        central?.connect(peripheral, options: nil)
+        transport.connect(peripheral)
         bleLog("bağlanılıyor: \(peripheral.name ?? "isimsiz") id=\(peripheral.identifier)")
         state = .connecting
         lastEvent = "Bağlanıyor…"
@@ -708,67 +705,6 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         armTimeout(8, "Araç kimlik doğrulama sorusu göndermedi.")
     }
 
-    // MARK: - CBCentralManagerDelegate
-
-    func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
-        guard let restored = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral],
-              let peripheral = restored.first else { return }
-        lastPeripheral = peripheral
-        lastPeripheralVIN = targetVIN
-        print("[BLE] state restored peripherals=\(restored.count)")
-        recordDiagnostic("gatt_restore · BLE durumu geri yüklendi (\(restored.count) çevrebirim)")
-    }
-
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        bleLog("merkezi bluetooth durumu=\(central.state.rawValue)")
-        switch central.state {
-        case .poweredOn:
-            lastEvent = "Bluetooth hazır"
-            if radioWasPoweredOff {
-                // Android 1.0.24.42 "Bluetooth radyo değişimi / STATE_ON":
-                // eski çevrebirim tanıtıcıları geçersiz, tarama sıfırdan kurulur.
-                radioWasPoweredOff = false
-                lastPeripheral = nil
-                lastPeripheralVIN = ""
-                recordDiagnostic("radio_on · Bluetooth yeniden açıldı; tarama sıfırlandı")
-                if shouldStayConnected {
-                    recordDiagnostic("radio_on_reconnect · bağlantı yeniden kurulacak")
-                    start()
-                    return
-                }
-            }
-            if wantsScan { start() }
-        case .poweredOff:
-            lastEvent = "Bluetooth kapalı — açılınca yeniden bağlanacak"
-            radioWasPoweredOff = true
-            wantsScan = false
-            cancelScanTimeout()
-            central.stopScan()
-            state = .failed("Bluetooth kapalı")
-            noteFailure(.radioOff)
-        case .unauthorized:
-            lastEvent = "Bluetooth izni yok"
-            state = .failed("Bluetooth izni yok")
-            noteFailure(.radioOff)
-        default:
-            break
-        }
-    }
-
-    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
-                        advertisementData: [String: Any], rssi RSSI: NSNumber) {
-        guard wantsScan || state.isConnecting else { return }
-        let advertised = advertisementData[CBAdvertisementDataLocalNameKey] as? String
-        let name = peripheral.name ?? advertised ?? "bilinmiyor"
-        guard matchesTarget(name) else { return }
-        print("[BLE] found \(name) rssi=\(RSSI) id=\(peripheral.identifier)")
-        recordDiagnostic("Araç bulundu; RSSI \(RSSI) dBm")
-        failureSummary = nil
-        lastEvent = "Araç bulundu: \(name) (\(RSSI))"
-        central.stopScan()
-        connect(to: peripheral)
-    }
-
     /// Android ile aynı ad eşleşmesi: "MY T-SAS <VIN>", "<son 8>" veya "<son 6>".
     private func matchesTarget(_ rawName: String) -> Bool {
         let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
@@ -784,17 +720,14 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
     /// "PI → normal devir" davranışının iOS karşılığı; tek seferlik taramanın
     /// kaçırdığı reklamı ikinci evre yakalar.
     private func beginScanPhase(_ index: Int) {
-        guard let central, central.state == .poweredOn else { return }
+        guard transport.isRadioOn else { return }
         cancelScanTimeout()
         let phase = BleScanPolicy.phases[index]
-        central.stopScan()
+        transport.stopScan()
         recordDiagnostic("gatt_scan_start · \(phase.name) tarama \(Int(phase.seconds)) sn")
         // Android ile aynı: servis filtresi kullanılmaz. Araç reklamında
         // f0002412 görünmediğinde filtreli tarama cihazı hiç bulamıyor.
-        central.scanForPeripherals(
-            withServices: nil,
-            options: [CBCentralManagerScanOptionAllowDuplicatesKey: phase.allowDuplicates]
-        )
+        transport.startScan(allowDuplicates: phase.allowDuplicates)
         scanTimeoutTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(phase.seconds * 1_000_000_000))
             guard !Task.isCancelled, let self else { return }
@@ -806,7 +739,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
                     self.beginScanPhase(index + 1)
                     return
                 }
-                self.central?.stopScan()
+                self.transport.stopScan()
                 self.wantsScan = false
                 self.state = .failed("Araç bulunamadı")
                 self.failureSummary = "Araç bulunamadı · araç yakında mı?"
@@ -818,7 +751,7 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
 
     /// Radyo kullanılabilir mi? (Bluetooth kapalıyken yeniden bağlanma
     /// denemeleri deneme sayacını tüketmemeli.)
-    var isRadioAvailable: Bool { central?.state == .poweredOn }
+    var isRadioAvailable: Bool { transport.isRadioOn }
 
     private func noteFailure(_ kind: BleFailureKind) {
         let count = failureCounter.record(kind)
@@ -849,59 +782,6 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
                 self.recordDiagnostic("gatt_timeout_connect · doğrudan bağlanma zaman aşımı")
             }
         }
-    }
-
-    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        guard peripheral === self.peripheral else { return }
-        connectedAt = Date()
-        lastPeripheral = peripheral
-        lastPeripheralVIN = targetVIN
-        state = .discovering
-        lastEvent = "Bağlandı, servisler keşfediliyor"
-        print("[BLE] connected; discovering services")
-        recordDiagnostic("BLE bağlantısı kuruldu; servisler keşfediliyor")
-        peripheral.discoverServices([serviceUUID, timeServiceUUID])
-    }
-
-    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        guard peripheral === self.peripheral else { return }
-        if lastPeripheral === peripheral {
-            lastPeripheral = nil
-            lastPeripheralVIN = ""
-        }
-        if let error = error as NSError? {
-            print("[BLE] connect failed \(error.domain) code=\(error.code) \(error.localizedDescription)")
-        }
-        if let guidance = pairingGuidance(error) {
-            needsRepair = true
-            noteFailure(.pairingLost)
-            state = .failed("Eşleşme hatası")
-            lastEvent = guidance
-            return
-        }
-        noteFailure(BleFailureClassifier.classify(error))
-        state = .failed("Bağlantı hatası: \(error?.localizedDescription ?? "bilinmiyor")")
-        lastEvent = state.description
-    }
-
-    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        guard peripheral === self.peripheral else { return }
-        let elapsed = connectedAt.map { Date().timeIntervalSince($0) } ?? 0
-        connectedAt = nil
-        let reason = Self.disconnectReason(error)
-        if let error = error as NSError? {
-            print("[BLE] disconnected \(error.domain) code=\(error.code) \(error.localizedDescription)")
-        }
-        recordDiagnostic("BLEDisconnected · \(reason); süre \(Int(elapsed.rounded())) sn, son RSSI \(rssi.map { "\($0) dBm" } ?? "—")")
-        noteFailure(BleFailureClassifier.classify(error))
-        stop(keepTelemetry: true)
-        if let guidance = pairingGuidance(error) {
-            needsRepair = true
-            state = .failed("Eşleşme hatası")
-            lastEvent = guidance
-            return
-        }
-        lastEvent = "Araç bağlantısı kesildi (\(reason))"
     }
 
     /// Kopma nedenini kullanıcıya anlaşılır biçimde eşler.
@@ -1364,6 +1244,115 @@ final class BleConnection: NSObject, ObservableObject, CBCentralManagerDelegate,
         if char.properties.contains(.notify) { out.append("notify") }
         if char.properties.contains(.indicate) { out.append("indicate") }
         return out
+    }
+}
+
+extension BleConnection: BLETransportDelegate {
+    func transportDidUpdateState(_ managerState: CBManagerState) {
+        bleLog("merkezi bluetooth durumu=\(managerState.rawValue)")
+        switch managerState {
+        case .poweredOn:
+            lastEvent = "Bluetooth hazır"
+            if radioWasPoweredOff {
+                // Android 1.0.24.42 "Bluetooth radyo değişimi / STATE_ON":
+                // eski çevrebirim tanıtıcıları geçersiz, tarama sıfırdan kurulur.
+                radioWasPoweredOff = false
+                lastPeripheral = nil
+                lastPeripheralVIN = ""
+                recordDiagnostic("radio_on · Bluetooth yeniden açıldı; tarama sıfırlandı")
+                if shouldStayConnected {
+                    recordDiagnostic("radio_on_reconnect · bağlantı yeniden kurulacak")
+                    start()
+                    return
+                }
+            }
+            if wantsScan { start() }
+        case .poweredOff:
+            lastEvent = "Bluetooth kapalı — açılınca yeniden bağlanacak"
+            radioWasPoweredOff = true
+            wantsScan = false
+            cancelScanTimeout()
+            self.transport.stopScan()
+            state = .failed("Bluetooth kapalı")
+            noteFailure(.radioOff)
+        case .unauthorized:
+            lastEvent = "Bluetooth izni yok"
+            state = .failed("Bluetooth izni yok")
+            noteFailure(.radioOff)
+        default:
+            break
+        }
+    }
+
+    func transportDidRestore(peripheral: CBPeripheral, count: Int) {
+        lastPeripheral = peripheral
+        lastPeripheralVIN = targetVIN
+        print("[BLE] state restored peripherals=\(count)")
+        recordDiagnostic("gatt_restore · BLE durumu geri yüklendi (\(count) çevrebirim)")
+    }
+
+    func transportDidDiscover(peripheral: CBPeripheral, name: String, rssi: Int) {
+        guard wantsScan || state.isConnecting else { return }
+        guard matchesTarget(name) else { return }
+        print("[BLE] found \(name) rssi=\(rssi) id=\(peripheral.identifier)")
+        recordDiagnostic("Araç bulundu; RSSI \(rssi) dBm")
+        failureSummary = nil
+        lastEvent = "Araç bulundu: \(name) (\(rssi))"
+        self.transport.stopScan()
+        connect(to: peripheral)
+    }
+
+    func transportDidConnect(peripheral: CBPeripheral) {
+        guard peripheral === self.peripheral else { return }
+        connectedAt = Date()
+        lastPeripheral = peripheral
+        lastPeripheralVIN = targetVIN
+        state = .discovering
+        lastEvent = "Bağlandı, servisler keşfediliyor"
+        print("[BLE] connected; discovering services")
+        recordDiagnostic("BLE bağlantısı kuruldu; servisler keşfediliyor")
+        peripheral.discoverServices([serviceUUID, timeServiceUUID])
+    }
+
+    func transportDidFailToConnect(peripheral: CBPeripheral, error: Error?) {
+        guard peripheral === self.peripheral else { return }
+        if lastPeripheral === peripheral {
+            lastPeripheral = nil
+            lastPeripheralVIN = ""
+        }
+        if let error = error as NSError? {
+            print("[BLE] connect failed \(error.domain) code=\(error.code) \(error.localizedDescription)")
+        }
+        if let guidance = pairingGuidance(error) {
+            needsRepair = true
+            noteFailure(.pairingLost)
+            state = .failed("Eşleşme hatası")
+            lastEvent = guidance
+            return
+        }
+        noteFailure(BleFailureClassifier.classify(error))
+        state = .failed("Bağlantı hatası: \(error?.localizedDescription ?? "bilinmiyor")")
+        lastEvent = state.description
+    }
+
+    func transportDidDisconnect(peripheral: CBPeripheral, error: Error?) {
+        guard peripheral === self.peripheral else { return }
+        let elapsed = connectedAt.map { Date().timeIntervalSince($0) } ?? 0
+        connectedAt = nil
+        let reason = Self.disconnectReason(error)
+        if let error = error as NSError? {
+            print("[BLE] disconnected \(error.domain) code=\(error.code) \(error.localizedDescription)")
+        }
+        recordDiagnostic("BLEDisconnected · \(reason); süre \(Int(elapsed.rounded())) sn, son RSSI \(rssi.map { "\($0) dBm" } ?? "—")")
+        noteFailure(BleFailureClassifier.classify(error))
+        stop(keepTelemetry: true)
+        if let guidance = pairingGuidance(error) {
+            needsRepair = true
+            state = .failed("Eşleşme hatası")
+            lastEvent = guidance
+            return
+        }
+        lastEvent = "Araç bağlantısı kesildi (\(reason))"
     }
 }
 
