@@ -68,6 +68,18 @@ struct CommandView: View {
                         .font(.caption)
                         .foregroundStyle(linkStatus.contains("başarısız") ? .orange : .secondary)
                 }
+                if let receipt = ble.lastCommandReceipt {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Son komut: \(receipt.summary)")
+                            .font(.footnote)
+                            .foregroundStyle(receipt.phase.isFailure ? .orange : .secondary)
+                        if let detail = receipt.detail, !detail.isEmpty {
+                            Text(detail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
                 if ble.needsRepair {
                     VStack(alignment: .leading, spacing: 6) {
                         Label("Eşleşme sıfırlanmalı", systemImage: "exclamationmark.triangle.fill")

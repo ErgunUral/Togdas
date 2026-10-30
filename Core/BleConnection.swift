@@ -37,6 +37,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     /// Panoda gösterilen tek satır hata özeti. Android 1.0.24.42'deki GATT
     /// hata gruplarının iOS karşılığı; ayrıntı `diagnosticEvents` içinde.
     @Published private(set) var failureSummary: String?
+    @Published private(set) var lastCommandReceipt: BLECommandReceipt?
     @Published private(set) var lockConfirmationCount = 0
     @Published private(set) var diagnosticEvents = BLEDiagnosticStore.load()
     private var lastLoggedTelemetrySummary: String?
@@ -242,6 +243,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         lastLoggedTelemetrySummary = nil
         pendingCommand = nil
         pendingCommandNonce = nil
+        lastCommandReceipt = nil
         lockAfterWindowsClose = false
         waitingForCommandTime = false
         waitingForCommandNonce = false
@@ -330,6 +332,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         phoneNonce = nil
         pendingCommand = nil
         pendingCommandNonce = nil
+        lastCommandReceipt = nil
         lockAfterWindowsClose = false
         waitingForCommandTime = false
         waitingForCommandNonce = false
@@ -490,18 +493,30 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     @discardableResult
     private func sendCommand(code: UInt8, action: String) -> Bool {
+        let hasActiveCommand = pendingCommand != nil || pendingLockVerification != nil
         if let rejection = BLECommandPolicy.rejection(code: code, linkReady: state.isReady, telemetry: telemetry) {
             lastEvent = rejection.message
+            if !hasActiveCommand {
+                recordCommandReceipt(code: code, action: action, phase: .failed, detail: rejection.message)
+            }
             recordDiagnostic("command_gate_rejected · \(action): \(rejection.diagnosticCode)")
             return false
         }
         guard commandChar != nil else {
-            lastEvent = "Komut kanalı yok."; return false
+            lastEvent = "Komut kanalı yok."
+            if !hasActiveCommand {
+                recordCommandReceipt(code: code, action: action, phase: .failed, detail: "Komut kanalı yok.")
+            }
+            return false
         }
         guard phoneKey != nil else {
-            lastEvent = "Telefon imza anahtarı yok."; return false
+            lastEvent = "Telefon imza anahtarı yok."
+            if !hasActiveCommand {
+                recordCommandReceipt(code: code, action: action, phase: .failed, detail: "Telefon imza anahtarı yok.")
+            }
+            return false
         }
-        guard pendingCommand == nil, pendingLockVerification == nil else {
+        guard !hasActiveCommand else {
             lastEvent = "Önceki komut yanıtı bekleniyor."
             return false
         }
@@ -513,6 +528,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         commandVerificationTask?.cancel()
         commandVerificationTask = nil
         lastEvent = "Araç saati ve tek kullanımlık komut sorusu alınıyor"
+        recordCommandReceipt(code: code, action: action, phase: .queued, detail: lastEvent)
 
         if let readAt = carTimeReadAt,
            Date().timeIntervalSince(readAt) < 30 {
@@ -526,8 +542,32 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         } else {
             pendingCommand = nil
             lastEvent = "Araç saati kanalı kullanılamıyor; komut gönderilmedi."
+            advanceCommandReceipt(.failed, detail: lastEvent)
             return false
         }
+    }
+
+    private func recordCommandReceipt(
+        code: UInt8,
+        action: String,
+        phase: BLECommandReceipt.Phase,
+        detail: String?
+    ) {
+        lastCommandReceipt = BLECommandReceipt(
+            code: code,
+            action: action,
+            phase: phase,
+            detail: detail,
+            updatedAt: Date()
+        )
+    }
+
+    private func advanceCommandReceipt(_ phase: BLECommandReceipt.Phase, detail: String? = nil) {
+        guard var receipt = lastCommandReceipt else { return }
+        receipt.phase = phase
+        receipt.detail = detail
+        receipt.updatedAt = Date()
+        lastCommandReceipt = receipt
     }
 
     private func requestCommandNonce() {
@@ -535,6 +575,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         waitingForCommandTime = false
         waitingForCommandNonce = true
         lastEvent = "Araçtan tek kullanımlık komut sorusu isteniyor"
+        advanceCommandReceipt(.queued, detail: lastEvent)
         print("[BLE] command nonce request 1300000001000000")
         enqueue(BLEProtocol.commandNonce, to: commandChar)
         recordDiagnostic("nonce_requested · tek kullanımlık komut sorusu")
@@ -564,6 +605,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             print("[BLE] signed command action=\(pendingCommand.action) code=\(pendingCommand.code) len=\(packet.count)")
             recordDiagnostic("nonce_packet_prepared · imzalı komut gönderildi: \(pendingCommand.action)")
             lastEvent = "İmzalı \(pendingCommand.action.lowercased()) komutu gönderiliyor"
+            advanceCommandReceipt(.sent, detail: "Araç yanıtı bekleniyor.")
             enqueue(packet, to: commandChar)
             armCommandTimeout(8, "Araç komut yanıtı göndermedi.")
         } catch {
@@ -584,6 +626,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     }
 
     private func finishPendingCommand(error: String) {
+        let hadPendingCommand = pendingCommand != nil
         if pendingCommand?.code == 7 { lockAfterWindowsClose = false }
         commandTimeoutTask?.cancel()
         commandTimeoutTask = nil
@@ -592,6 +635,9 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         waitingForCommandTime = false
         waitingForCommandNonce = false
         lastEvent = error
+        if hadPendingCommand {
+            advanceCommandReceipt(.failed, detail: error)
+        }
         recordDiagnostic("protocol_response_timeout · \(error)")
     }
 
@@ -611,6 +657,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         if command.code == 7, lockAfterWindowsClose {
             lockAfterWindowsClose = false
             lastEvent = "Cam kapatma komutu alındı; cam konumu doğrulanmıyor. Kapılar kilitleniyor."
+            advanceCommandReceipt(.acknowledged, detail: "Cam kapatma alındı; kapı kilidi başlatılıyor.")
             recordDiagnostic("Cam kapatma komutu onaylandı; konum bilinmiyor, kilitleme başlatılıyor")
             if !sendCommand(code: 1, action: "Kilitle") {
                 lastEvent = "Cam kapatma komutu alındı ancak kapı kilitleme komutu gönderilemedi."
@@ -622,8 +669,10 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         guard let targetLocked else {
             if command.code == 6 || command.code == 7 {
                 lastEvent = "\(command.action) komutu araç tarafından alındı; cam konumu ayrıca doğrulanmalı."
+                advanceCommandReceipt(.acknowledged, detail: "Cam konumu ayrıca doğrulanmalı.")
             } else {
                 lastEvent = "\(command.action) komutu araç tarafından alındı."
+                advanceCommandReceipt(.acknowledged, detail: "Araç komutu aldı.")
             }
             return
         }
@@ -636,10 +685,12 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
                 recordDiagnostic("Kilitli durum taze imzalı telemetriyle doğrulandı")
             }
             lastEvent = "Araç komutu onayladı; kilit durumu hedef değerle eşleşiyor."
+            advanceCommandReceipt(.verified, detail: "Kilit durumu telemetriyle doğrulandı.")
             return
         }
         pendingLockVerification = targetLocked
         lastEvent = "Araç komutu aldı; kilit durumu değişikliği doğrulanıyor…"
+        advanceCommandReceipt(.acknowledged, detail: "Kilit durumu doğrulanıyor…")
         commandVerificationTask?.cancel()
         commandVerificationTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 6_000_000_000)
@@ -649,6 +700,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
                 self.pendingLockVerification = nil
                 self.commandVerificationTask = nil
                 self.lastEvent = "Araç komutu onayladı ancak kilit değişikliği doğrulanamadı."
+                self.advanceCommandReceipt(.failed, detail: "Kilit değişikliği doğrulanamadı.")
                 self.recordDiagnostic("automatic_command_failed · kilit durumu komut sonrasında doğrulanamadı")
             }
         }
@@ -1176,6 +1228,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
                 print("[BLE] lock state confirmed by fresh signed telemetry")
             }
             lastEvent = target ? "Kapılar kilitli; araç durumuyla doğrulandı." : "Kapı kilitleri açık; araç durumuyla doğrulandı."
+            advanceCommandReceipt(.verified, detail: target ? "Kilitli durum doğrulandı." : "Açık durum doğrulandı.")
             recordDiagnostic("lock_verified · kilit durumu imzalı telemetriyle doğrulandı: \(target ? "kilitli" : "açık")")
         }
     }
