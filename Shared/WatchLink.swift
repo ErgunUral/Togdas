@@ -314,7 +314,11 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
         cache(context)
         print("[WATCH] context received snapshot=\(snapshot != nil) names=\(vehicleNames.count) keys=\(context.keys.sorted())")
         if let snapshot {
-            status = snapshot.ready ? "iPhone bağlı; komut hazır" : "iPhone bağlı; anahtar hazır değil"
+            if reachable {
+                status = snapshot.ready ? "iPhone bağlı; komut hazır" : "iPhone bağlı; anahtar hazır değil"
+            } else {
+                status = "Son bilinen veri; iPhone’a ulaşılamıyor"
+            }
         } else {
             status = "Telefondan alınan son araç listesi"
         }
