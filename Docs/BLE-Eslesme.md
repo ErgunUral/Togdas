@@ -75,6 +75,11 @@ Logda:
 Anlamı: sertifika var, araç doğrulama anahtarı yok. Öncelikle araç ekranından
 eşleştirmeyi tamamla. Eşleştirme tamamlanmışsa sunucu/araç kaydı yenilenmeli.
 
+Doğrulanan örnek (31 Ekim 2026): `GetCertificate` yanıtının kök alanları
+`certificateBase64`, `resultEnum`, `resultIndex`, `timestamp`, `vin` idi;
+`carPublicKey` veya eşdeğeri yoktu. Sertifika önbelleği `status=valid` olsa da
+araç anahtarı olmadığı için el sıkışma `vehicleKeyMissing` ile durdu.
+
 ### B. Sunucu anahtar döndürüyor ama uygulama bulamıyor
 
 `[CERT][DEBUG] certObjectKeys=[...]` çıktısında anahtar farklı adla
