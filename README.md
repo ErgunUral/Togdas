@@ -2,6 +2,7 @@
 
 Native SwiftUI project based on the API contract in `../Garajm`.
 This is an independent implementation, not a completed port of the Android app.
+Mimari hedef ve kademeli geçiş sırası: [Docs/Mimari.md](Docs/Mimari.md).
 
 ## Open and build
 
@@ -165,7 +166,7 @@ v2 çekirdeği:
   `Tests/VoiceSessionTests.swift`, `Tests/VoiceChatTests.swift`,
   `Tests/BleFailureTests.swift`, `Tests/EPDKCatalogTests.swift`,
   `Tests/BLEDiagnosticReportTests.swift`, `Tests/KeySharingTests.swift`,
-  `Tests/BLECommandPolicyTests.swift`: toplam 139 test.
+  `Tests/BLECommandPolicyTests.swift`: toplam 278 test.
 
 Sesli asistanı genişletme rehberi: `Docs/SesliKomut-Ekleme.md` (sohbet sorusu, salt
 okunur komut ve eylem ekleme adımları, değişmez kurallar).
@@ -289,8 +290,8 @@ new watchOS versions; observe documented runtime errors and test target versions
   `devicectl device install app --device <watch-udid> …/Debug-watchos/ToqdasWatch.app`.
   Installing through the iPhone's Watch app fails on free-provisioning teams
   (MIInstallerErrorDomain 111); use the direct devicectl path.
-- Thirty-three Swift package tests: passed (Drive Experience şema, biçimlendirme,
-  sayfalama ve ayrıntı testleri; şarj hesaplama sınırları).
+- 278 Swift package tests: passed (Drive Experience şeması, biçimlendirme,
+  sayfalama, BLE komut kapıları ve şarj hesaplama sınırları).
 - Dashboard UI: built and launched on the physical iPhone. Veri gelmeyen alanlar
   (ortalama tüketim, şarj kontrolleri) açıkça "önizleme" olarak işaretlidir.
   Şarj istasyonları EPDK kamu kataloğundan listelenir; canlı soket durumu içermez.
