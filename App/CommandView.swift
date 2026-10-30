@@ -80,6 +80,16 @@ struct CommandView: View {
                         }
                     }
                 }
+                if ble.pairingRequired, !ble.state.isReady {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label("Araç eşleştirmesi gerekiyor", systemImage: "key.fill")
+                            .font(.footnote.bold()).foregroundStyle(.orange)
+                        Text("1. Araç ekranında dijital anahtar / telefon eşleştirme bölümünü aç.\n2. Bu iPhone’u seç ve eşleştirmeyi başlat.\n3. Araçta onay kodu görünürse iPhone’daki kodla karşılaştır.\n4. Bu ekranda bağlantıyı açık tut; araç doğrulama anahtarı gelince oturum READY olur.")
+                            .font(.caption)
+                        Text("Sertifika araca sunuldu ancak araç doğrulama anahtarı henüz gelmedi.")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
                 if ble.needsRepair {
                     VStack(alignment: .leading, spacing: 6) {
                         Label("Eşleşme sıfırlanmalı", systemImage: "exclamationmark.triangle.fill")

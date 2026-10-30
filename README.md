@@ -176,6 +176,9 @@ mekanizması iOS'a uyarlandı — evreli tarama (normal → ısrarlı), radyo ka
 açıldığında kendiliğinden yeniden bağlanma, GATT hatalarının tek satır özete
 indirgenmesi (`Core/BleFailure.swift`).
 
+Dijital anahtar eşleştirme adımları ve log karar ağacı:
+[`Docs/BLE-Eslesme.md`](Docs/BLE-Eslesme.md).
+
 Uygulama içi bas-konuş arayüzü:
 
 - `App/VoiceAssistant.swift`: cihaz üstü Türkçe tanıma (`requiresOnDeviceRecognition`),
