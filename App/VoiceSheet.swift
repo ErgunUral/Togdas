@@ -8,6 +8,7 @@ struct VoiceSheet: View {
     let handler: (String) -> String
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pulse = false
     #if DEBUG
     @State private var micTestResult: String?
@@ -118,8 +119,14 @@ struct VoiceSheet: View {
         .buttonStyle(.plain)
         .accessibilityLabel(voice.isListening ? "Dinlemeyi durdur" : "Sesli komut söyle")
         .onAppear {
+            guard !reduceMotion else { return }
             withAnimation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true)) {
                 pulse = true
+            }
+        }
+        .onChange(of: reduceMotion) { reduced in
+            if reduced {
+                withAnimation(.linear(duration: 0.01)) { pulse = false }
             }
         }
     }

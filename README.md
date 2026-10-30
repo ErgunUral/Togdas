@@ -174,6 +174,9 @@ v2 çekirdeği:
 Sesli asistanı genişletme rehberi: `Docs/SesliKomut-Ekleme.md` (sohbet sorusu, salt
 okunur komut ve eylem ekleme adımları, değişmez kurallar).
 
+Erişilebilirlik (`Docs/Erisilebilirlik.md`): VoiceOver etiketleri, seçili sekme
+bildirimi, Hareketi Azalt desteği, Dynamic Type ve bilinen boşluklar.
+
 BLE dayanıklılığı (`Docs/Ble-Dayanklilik.md`): Android 1.0.24.42'nin üç
 mekanizması iOS'a uyarlandı — evreli tarama (normal → ısrarlı), radyo kapanıp
 açıldığında kendiliğinden yeniden bağlanma, GATT hatalarının tek satır özete

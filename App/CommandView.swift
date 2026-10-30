@@ -158,6 +158,9 @@ struct CommandView: View {
                             .foregroundStyle(lifecycle.state == .expired ? .orange : .secondary)
                     }
                     .font(.caption)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Sertifika durumu")
+                    .accessibilityValue(lifecycle.summary)
                     if lifecycle.needsRefresh {
                         Text("Bağlantı sırasında yenilenmeye çalışılır; yenilenemezse süresi dolana kadar kullanılır.")
                             .font(.caption2).foregroundStyle(.orange)

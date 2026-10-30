@@ -2055,6 +2055,9 @@ struct DashboardView: View {
                     .foregroundStyle(tab == item ? ToggTheme.teal : ToggTheme.muted)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("\(item.title) sekmesi")
+                .accessibilityValue(tab == item ? "Seçili" : "")
+                .accessibilityAddTraits(tab == item ? .isSelected : [])
             }
         }
         .padding(.top, 10)

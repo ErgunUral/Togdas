@@ -289,6 +289,8 @@ struct WatchGarageView: View {
         .buttonStyle(.borderedProminent)
         .tint(tint)
         .disabled(!enabled)
+        .accessibilityLabel(title)
+        .accessibilityHint("Komut iPhone üzerinden gönderilir; taze imzalı telemetri gerekir.")
     }
 
     private func previewButton(_ title: String) -> some View {

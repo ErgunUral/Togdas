@@ -240,6 +240,9 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 - Saat, son gösterim anlık görüntüsünü kendi `UserDefaults` alanında saklıyor;
   iPhone erişilemezken son bilinen değerleri yaşıyla gösteriyor. Komutlar hâlâ
   iPhone bağlantısı ve taze telemetri gerektiriyor.
+- Erişilebilirlik: alt sekmeler seçili durumu VoiceOver'a bildiriyor, sertifika
+  durumu etiket/değer olarak okunuyor ve sesli asistan nabzı Hareketi Azalt
+  açıkken duruyor. Ayrıntılar `Docs/Erisilebilirlik.md` içinde.
 
 ## 9. İlkeler
 
