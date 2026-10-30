@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.014 satır.
 - `Core`: 35 Swift dosyası, yaklaşık 7.138 satır.
-- `Tests`: 32 dosya, 276 test.
+- `Tests`: 32 dosya, 278 test.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.406 satır, 14 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -217,7 +217,7 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 
 ## 8. İlkeler
 
-- Sıfırdan rewrite yok; strangler/strangler benzeri kademeli geçiş.
+- Sıfırdan rewrite yok; strangler pattern benzeri kademeli geçiş.
 - Bir seferde tek sınır: önce BLE, sonra DI, sonra UI.
 - Davranış değişikliği ile refactor aynı PR'da karıştırılmaz.
 - Güvenlik kapıları UI'da değil, domain/servis katmanında kalır.
