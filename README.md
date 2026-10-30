@@ -180,6 +180,9 @@ bildirimi, Hareketi Azalt desteği, Dynamic Type ve bilinen boşluklar.
 Lokalizasyon (`Docs/Lokalizasyon.md`): Türkçe ondalık/binlik ayırıcı, tarih
 biçimi, teknik değerlerin `en_US_POSIX` istisnaları ve denetim komutu.
 
+Gizlilik (`Docs/Gizlilik.md`): cihazda kalan veriler, Togg servislerine giden
+veriler, `PrivacyInfo.xcprivacy` gerekçeleri ve App Store öncesi eksikler.
+
 BLE dayanıklılığı (`Docs/Ble-Dayanklilik.md`): Android 1.0.24.42'nin üç
 mekanizması iOS'a uyarlandı — evreli tarama (normal → ısrarlı), radyo kapanıp
 açıldığında kendiliğinden yeniden bağlanma, GATT hatalarının tek satır özete

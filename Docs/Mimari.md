@@ -247,6 +247,9 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   virgüllü, binlikler noktalı; `ExperienceFormat` ve kritik kartlar aynı kaynağı
   kullanıyor. Teknik/protokol biçimleri `en_US_POSIX` olarak ayrıldı. Ayrıntılar
   `Docs/Lokalizasyon.md` içinde.
+- Gizlilik: uygulama, watch ve widget hedeflerine `PrivacyInfo.xcprivacy`
+  eklendi; UserDefaults ve dosya zaman damgası erişim gerekçeleri bildirildi.
+  Veri akışı ve App Store öncesi eksikler `Docs/Gizlilik.md` içinde.
 
 ## 9. İlkeler
 

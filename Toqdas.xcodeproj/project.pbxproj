@@ -23,6 +23,7 @@
 		1D1C6C9F3531B15BBE7062B5 /* NetworkRetryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42BF300A56D86B042AD1554F /* NetworkRetryPolicy.swift */; };
 		1E0C5A4A13F1AC06C06B1447 /* BleReconnectPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25AE24F767FA57184C0C3002 /* BleReconnectPolicy.swift */; };
 		1E28C93D9BA3BFA279C7C17D /* BleTelemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA44742AB17EF2BB229C2C0B /* BleTelemetry.swift */; };
+		1E8DF67676E9DA6D8BA9B001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4EDFED152C5F6A3C1F1D0224 /* PrivacyInfo.xcprivacy */; };
 		1EBB22A653623BA4FA7983B9 /* KeySharing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 225E7DB7A647E687C254D937 /* KeySharing.swift */; };
 		204E8BAA0F4896339DCED951 /* CommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2259D07012A3A5E766C38E4 /* CommandView.swift */; };
 		2668B4DB93142EAD2CF5563E /* ProtocolModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CC9E78D87168C951A60BEB0 /* ProtocolModels.swift */; };
@@ -54,6 +55,7 @@
 		5AEEE9B34A0AAC2CF800A3FF /* AccountCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3F7A0A3A858FECE4000FF1 /* AccountCenterView.swift */; };
 		5C3F753F0A3F2AF2C29189A4 /* DashboardCustomization.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C5FB0BE9CCF79E283AA6A0 /* DashboardCustomization.swift */; };
 		5CD83876C4AF566D7FDFF887 /* ProximityAutomation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B678CEE9819DFD44926ECBFA /* ProximityAutomation.swift */; };
+		5D3F76BDCC194522EBAD176A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 68D5366CFC2C2BABF91AF7DC /* PrivacyInfo.xcprivacy */; };
 		662C1493B0896EA61D7E6D04 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A4DD3F5F17FD7AB467DE8B0 /* Assets.xcassets */; };
 		6B2A8CA6FB6C2740A49CF9C6 /* BLETransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F06C7FDD9F07822CEB4D3FA /* BLETransport.swift */; };
 		6BF28097151D2C7B8F6304AC /* VehicleWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35C78E8C2EE645434866DA5 /* VehicleWidgetSnapshot.swift */; };
@@ -63,6 +65,7 @@
 		768BE458489998C0C6392676 /* WatchLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8E453F271AC262C7B58756 /* WatchLink.swift */; };
 		78635F3C036060F244481CA3 /* MaintenanceNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962EAB5F4FCFF9ABEB3F0D6E /* MaintenanceNotifier.swift */; };
 		78B95720E4FE860F8E25C1EC /* GaragePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A90646A8F064CC74B8E1653 /* GaragePreferences.swift */; };
+		7D50C27DD106E59017D5D52D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F5804F9E0A1E3B61CB06D137 /* PrivacyInfo.xcprivacy */; };
 		7E875253402EDC3321B82860 /* DrivingStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC006C81C7126BBE30BCB1B1 /* DrivingStats.swift */; };
 		7F07DCC632694FBA974C45D4 /* WidgetRefreshPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A726A6BC8538C30D64031109 /* WidgetRefreshPolicy.swift */; };
 		8217A8028B65C709C214133D /* CertificateLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE1205A21B8B73285145929 /* CertificateLifecycle.swift */; };
@@ -207,6 +210,7 @@
 		4D3F7A0A3A858FECE4000FF1 /* AccountCenterView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AccountCenterView.swift; path = App/AccountCenterView.swift; sourceTree = "<group>"; };
 		4DB38BAF3BBC341BD7A379E7 /* BleAuth.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleAuth.swift; path = App/BleAuth.swift; sourceTree = "<group>"; };
 		4E893B70F3216DCD1099B811 /* ToqdasApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasApp.swift; path = App/ToqdasApp.swift; sourceTree = "<group>"; };
+		4EDFED152C5F6A3C1F1D0224 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Widget/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4F09661B230F595973341DA9 /* Localizable.xcstrings */ = {isa = PBXFileReference; includeInIndex = 1; name = Localizable.xcstrings; path = App/Localizable.xcstrings; sourceTree = "<group>"; };
 		4F9120A9A9B3C30156968E6B /* ToqdasWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; name = ToqdasWidget.entitlements; path = Widget/ToqdasWidget.entitlements; sourceTree = "<group>"; };
 		55695E170544648784C555E6 /* ExperienceFormat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExperienceFormat.swift; path = Core/ExperienceFormat.swift; sourceTree = "<group>"; };
@@ -215,6 +219,7 @@
 		5F06C7FDD9F07822CEB4D3FA /* BLETransport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLETransport.swift; path = Core/BLETransport.swift; sourceTree = "<group>"; };
 		61B0937BFEE69314B58DD6FD /* BluetoothDiscovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothDiscovery.swift; path = Shared/BluetoothDiscovery.swift; sourceTree = "<group>"; };
 		65CA21BA085F722911635017 /* LockConfirmationSound.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LockConfirmationSound.swift; path = App/LockConfirmationSound.swift; sourceTree = "<group>"; };
+		68D5366CFC2C2BABF91AF7DC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = App/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		726267B05D0DDF66575C2144 /* VoiceSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceSheet.swift; path = App/VoiceSheet.swift; sourceTree = "<group>"; };
 		7473E4E29DEF8580E34774A4 /* ChargingEstimate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingEstimate.swift; path = Core/ChargingEstimate.swift; sourceTree = "<group>"; };
 		7779420C66BEEB0F9F0F67E1 /* UserFacingError.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/UserFacingError.swift; sourceTree = "<group>"; };
@@ -264,6 +269,7 @@
 		ED85292C3B4DC74E070D4819 /* LoginCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LoginCoordinator.swift; path = App/LoginCoordinator.swift; sourceTree = "<group>"; };
 		F2B401D4137AF270012CEBA2 /* BLEIssue.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLEIssue.swift; path = Core/BLEIssue.swift; sourceTree = "<group>"; };
 		F4B6B8B65CC65D8E84FA3C40 /* ChargingBudget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingBudget.swift; path = Core/ChargingBudget.swift; sourceTree = "<group>"; };
+		F5804F9E0A1E3B61CB06D137 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Watch/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F77C813FDF07671FEDDAE0CE /* VoiceCommandPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceCommandPolicy.swift; path = Core/VoiceCommandPolicy.swift; sourceTree = "<group>"; };
 		F9EB3AE99CA2F29A0F4ED1B7 /* VoiceCommandParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceCommandParser.swift; path = Core/VoiceCommandParser.swift; sourceTree = "<group>"; };
 		FBE1205A21B8B73285145929 /* CertificateLifecycle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CertificateLifecycle.swift; path = Core/CertificateLifecycle.swift; sourceTree = "<group>"; };
@@ -417,6 +423,9 @@
 				11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */,
 				FBE1205A21B8B73285145929 /* CertificateLifecycle.swift */,
 				42BF300A56D86B042AD1554F /* NetworkRetryPolicy.swift */,
+				68D5366CFC2C2BABF91AF7DC /* PrivacyInfo.xcprivacy */,
+				F5804F9E0A1E3B61CB06D137 /* PrivacyInfo.xcprivacy */,
+				4EDFED152C5F6A3C1F1D0224 /* PrivacyInfo.xcprivacy */,
 			);
 			sourceTree = "<group>";
 		};
@@ -559,6 +568,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1E8DF67676E9DA6D8BA9B001 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -568,6 +578,7 @@
 			files = (
 				662C1493B0896EA61D7E6D04 /* Assets.xcassets in Resources */,
 				38F478E51897E636420DB1AD /* Localizable.xcstrings in Resources */,
+				5D3F76BDCC194522EBAD176A /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -577,6 +588,7 @@
 			files = (
 				AEAB8AF4B539754BA77A2B6A /* Assets.xcassets in Resources */,
 				94FE6F5C1DDA16FEC6B03FB1 /* AppIcon.icon in Resources */,
+				7D50C27DD106E59017D5D52D /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
