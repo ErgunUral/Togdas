@@ -99,6 +99,15 @@ struct DashboardView: View {
     @State private var showProximityConfirmation = false
     @State private var showProximityGuide = false
     private var drivingStats: DrivingStatsStore { DrivingStatsStore(vin: vehicle.vin) }
+    /// UI testinde ağ ve CoreBluetooth tarafı sessizleştirilir; yalnız yerel
+    /// fixture verisi ve komut kapısı gösterimi test edilir.
+    private var usesUITestFixture: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-uiTestFixture")
+        #else
+        false
+        #endif
+    }
 
 
     private func checkTirePressure(_ tires: [TireReading]) {
@@ -292,9 +301,9 @@ struct DashboardView: View {
         }
         .safeAreaInset(edge: .bottom) { bottomBar }
         .toolbar(.hidden, for: .navigationBar)
-        .task { await liveLoop() }
-        .task { await climateLoop() }
-        .task { await prefetchCertificate() }
+        .task { if !usesUITestFixture { await liveLoop() } }
+        .task { if !usesUITestFixture { await climateLoop() } }
+        .task { if !usesUITestFixture { await prefetchCertificate() } }
         .task { loadProximitySettings() }
         }
         .onReceive(ble.$state) { state in

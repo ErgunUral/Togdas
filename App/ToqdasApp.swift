@@ -43,6 +43,44 @@ final class GarageModel: ObservableObject {
         do { signedIn = try api.hasSession() }
         catch { self.facingError = .from(error) }
 
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uiTestFixture") {
+            // UI testi için uçtan uca oturum/ağ kurulumunu atlar; BLE yoktur ve
+            // pano görevleri bu bayrakla ağ çağrısı yapmaz.
+            let vehicle = Vehicle(
+                vin: "TESTVIN0000000000",
+                name: "UI Test Aracı",
+                plate: "UI 0001",
+                model: "T10X",
+                access: .owner
+            )
+            let telemetry = VehicleTelemetry(
+                batteryPercent: 78.5,
+                rangeKM: 365,
+                auxiliaryBatteryPercent: 65,
+                chargingState: nil,
+                vehicleUpdatedAt: Date(),
+                odometerKM: 1_234.5,
+                outsideTemperatureC: 14.5,
+                insideTemperatureC: 20.0,
+                brakeWarning: false,
+                engineWarning: false,
+                driveMode: nil,
+                latitude: nil,
+                longitude: nil,
+                tirePressureAvailable: true,
+                tires: TirePosition.allCases.map {
+                    TireReading(position: $0, pressurePSI: 35, temperatureC: nil)
+                }
+            )
+            vehicles = [vehicle]
+            selectedVin = vehicle.vin
+            signedIn = true
+            facingError = nil
+            noteCloudTelemetry(telemetry)
+        }
+        #endif
+
         if let selectedVin {
             // Eski sürümlerden kalan geçici paylaşılan anahtar kayıtlarını temizle.
             SharedKeyRequestStore.cleanupStaleState(vin: selectedVin)

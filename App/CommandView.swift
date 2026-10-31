@@ -259,16 +259,26 @@ struct CommandView: View {
             }
 
             Section("Komutlar") {
-                Button("Kilidi aç") { pending = .unlock }.disabled(!commandsEnabled)
-                Button("Kilitle") { pending = .lock }.disabled(!commandsEnabled)
-                Button("Bagajı aç") { pending = .trunkOpen }.disabled(!commandsEnabled)
-                Button("Bagajı kapat") { pending = .trunkClose }.disabled(!commandsEnabled)
+                Button("Kilidi aç") { pending = .unlock }
+                    .disabled(!commandsEnabled)
+                    .accessibilityIdentifier("commands.unlock")
+                Button("Kilitle") { pending = .lock }
+                    .disabled(!commandsEnabled)
+                    .accessibilityIdentifier("commands.lock")
+                Button("Bagajı aç") { pending = .trunkOpen }
+                    .disabled(!commandsEnabled)
+                    .accessibilityIdentifier("commands.trunkOpen")
+                Button("Bagajı kapat") { pending = .trunkClose }
+                    .disabled(!commandsEnabled)
+                    .accessibilityIdentifier("commands.trunkClose")
                 Button("Sürüş yetkilendir") { pending = .driveAuthorize }
                     .disabled(!commandsEnabled)
                     .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("commands.driveAuthorize")
                 if !ble.canSendVehicleCommands {
                     Text(commandGateMessage)
                         .font(.caption).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("commands.gateMessage")
                 }
             }
 

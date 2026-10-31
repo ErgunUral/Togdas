@@ -16,7 +16,7 @@ edilir. Fiziksel araç davranışı bu testlerin kapsamı dışıdır.
 xcodebuild test \
   -project Toqdas.xcodeproj \
   -scheme Toqdas \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6' \
   -derivedDataPath build-uitest \
   CODE_SIGNING_ALLOWED=NO
 ```
@@ -25,6 +25,8 @@ xcodebuild test \
 
 - Giriş ekranı ve Togg ID düğmesi erişilebilir.
 - Cihaz dili İngilizce olsa da Türkçe arayüz metni korunur.
+- `-uiTestFixture` (yalnız DEBUG) ile ağa çıkmadan pano açılır ve sekmeler görünür.
+- Araç READY değilken komut düğmeleri kapalıdır ve neden ekranda görünür.
 
 UI testleri ağa çıkmaz. `-uiTestSignedOut` yalnız DEBUG derlemesinde oturumu
 temizler; giriş düğmesine basmaz.
@@ -44,7 +46,7 @@ eklenir. READY veya komut başarısı fiziksel kanıt olmadan iddia edilmez.
 
 ## Bilinen sınırlar
 
-- UI testleri yalnız giriş ekranını kapsıyor; oturum açmış pano için seed veri
-  veya test hesabı gerekiyor.
+- UI testleri oturum açmış pano için `-uiTestFixture` ile yalnız giriş ekranı,
+  sekmeler ve komut kapısını kapsıyor; gerçek API/telemetri verisi kullanılmaz.
 - BLE ve WatchConnectivity simulator'da gerçek donanımı temsil etmez.
 - Watch UI testi fiziksel watch gerektirir.

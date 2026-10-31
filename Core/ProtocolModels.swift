@@ -285,3 +285,41 @@ struct VehicleTelemetry {
         return formatter.date(from: string)
     }
 }
+
+extension VehicleTelemetry {
+    /// Tüm alanları tipli olarak veren yardımcı kurucu. Sunucu yanıtı ayrıştırma
+    /// `init(data:)`'ta kalır; bu kurucu testler ve sahte/pasif özet verisi için.
+    init(
+        batteryPercent: Double? = nil,
+        rangeKM: Double? = nil,
+        auxiliaryBatteryPercent: Double? = nil,
+        chargingState: String? = nil,
+        vehicleUpdatedAt: Date? = nil,
+        odometerKM: Double? = nil,
+        outsideTemperatureC: Double? = nil,
+        insideTemperatureC: Double? = nil,
+        brakeWarning: Bool? = nil,
+        engineWarning: Bool? = nil,
+        driveMode: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
+        tirePressureAvailable: Bool = false,
+        tires: [TireReading] = []
+    ) {
+        self.batteryPercent = batteryPercent
+        self.rangeKM = rangeKM
+        self.auxiliaryBatteryPercent = auxiliaryBatteryPercent
+        self.chargingState = chargingState
+        self.vehicleUpdatedAt = vehicleUpdatedAt
+        self.odometerKM = odometerKM
+        self.outsideTemperatureC = outsideTemperatureC
+        self.insideTemperatureC = insideTemperatureC
+        self.brakeWarning = brakeWarning
+        self.engineWarning = engineWarning
+        self.driveMode = driveMode
+        self.latitude = latitude
+        self.longitude = longitude
+        self.tirePressureAvailable = tirePressureAvailable
+        self.tires = tires
+    }
+}
