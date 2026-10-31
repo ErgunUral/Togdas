@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 38 dosya, 308 birim testi; `UITests`: 1 dosya, 4 smoke testi.
+- `Tests`: 38 dosya, 309 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -229,6 +229,10 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   başlangıçta pano son bilinen değerle açılır, araç seçimi ve çıkışta
   karışma/sızıntı önlenir. `KeyValueStore` protokolü `GaragePreferences`
   içinden `Core/KeyValueStore.swift`'e taşındı.
+- Önbellekten açılan pano, üst kartta veri yaşını dolaysız yazar
+  (`Güncellendi HH:mm · N dk/sa önce`); 5 dakikanın altındaysa yalnız saat
+  görünür ve yan etkiler (lastik uyarısı, sürüş kaydı) eski değerle
+  tetiklenmez.
 - `BLETransport` merkezi (central) yaşam döngüsü ayrıldı; `BleConnection`
   hâlâ servis/karakteristik keşfi, yazma kuyruğu ve el sıkışmayı taşıyor.
 - `BLETransporting` protokolü ve `FakeBLETransport` ile radyo/tarama testleri

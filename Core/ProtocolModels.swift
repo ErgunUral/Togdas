@@ -322,4 +322,22 @@ extension VehicleTelemetry {
         self.tirePressureAvailable = tirePressureAvailable
         self.tires = tires
     }
+
+    /// Son bilinen bulut özetinden gösterim amaçlı telemetri kopyası.
+    ///
+    /// Neden gerekli: soğuk başlıkta pano ağ yanıtından önce önbellekteki son
+    /// değeri gösterir. Önbellek yalnızca özet alanları tuttuğu için lastik,
+    /// kapı ve konum alanları `nil`/boş kalır; bunlar taze veri gelir gibi
+    /// davranmaz, uyarı da üretmez.
+    init(summary: CloudSnapshot) {
+        self.init(
+            batteryPercent: summary.batteryPercent,
+            rangeKM: summary.rangeKM,
+            auxiliaryBatteryPercent: summary.auxiliaryBatteryPercent,
+            chargingState: summary.chargingState,
+            vehicleUpdatedAt: summary.updatedAt,
+            odometerKM: summary.odometerKM,
+            outsideTemperatureC: summary.outsideTemperatureC
+        )
+    }
 }

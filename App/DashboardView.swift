@@ -305,6 +305,7 @@ struct DashboardView: View {
         .task { if !usesUITestFixture { await climateLoop() } }
         .task { if !usesUITestFixture { await prefetchCertificate() } }
         .task { loadProximitySettings() }
+        .task { showLastKnownCloudTelemetryIfNeeded() }
         }
         .onReceive(ble.$state) { state in
             print("[BLE] state -> \(state.description)")
@@ -2257,6 +2258,27 @@ struct DashboardView: View {
         }
     }
 
+    /// Soğuk başlıkta ağ yanıtı gelmeden önce son bilinen bulut değerini
+    /// gösterir. Yalnızca gösterim: lastik uyarısı ve sürüş istatistiği gibi
+    /// yan etkiler taze veri geldikten sonra çalışır, eski değerle tetiklenmez.
+    /// Kartın "Güncellendi HH:mm" satırı gerçeği söylemeye devam eder; eskiyse
+    /// "Son Telemetri" rozetine döner.
+    @MainActor
+    private func showLastKnownCloudTelemetryIfNeeded() {
+        guard telemetry == nil, let cachedAt = model.cloud.updatedAt else { return }
+        let summary = CloudSnapshot(
+            batteryPercent: model.cloud.batteryPercent,
+            rangeKM: model.cloud.rangeKM,
+            outsideTemperatureC: model.cloud.outsideTemperatureC,
+            auxiliaryBatteryPercent: model.cloud.auxiliaryBatteryPercent,
+            odometerKM: model.cloud.odometerKM,
+            chargingState: model.cloud.chargingState,
+            updatedAt: cachedAt
+        )
+        telemetry = VehicleTelemetry(summary: summary)
+        updatedAt = cachedAt
+    }
+
     @MainActor
     private func refresh() async {
         guard !busy else { return }
@@ -2507,7 +2529,7 @@ private struct VehicleVisualCard: View {
 
                 Spacer()
 
-                Text(updatedAt.map { "Güncellendi \($0.formatted(date: .omitted, time: .shortened))" } ?? "Veri bekleniyor")
+                Text(updatedCaption)
                     .font(.caption2).foregroundStyle(ToggTheme.muted)
             }
 
@@ -2586,6 +2608,24 @@ private struct VehicleVisualCard: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Araç durumu")
         .accessibilityValue(accessibilitySummary)
+    }
+
+    /// Güncellenme satırı: taze veride saat, eski veride toplu yaş bilgisi.
+    /// Verinin ne kadar önce geldiği dolaysız yazılır; hiç yoksa "Veri
+    /// bekleniyor" yazılır, 0'a sıkıştırılmış sahte değer gösterilmez.
+    private var updatedCaption: String {
+        guard let updatedAt else { return "Veri bekleniyor" }
+        let time = updatedAt.formatted(date: .omitted, time: .shortened)
+        let seconds = Date().timeIntervalSince(updatedAt)
+        guard seconds >= 300 else { return "Güncellendi \(time)" }
+        if seconds < 3_600 {
+            return "Güncellendi \(time) · \(max(1, Int(seconds / 60))) dk önce"
+        }
+        if seconds < 86_400 {
+            return "Güncellendi \(time) · \(max(1, Int(seconds / 3_600))) sa önce"
+        }
+        let day = updatedAt.formatted(.dateTime.day().month(.abbreviated).hour().minute())
+        return "Güncellendi \(day)"
     }
 
     private var accessibilitySummary: String {

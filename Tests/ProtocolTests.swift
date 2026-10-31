@@ -24,6 +24,34 @@ final class ProtocolTests: XCTestCase {
         XCTAssertThrowsError(try attempt.code(from: url, now: now.addingTimeInterval(-1)))
     }
 
+    func testTelemetrySummaryFromCloudSnapshotKeepsZerosAndDropsDetailFields() {
+        let updatedAt = Date(timeIntervalSince1970: 1_790_000_000)
+        let summary = CloudSnapshot(
+            batteryPercent: 0,
+            rangeKM: 0,
+            outsideTemperatureC: nil,
+            auxiliaryBatteryPercent: 65,
+            odometerKM: 1_234.5,
+            chargingState: nil,
+            updatedAt: updatedAt
+        )
+        let telemetry = VehicleTelemetry(summary: summary)
+        XCTAssertEqual(telemetry.batteryPercent, 0)
+        XCTAssertEqual(telemetry.rangeKM, 0)
+        XCTAssertEqual(telemetry.auxiliaryBatteryPercent, 65)
+        XCTAssertEqual(telemetry.odometerKM, 1_234.5)
+        XCTAssertEqual(telemetry.vehicleUpdatedAt, updatedAt)
+        // Önbellekte olmayan detay alanları boş kalır; uyarı üretmez.
+        XCTAssertNil(telemetry.outsideTemperatureC)
+        XCTAssertNil(telemetry.chargingState)
+        XCTAssertNil(telemetry.insideTemperatureC)
+        XCTAssertNil(telemetry.brakeWarning)
+        XCTAssertNil(telemetry.engineWarning)
+        XCTAssertFalse(telemetry.tirePressureAvailable)
+        XCTAssertTrue(telemetry.tires.isEmpty)
+        XCTAssertNil(telemetry.coordinateText)
+    }
+
     func testVehiclesDeduplicateAndAcceptBothResponseForms() throws {
         let data = Data(#"{"ownedVins":[{"vin":"ABC12345678901234","name":"Aracım"},"DEF12345678901234"],"friendVins":[{"vinNumber":"ABC12345678901234"},{"vin":"GHJ12345678901234","name":"Paylaşılan"},"invalid"]}"#.utf8)
         let vehicles = try Vehicle.parse(data)
