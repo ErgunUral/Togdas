@@ -141,17 +141,11 @@ private struct VehicleStatusView: View {
 
     private func freshness(_ snapshot: VehicleWidgetSnapshot) -> some View {
         HStack(spacing: 4) {
-            Image(systemName: snapshot.bleReady ? "dot.radiowaves.left.and.right" : "clock")
-            Text(freshnessText(snapshot))
+            Image(systemName: snapshot.freshnessIsLive ? "dot.radiowaves.left.and.right" : "clock")
+            Text(snapshot.freshnessText)
         }
         .font(.system(size: 8, weight: .medium))
-        .foregroundStyle(snapshot.bleReady && !snapshot.lockDataIsStale ? .white.opacity(0.55) : .orange)
+        .foregroundStyle(snapshot.freshnessIsLive ? .white.opacity(0.55) : .orange)
         .lineLimit(1)
-    }
-
-    private func freshnessText(_ snapshot: VehicleWidgetSnapshot) -> String {
-        guard let date = snapshot.bleUpdatedAt else { return "Kilit bilgisi yok" }
-        if snapshot.lockDataIsStale { return "Son BLE: \(date.formatted(date: .omitted, time: .shortened))" }
-        return snapshot.bleReady ? "Canlı BLE · \(date.formatted(date: .omitted, time: .shortened))" : "Son BLE · \(date.formatted(date: .omitted, time: .shortened))"
     }
 }

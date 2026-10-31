@@ -53,6 +53,28 @@ struct VehicleWidgetSnapshot: Codable, Equatable {
         case nil: return "—"
         }
     }
+
+    /// Veri yaşı rozeti. Öncelik canlı/kaydedilmiş BLE kilit bilgisi; BLE yoksa
+    /// bulut telemetri zamanı kullanılır. Hiç veri yoksa "—"/bilgi yok kuralı
+    /// burada da geçerlidir: 0 veya sahte tazelik yazılmaz.
+    var freshnessText: String {
+        if let bleUpdatedAt {
+            if lockDataIsStale { return "Son BLE: \(time(bleUpdatedAt))" }
+            return bleReady ? "Canlı BLE · \(time(bleUpdatedAt))" : "Son BLE · \(time(bleUpdatedAt))"
+        }
+        if let cloudUpdatedAt { return "Bulut · \(time(cloudUpdatedAt))" }
+        return "Kilit bilgisi yok"
+    }
+
+    /// Widget ailesine göre renk: yalnızca canlı BLE yeşildir; bulut verisi
+    /// tazelik taslağı vermez, turuncu ile "canlı değil" sinyali korunur.
+    var freshnessIsLive: Bool {
+        bleReady && !lockDataIsStale
+    }
+
+    private func time(_ date: Date) -> String {
+        date.formatted(date: .omitted, time: .shortened)
+    }
 }
 
 enum VehicleWidgetSnapshotStore {

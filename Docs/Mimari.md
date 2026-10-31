@@ -233,6 +233,9 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   (`Güncellendi HH:mm · N dk/sa önce`); 5 dakikanın altındaysa yalnız saat
   görünür ve yan etkiler (lastik uyarısı, sürüş kaydı) eski değerle
   tetiklenmez.
+- Widget tazelik rozeti test edilebilir `VehicleWidgetSnapshot.freshnessText`
+  hesaplamasına taşındı: BLE yoksa bulut telemetri zamanı (`Bulut · HH:mm`)
+  gösterilir; canlılık iddiası yalnız canlı BLE için korunur.
 - `BLETransport` merkezi (central) yaşam döngüsü ayrıldı; `BleConnection`
   hâlâ servis/karakteristik keşfi, yazma kuyruğu ve el sıkışmayı taşıyor.
 - `BLETransporting` protokolü ve `FakeBLETransport` ile radyo/tarama testleri
