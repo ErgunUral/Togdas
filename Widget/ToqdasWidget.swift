@@ -1,6 +1,20 @@
 import SwiftUI
 import WidgetKit
 
+/// iOS 17+ `.containerBackground` zorunluluğu; iOS 16'da eski `.background`
+/// kullanımı korunur. Aksi halde WidgetKit console'a
+/// "Please adopt containerBackground API" uyarısını basar.
+private extension View {
+    @ViewBuilder
+    func widgetBackground(_ color: Color) -> some View {
+        if #available(iOS 17.0, *) {
+            containerBackground(for: .widget) { color }
+        } else {
+            background(color)
+        }
+    }
+}
+
 private struct VehicleStatusEntry: TimelineEntry {
     let date: Date
     let snapshot: VehicleWidgetSnapshot?
@@ -57,7 +71,7 @@ private struct VehicleStatusView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(Color(red: 0.025, green: 0.075, blue: 0.13))
+        .widgetBackground(Color(red: 0.025, green: 0.075, blue: 0.13))
     }
 
     @ViewBuilder
