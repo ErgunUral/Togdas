@@ -103,6 +103,7 @@
 		C3138A75FBF2E06A836D72EF /* EPDKCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F5C039B6839EF0057AFFCF /* EPDKCatalog.swift */; };
 		C5AEEBEBF92A0F6E9BBE9DE6 /* BLECommandPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19744B31775E323987033834 /* BLECommandPolicy.swift */; };
 		C614A7D049EC7F0F9A9AB2D7 /* BluetoothDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47F70330A6194A6BE63D1B2 /* BluetoothDiscovery.swift */; };
+		C6E517CFBEE3816719333720 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 48BBBF59B97A8AC6EBD8A68C /* Foundation.framework */; };
 		CBCEAA3EADD1438C88320367 /* ToqdasApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E893B70F3216DCD1099B811 /* ToqdasApp.swift */; };
 		CEA7D2F28564C0B062687354 /* BLEDiagnosticReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77B299F1794FD935939C1DB /* BLEDiagnosticReport.swift */; };
 		D0D3EBBC07E547E4F38B394C /* BleFailure.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCC400D8DED656A26C6193E /* BleFailure.swift */; };
@@ -127,6 +128,7 @@
 		F5D5C31BD023B399FEE9614C /* VoiceCommandPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F77C813FDF07671FEDDAE0CE /* VoiceCommandPolicy.swift */; };
 		F5F0D21B12E85F377E6A18B7 /* VoiceChat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078320CBB05152234D17A51F /* VoiceChat.swift */; };
 		FD593741F80E5D1BCB317F2D /* BLECommandPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19744B31775E323987033834 /* BLECommandPolicy.swift */; };
+		FE316FB93C1BDE077C180F54 /* ToqdasSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C03C4E5036E16BC226F6839 /* ToqdasSmokeTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -143,6 +145,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = AD9E3AEBC1EBF8BDFE6BDB8F;
 			remoteInfo = ToqdasWatch;
+		};
+		DB57027C432E01138AF736B1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 61A0D0F4C66BB5A92FE3675B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0518DA72115DA8E8C7707B3D;
+			remoteInfo = Toqdas;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -195,6 +204,7 @@
 		225E7DB7A647E687C254D937 /* KeySharing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeySharing.swift; path = Core/KeySharing.swift; sourceTree = "<group>"; };
 		25AE24F767FA57184C0C3002 /* BleReconnectPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/BleReconnectPolicy.swift; sourceTree = "<group>"; };
 		266AF5BEEDC756597FF5C07D /* PhoneKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PhoneKeyStore.swift; path = Core/PhoneKeyStore.swift; sourceTree = "<group>"; };
+		2C03C4E5036E16BC226F6839 /* ToqdasSmokeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasSmokeTests.swift; path = UITests/ToqdasSmokeTests.swift; sourceTree = "<group>"; };
 		2E78CC5BA15E8412DB097101 /* ToqdasWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasWatchApp.swift; path = Watch/ToqdasWatchApp.swift; sourceTree = "<group>"; };
 		2FA11CF63088BBE37B16DB9B /* VoiceIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceIntent.swift; path = Core/VoiceIntent.swift; sourceTree = "<group>"; };
 		32B2F569158F2E67568D3968 /* ProtocolModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProtocolModels.swift; path = Core/ProtocolModels.swift; sourceTree = "<group>"; };
@@ -232,6 +242,7 @@
 		8428BFAC48F08C28AD7042E3 /* ToqdasWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ToqdasWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		84CB7A88A6525A18CF92F242 /* ProximityAutomation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityAutomation.swift; path = Core/ProximityAutomation.swift; sourceTree = "<group>"; };
 		85040453788C961DCF9A0558 /* ShareSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ShareSheet.swift; path = App/ShareSheet.swift; sourceTree = "<group>"; };
+		862C7CE8FFF2E258D5D9F800 /* ToqdasUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ToqdasUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		87E9AD0C3188E52B427A89BA /* DashboardTheme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DashboardTheme.swift; path = App/DashboardTheme.swift; sourceTree = "<group>"; };
 		8CC9E78D87168C951A60BEB0 /* ProtocolModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProtocolModels.swift; path = Core/ProtocolModels.swift; sourceTree = "<group>"; };
 		916E3FFCE5A36274CE3483A4 /* BLEProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLEProtocol.swift; path = Core/BLEProtocol.swift; sourceTree = "<group>"; };
@@ -281,6 +292,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				3715AD858D6A911D69C3A040 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1ED6D62ABB3D63FB15939D8B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C6E517CFBEE3816719333720 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -426,6 +445,7 @@
 				68D5366CFC2C2BABF91AF7DC /* PrivacyInfo.xcprivacy */,
 				F5804F9E0A1E3B61CB06D137 /* PrivacyInfo.xcprivacy */,
 				4EDFED152C5F6A3C1F1D0224 /* PrivacyInfo.xcprivacy */,
+				2C03C4E5036E16BC226F6839 /* ToqdasSmokeTests.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -454,6 +474,7 @@
 				0E5B168E2FCE69E64569A1F8 /* Toqdas.app */,
 				8428BFAC48F08C28AD7042E3 /* ToqdasWatch.app */,
 				03818B913F27CF35EDB83E06 /* ToqdasWidget.appex */,
+				862C7CE8FFF2E258D5D9F800 /* ToqdasUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -481,6 +502,24 @@
 			productName = Toqdas;
 			productReference = 0E5B168E2FCE69E64569A1F8 /* Toqdas.app */;
 			productType = "com.apple.product-type.application";
+		};
+		5BFF56DB3468D02B0D2D732E /* ToqdasUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B15EDBDDC15049094EC33250 /* Build configuration list for PBXNativeTarget "ToqdasUITests" */;
+			buildPhases = (
+				9697EE268C8A3DC4B1033C83 /* Sources */,
+				1ED6D62ABB3D63FB15939D8B /* Frameworks */,
+				1885A440CB6ABCB086ECAE73 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BAECC3B20DEE4D8741A9C990 /* PBXTargetDependency */,
+			);
+			name = ToqdasUITests;
+			productName = ToqdasUITests;
+			productReference = 862C7CE8FFF2E258D5D9F800 /* ToqdasUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		AD9E3AEBC1EBF8BDFE6BDB8F /* ToqdasWatch */ = {
 			isa = PBXNativeTarget;
@@ -559,6 +598,7 @@
 				0518DA72115DA8E8C7707B3D /* Toqdas */,
 				AD9E3AEBC1EBF8BDFE6BDB8F /* ToqdasWatch */,
 				DFF3F318A46810C85EB08D36 /* ToqdasWidget */,
+				5BFF56DB3468D02B0D2D732E /* ToqdasUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -569,6 +609,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				1E8DF67676E9DA6D8BA9B001 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1885A440CB6ABCB086ECAE73 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -601,6 +648,14 @@
 			files = (
 				EE230E39862FB025B45615E3 /* ToqdasWidget.swift in Sources */,
 				D996C237D897011FC95738CF /* VehicleWidgetSnapshot.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9697EE268C8A3DC4B1033C83 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FE316FB93C1BDE077C180F54 /* ToqdasSmokeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -733,6 +788,12 @@
 			target = AD9E3AEBC1EBF8BDFE6BDB8F /* ToqdasWatch */;
 			targetProxy = 89C1C04C117C1C922E0B62E8 /* PBXContainerItemProxy */;
 		};
+		BAECC3B20DEE4D8741A9C990 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Toqdas;
+			target = 0518DA72115DA8E8C7707B3D /* Toqdas */;
+			targetProxy = DB57027C432E01138AF736B1 /* PBXContainerItemProxy */;
+		};
 		F228EEE30917DC8212BE0046 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = ToqdasWidget;
@@ -846,6 +907,23 @@
 			};
 			name = Debug;
 		};
+		6CAC1AC4B5800A22B049A421 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2QAL5894CY;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Toqdas;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		872430E38B69EF5DB8AB28E6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -868,6 +946,22 @@
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
+		};
+		8EF08E19C652D63C05E8A24F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2QAL5894CY;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Toqdas;
+			};
+			name = Debug;
 		};
 		9FD3FB2121281C611FD0B7BB /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -1020,6 +1114,15 @@
 			buildConfigurations = (
 				61045E8253DB847BEC8963CF /* Debug */,
 				DF205BFC1A16BAC2A5020802 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B15EDBDDC15049094EC33250 /* Build configuration list for PBXNativeTarget "ToqdasUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6CAC1AC4B5800A22B049A421 /* Release */,
+				8EF08E19C652D63C05E8A24F /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

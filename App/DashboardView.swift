@@ -3194,6 +3194,7 @@ struct LoginView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(model.busy)
+                .accessibilityIdentifier("login.toggButton")
 
                 if model.busy { ProgressView().tint(ToggTheme.teal) }
                 if let facingError = model.facingError {

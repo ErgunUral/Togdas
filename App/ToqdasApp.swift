@@ -35,6 +35,11 @@ final class GarageModel: ObservableObject {
         self.selectedVin = preferences.selectedVin
         proximityMonitor = ProximityDetectionMonitor(ble: ble)
         link = BleLinkCoordinator(ble: ble, api: api, preferences: preferences)
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uiTestSignedOut") {
+            try? api.logout()
+        }
+        #endif
         do { signedIn = try api.hasSession() }
         catch { self.facingError = .from(error) }
 

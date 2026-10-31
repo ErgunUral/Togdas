@@ -37,6 +37,17 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "5BFF56DB3468D02B0D2D732E"
+               BuildableName = "ToqdasUITests.xctest"
+               BlueprintName = "ToqdasUITests"
+               ReferencedContainer = "container:Toqdas.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

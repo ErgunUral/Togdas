@@ -183,6 +183,9 @@ biçimi, teknik değerlerin `en_US_POSIX` istisnaları ve denetim komutu.
 Gizlilik (`Docs/Gizlilik.md`): cihazda kalan veriler, Togg servislerine giden
 veriler, `PrivacyInfo.xcprivacy` gerekçeleri ve App Store öncesi eksikler.
 
+Test stratejisi (`Docs/TestStratejisi.md`): birim testleri, simulator UI smoke
+testleri, fiziksel test listesi ve bilinen sınırlar.
+
 BLE dayanıklılığı (`Docs/Ble-Dayanklilik.md`): Android 1.0.24.42'nin üç
 mekanizması iOS'a uyarlandı — evreli tarama (normal → ısrarlı), radyo kapanıp
 açıldığında kendiliğinden yeniden bağlanma, GATT hatalarının tek satır özete
@@ -308,6 +311,8 @@ new watchOS versions; observe documented runtime errors and test target versions
   (MIInstallerErrorDomain 111); use the direct devicectl path.
 - 302 Swift package tests: passed (Drive Experience şeması, biçimlendirme,
   sayfalama, BLE komut kapıları ve şarj hesaplama sınırları).
+- 2 simulator UI smoke test: passed (giriş ekranı ve İngilizce cihaz dilinde
+  Türkçe metin korunumu).
 - Dashboard UI: built and launched on the physical iPhone. Veri gelmeyen alanlar
   (ortalama tüketim, şarj kontrolleri) açıkça "önizleme" olarak işaretlidir.
   Şarj istasyonları EPDK kamu kataloğundan listelenir; canlı soket durumu içermez.
