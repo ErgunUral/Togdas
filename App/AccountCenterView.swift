@@ -60,6 +60,7 @@ struct AccountCenterView: View {
                             itemCard(item)
                         }
                     }
+                    footer
                 }
                 .padding(20)
             }
@@ -108,8 +109,36 @@ struct AccountCenterView: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("\(item.title) sekmesi")
+                .accessibilityValue(kind == item ? "Seçili" : "")
+                .accessibilityAddTraits(kind == item ? .isSelected : [])
             }
         }
+    }
+
+    private var footer: some View {
+        VStack(spacing: 4) {
+            Text(Self.versionText)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(ToggTheme.muted)
+                .accessibilityLabel("Uygulama sürümü")
+                .accessibilityValue(Self.versionText)
+            Text("Reklam ve izleme yok · Ses kaydı saklanmaz")
+                .font(.caption2)
+                .foregroundStyle(ToggTheme.muted)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 12)
+    }
+
+    private static var versionText: String {
+        let info = Bundle.main.infoDictionary
+        guard let version = info?["CFBundleShortVersionString"] as? String,
+              let build = info?["CFBundleVersion"] as? String else {
+            return "Sürüm bilgisi yok"
+        }
+        return "Toqdas \(version) (\(build))"
     }
 
     @ViewBuilder

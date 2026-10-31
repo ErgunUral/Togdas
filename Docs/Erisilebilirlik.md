@@ -8,8 +8,8 @@ yapılmadan tam erişilebilirlik iddia edilmez.
 
 - Kritik ikon düğmelerinde (`Kapat`, `Sesli komut`, `Konumu yenile`, `EPDK
   kataloğunu yenile`) VoiceOver etiketi var.
-- Alt sekme çubuğu seçili sekmeyi `isSelected` olarak bildirir; her sekmenin
-  etiketi ve değeri ayrı verilir.
+- Alt sekme çubuğu ve hesap merkezi sekmeleri seçili durumu `isSelected` olarak
+  bildirir; her sekmenin etiketi ve değeri ayrı verilir.
 - Sertifika durumu “Sertifika durumu” etiketi ve kalan gün değeriyle okunur.
 - Araç durumu, lastik, kapı ve uyarı kartları `children: .ignore` ile tek bir
   anlamlı özet olarak sunulur; ham ikon adları okunmaz.
