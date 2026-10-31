@@ -18,6 +18,10 @@
 		0E38E0360A699B6A77485B81 /* BleConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116E891E8D1E2CBDE901BDC5 /* BleConnection.swift */; };
 		104A62617E10CDC2B0B03B56 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11854A761FC25AD5CF9F967 /* BLEProtocol.swift */; };
 		119EAD8F111DE7DE3BF64BA3 /* BLECommandHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */; };
+		0C9D3E4F5A6B7C8D9E0F1A2B /* KeyValueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A7B1C2D3E4F5A6B7C8D9E0F /* KeyValueStore.swift */; };
+		9B8C2D3E4F5A6B7C8D9E0F1A /* KeyValueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A7B1C2D3E4F5A6B7C8D9E0F /* KeyValueStore.swift */; };
+		6E5F9B8C2D3A4E5F6A7B8C9D /* CloudSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4E8A7B1C2F3D4E5F6A7B8C /* CloudSnapshotStore.swift */; };
+		7F6A0C9D3E4B5F6A7B8C9D0E /* CloudSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4E8A7B1C2F3D4E5F6A7B8C /* CloudSnapshotStore.swift */; };
 		17BB4A312D672A325B161295 /* BLETransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F06C7FDD9F07822CEB4D3FA /* BLETransport.swift */; };
 		1C6DA13A06FA16344F363701 /* ServiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39F9C8F8DE63FDCFB5C37C9 /* ServiceView.swift */; };
 		1D1C6C9F3531B15BBE7062B5 /* NetworkRetryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42BF300A56D86B042AD1554F /* NetworkRetryPolicy.swift */; };
@@ -203,6 +207,8 @@
 		215F2C49326A1FA6F27313DF /* TirePressurePolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/TirePressurePolicy.swift; sourceTree = "<group>"; };
 		225E7DB7A647E687C254D937 /* KeySharing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeySharing.swift; path = Core/KeySharing.swift; sourceTree = "<group>"; };
 		25AE24F767FA57184C0C3002 /* BleReconnectPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/BleReconnectPolicy.swift; sourceTree = "<group>"; };
+		8A7B1C2D3E4F5A6B7C8D9E0F /* KeyValueStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeyValueStore.swift; path = Core/KeyValueStore.swift; sourceTree = "<group>"; };
+		5D4E8A7B1C2F3D4E5F6A7B8C /* CloudSnapshotStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CloudSnapshotStore.swift; path = Core/CloudSnapshotStore.swift; sourceTree = "<group>"; };
 		266AF5BEEDC756597FF5C07D /* PhoneKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PhoneKeyStore.swift; path = Core/PhoneKeyStore.swift; sourceTree = "<group>"; };
 		2C03C4E5036E16BC226F6839 /* ToqdasSmokeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasSmokeTests.swift; path = UITests/ToqdasSmokeTests.swift; sourceTree = "<group>"; };
 		2E78CC5BA15E8412DB097101 /* ToqdasWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasWatchApp.swift; path = Watch/ToqdasWatchApp.swift; sourceTree = "<group>"; };
@@ -464,6 +470,8 @@
 				25AE24F767FA57184C0C3002 /* BleReconnectPolicy.swift */,
 				1A90646A8F064CC74B8E1653 /* GaragePreferences.swift */,
 				9CDCAC4C8F3596E99B43B8E6 /* EnergyPricing.swift */,
+				5D4E8A7B1C2F3D4E5F6A7B8C /* CloudSnapshotStore.swift */,
+				8A7B1C2D3E4F5A6B7C8D9E0F /* KeyValueStore.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -696,6 +704,8 @@
 				8C228C7F0ECBB433F549135B /* CertificateLifecycle.swift in Sources */,
 				1D1C6C9F3531B15BBE7062B5 /* NetworkRetryPolicy.swift in Sources */,
 				B902A0E9D7F0D2BA13AC0A4B /* TurkishFormat.swift in Sources */,
+				7F6A0C9D3E4B5F6A7B8C9D0E /* CloudSnapshotStore.swift in Sources */,
+				0C9D3E4F5A6B7C8D9E0F1A2B /* KeyValueStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -776,6 +786,8 @@
 				119EAD8F111DE7DE3BF64BA3 /* BLECommandHistoryStore.swift in Sources */,
 				8217A8028B65C709C214133D /* CertificateLifecycle.swift in Sources */,
 				EA21F0AA0268A3D3B6D7A24C /* NetworkRetryPolicy.swift in Sources */,
+				6E5F9B8C2D3A4E5F6A7B8C9D /* CloudSnapshotStore.swift in Sources */,
+				9B8C2D3E4F5A6B7C8D9E0F1A /* KeyValueStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

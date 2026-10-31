@@ -1,16 +1,5 @@
 import Foundation
 
-/// `UserDefaults` yerine enjekte edilebilen basit anahtar-değer deposu.
-/// Testlerde bellek içi sahte depo kullanılır; üretimde `UserDefaults.standard`.
-protocol KeyValueStore: AnyObject {
-    func string(forKey key: String) -> String?
-    func bool(forKey key: String) -> Bool
-    func set(_ value: Any?, forKey key: String)
-    func removeObject(forKey key: String)
-}
-
-extension UserDefaults: KeyValueStore {}
-
 /// Garaj tercihleri: seçili araç ve otomatik bağlantı izni.
 ///
 /// Daha önce bu anahtarlar `GarageModel`, `BleLinkCoordinator` ve

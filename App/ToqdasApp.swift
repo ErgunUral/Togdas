@@ -21,6 +21,7 @@ final class GarageModel: ObservableObject {
     let link: BleLinkCoordinator
     let geofence = GeofenceManager()
     private var watchCancellables = Set<AnyCancellable>()
+    let cloudStore = CloudSnapshotStore()
     let cloud = CloudTelemetryStore()
     private var lastWidgetReloadAt = Date.distantPast
 
@@ -80,6 +81,13 @@ final class GarageModel: ObservableObject {
             noteCloudTelemetry(telemetry)
         }
         #endif
+        // Soğuk başlangıçta ağ yanıtı gelmeden pano boş kalmasın: seçili VIN'in
+        // son bilinen bulut değerini yükle. UI testi fixture'ı kendi verisini
+        // kurduğu için önbellek yüklemesi yapılmaz.
+        if signedIn, selectedVin != nil,
+           !ProcessInfo.processInfo.arguments.contains("-uiTestFixture") {
+            applySelectionChange()
+        }
 
         if let selectedVin {
             // Eski sürümlerden kalan geçici paylaşılan anahtar kayıtlarını temizle.
@@ -196,10 +204,14 @@ final class GarageModel: ObservableObject {
 
     private func load() async throws {
         vehicles = try await api.vehicles()
+        let previousVin = selectedVin
         if let selectedVin, !vehicles.contains(where: { $0.vin == selectedVin }) {
             self.selectedVin = vehicles.first?.vin
         } else if selectedVin == nil {
             selectedVin = vehicles.first?.vin
+        }
+        if selectedVin != previousVin {
+            applySelectionChange()
         }
         if let selectedVin {
             preferences.selectedVin = selectedVin
@@ -213,6 +225,7 @@ final class GarageModel: ObservableObject {
     }
 
     /// Pano yenilemesi bulut telemetrisini saate de yazar. Eksik alan nil kalır.
+    @MainActor
     func noteCloudTelemetry(_ telemetry: VehicleTelemetry) {
         cloud.batteryPercent = telemetry.batteryPercent
         cloud.rangeKM = telemetry.rangeKM
@@ -221,7 +234,37 @@ final class GarageModel: ObservableObject {
         cloud.odometerKM = telemetry.odometerKM
         cloud.chargingState = telemetry.chargingState
         cloud.updatedAt = telemetry.vehicleUpdatedAt ?? Date()
+        if let vin = selectedVin {
+            cloudStore.save(
+                CloudSnapshot(
+                    batteryPercent: telemetry.batteryPercent,
+                    rangeKM: telemetry.rangeKM,
+                    outsideTemperatureC: telemetry.outsideTemperatureC,
+                    auxiliaryBatteryPercent: telemetry.auxiliaryBatteryPercent,
+                    odometerKM: telemetry.odometerKM,
+                    chargingState: telemetry.chargingState,
+                    updatedAt: cloud.updatedAt ?? Date()
+                ),
+                for: vin
+            )
+        }
         publishWatchSnapshot()
+    }
+
+    /// Seçili VIN değiştiğinde kök bulut durumu sıfır; eski aracın değerleri
+    /// yeni araca karışmasın. Kullanılabilir son kayıt varsa yaşının görünmesi
+    /// yeterlidir.
+    private func applySelectionChange() {
+        cloud.clear()
+        if let vin = selectedVin, let cached = cloudStore.snapshot(for: vin) {
+            cloud.batteryPercent = cached.batteryPercent
+            cloud.rangeKM = cached.rangeKM
+            cloud.outsideTemperatureC = cached.outsideTemperatureC
+            cloud.auxiliaryBatteryPercent = cached.auxiliaryBatteryPercent
+            cloud.odometerKM = cached.odometerKM
+            cloud.chargingState = cached.chargingState
+            cloud.updatedAt = cached.updatedAt
+        }
     }
 
     private func refreshCloudIfStale() {
@@ -247,8 +290,14 @@ final class GarageModel: ObservableObject {
     }
 
     func select(_ vehicle: Vehicle) {
+        guard selectedVin != vehicle.vin else {
+            preferences.selectedVin = vehicle.vin
+            link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
+            return
+        }
         selectedVin = vehicle.vin
         preferences.selectedVin = vehicle.vin
+        applySelectionChange()
         link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
     }
 
@@ -262,13 +311,16 @@ final class GarageModel: ObservableObject {
     }
 
     func logout() {
-        do {
-            try api.logout()
-            vehicles = []
-            signedIn = false
-            watch.publish(names: [])
-            publishWidgetSnapshot()
-        } catch { self.facingError = .from(error) }
+        do { try api.logout() }
+        catch { self.facingError = .from(error) }
+        // Oturum kapandığında önbellek de VIN bazlı temizlenmezse sonraki
+        // kullanıcının panosuna bu hesabın son değerleri sızardı.
+        if let vin = selectedVin { cloudStore.clear(for: vin) }
+        cloud.clear()
+        vehicles = []
+        signedIn = false
+        watch.publish(names: [])
+        publishWidgetSnapshot()
     }
 
     // MARK: - Saat köprüsü
@@ -429,6 +481,16 @@ final class GarageModel: ObservableObject {
         var chargingState: String?
         var updatedAt: Date?
         var fetchTask: Task<Void, Never>?
+
+        func clear() {
+            batteryPercent = nil
+            rangeKM = nil
+            outsideTemperatureC = nil
+            auxiliaryBatteryPercent = nil
+            odometerKM = nil
+            chargingState = nil
+            updatedAt = nil
+        }
     }
 
     /// WidgetKit yenilemelerini uygulama içi BLE telemetrisinden daha seyrek
