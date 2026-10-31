@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 37 dosya, 302 birim testi; `UITests`: 1 dosya, 2 smoke testi.
+- `Tests`: 37 dosya, 302 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -217,8 +217,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 
 ## 8. İlerleme
 
-- `BLEDiagnosticStore` `BleConnection` içinden ayrıldı.
-- `BLECommandRejection` tipli hale getirildi.
+- `BLEDiagnosticStore` … `BLECommandRejection` ve `BLECommandReceipt` aşamaları eklendi.
+- `VehicleTelemetry` tipi tipli parça verileriyle test için kuruldu; görev hatası/TODO kalıntısı temizlendi.
+- Saat komut sonucuna kısa dokunsal geri bildirim veriyor; "forwarded" bildirim
+  tipindedir ve başarılı komut demek değildir.
+- UI testleri: `-uiTestFixture` ile ağa çıkmadan pano açılabilir; komutun kapalı olma nedeni test edilir.
+- Üst araç kartı semantik fonlara geçirildi; Dynamic Type ile birlikte ölçeklenir.
 - `BLETransport` merkezi (central) yaşam döngüsü ayrıldı; `BleConnection`
   hâlâ servis/karakteristik keşfi, yazma kuyruğu ve el sıkışmayı taşıyor.
 - `BLETransporting` protokolü ve `FakeBLETransport` ile radyo/tarama testleri

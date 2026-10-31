@@ -2498,8 +2498,8 @@ private struct VehicleVisualCard: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack {
                 HStack(spacing: 6) {
-                    Image(systemName: lockBadge.icon).font(.system(size: 14))
-                    Text(lockBadge.text).font(.system(size: 11, weight: .bold))
+                    Image(systemName: lockBadge.icon).font(.subheadline)
+                    Text(lockBadge.text).font(.footnote.weight(.bold))
                 }
                 .foregroundStyle(lockBadge.color)
                 .padding(.horizontal, 12).padding(.vertical, 6)
@@ -2508,22 +2508,22 @@ private struct VehicleVisualCard: View {
                 Spacer()
 
                 Text(updatedAt.map { "Güncellendi \($0.formatted(date: .omitted, time: .shortened))" } ?? "Veri bekleniyor")
-                    .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                    .font(.caption2).foregroundStyle(ToggTheme.muted)
             }
 
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Image(systemName: "gauge.with.dots.needle.50percent")
-                            .font(.system(size: 17)).foregroundStyle(ToggTheme.teal)
+                            .font(.body).foregroundStyle(ToggTheme.teal)
                         Text("KALAN MENZİL")
-                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                            .font(.footnote.weight(.semibold)).foregroundStyle(ToggTheme.muted)
                     }
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text(range.map { "\($0)" } ?? "—")
-                            .font(.system(size: 44, weight: .black)).foregroundStyle(.white)
+                            .font(.largeTitle.weight(.black)).foregroundStyle(.white)
                         Text("KM")
-                            .font(.system(size: 18, weight: .bold)).foregroundStyle(ToggTheme.teal)
+                            .font(.body.weight(.bold)).foregroundStyle(ToggTheme.teal)
                     }
                 }
 
@@ -2531,9 +2531,9 @@ private struct VehicleVisualCard: View {
 
                 VStack(alignment: .trailing, spacing: 4) {
                     HStack(spacing: 4) {
-                        Image(systemName: "bolt.fill").font(.system(size: 18)).foregroundStyle(batteryColor)
+                        Image(systemName: "bolt.fill").font(.body).foregroundStyle(batteryColor)
                         Text(battery.map { "%\($0)" } ?? "—")
-                            .font(.system(size: 22, weight: .bold)).foregroundStyle(batteryColor)
+                            .font(.title3.weight(.bold)).foregroundStyle(batteryColor)
                     }
                     .padding(.horizontal, 14).padding(.vertical, 8)
                     .background(
@@ -2558,15 +2558,15 @@ private struct VehicleVisualCard: View {
             HStack(spacing: 16) {
                 HStack(spacing: 5) {
                     Image(systemName: "gauge")
-                        .font(.system(size: 12)).foregroundStyle(ToggTheme.orange)
+                        .font(.footnote).foregroundStyle(ToggTheme.orange)
                     Text(odometer.map { "\($0.formatted(.number.precision(.fractionLength(0)))) km" } ?? "— km")
-                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                        .font(.footnote.weight(.semibold)).foregroundStyle(ToggTheme.muted)
                 }
                 HStack(spacing: 5) {
                     Image(systemName: "thermometer.medium")
-                        .font(.system(size: 12)).foregroundStyle(ToggTheme.cyan)
+                        .font(.footnote).foregroundStyle(ToggTheme.cyan)
                     Text(outsideTemperature.map { "\(Int($0.rounded()))°C" } ?? "—°C")
-                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                        .font(.footnote.weight(.semibold)).foregroundStyle(ToggTheme.muted)
                 }
                 Spacer()
             }

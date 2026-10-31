@@ -13,6 +13,9 @@ yapılmadan tam erişilebilirlik iddia edilmez.
 - Sertifika durumu “Sertifika durumu” etiketi ve kalan gün değeriyle okunur.
 - Araç durumu, lastik, kapı ve uyarı kartları `children: .ignore` ile tek bir
   anlamlı özet olarak sunulur; ham ikon adları okunmaz.
+- Üst araç kartındaki büyük menzil/batarya ve alt ölçü metinleri artık semantik
+  fontlar (`largeTitle`, `title3`, `body`, `footnote`, `caption2`) kullanır; bu
+  kart Dynamic Type ile birlikte ölçeklenir.
 - `VoiceSheet` mikrofon nabız animasyonu Hareketi Azalt açıksa durur.
 - Watch kilit/açma/bagaj düğmeleri, komutun iPhone üzerinden ve taze imzalı
   telemetriyle gönderildiğini ipucu olarak bildirir.
@@ -20,8 +23,9 @@ yapılmadan tam erişilebilirlik iddia edilmez.
 
 ## Bilinen boşluklar
 
-- Bazı özel kartlarda sabit punto (`font(.system(size:))`) kullanılıyor.
-  Dynamic Type ile tam ölçekleme için ortak bir tipografi katmanı gerekiyor.
+- Bazı özel kartlarda hâlâ sabit punto (`font(.system(size:))`) kullanılıyor.
+  Üst araç kartı semantik fonlara geçti; kalan kartlar için ortak bir tipografi
+  katmanı gerekiyor.
 - Harita üzerindeki istasyon iğneleri görsel; aynı istasyonlar erişilebilir
   liste kartlarında da sunuluyor.
 - Watch'ta VoiceOver ve Hareketi Azalt fiziksel cihazda denenmedi.
