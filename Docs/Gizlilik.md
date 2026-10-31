@@ -46,6 +46,8 @@ Connect gizlilik anketinde ayrıca beyan edilmeli.
 ## App Store öncesi eksikler
 
 - Yayınlanacak gizlilik politikası URL'si ve destek adresi.
+- Taslak beyanlar ve meta veri metinleri için `Docs/AppStore.md` hazırlanır;
+  URL ve kesin beyanlar ürün sahibi onayıyla kesinleşir.
 - Togg servislerinin veri saklama/silme koşullarının ürün sahibiyle
   netleştirilmesi.
 - Hesap silme akışının Togg tarafında karşılanması; uygulama çıkışı yalnızca
