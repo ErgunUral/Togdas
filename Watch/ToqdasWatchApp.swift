@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 @main
 struct ToqdasWatchApp: App {
@@ -184,6 +185,24 @@ struct WatchGarageView: View {
             Button("Vazgeç", role: .cancel) { pendingCommand = nil }
         } message: {
             Text("Komut iPhone üzerinden iletilir. İşlemden önce dijital anahtarın hazır ve imzalı araç durumu güncel olmalı.")
+        }
+        .onChange(of: link.lastResult?.id) { _ in
+            guard let result = link.lastResult else { return }
+            Self.playHaptic(for: result)
+        }
+    }
+
+    /// Komut yanıtına göre dokunsal geri bildirim. "forwarded" başarının
+    /// kanıtı değildir; onay telemetriden gelir, bu nedenle bildirim/hata
+    /// tipi kullanılır ve kesin onay tıklaması çalınmaz.
+    private static func playHaptic(for result: WatchCommandResult) {
+        switch result.status {
+        case "forwarded":
+            WKInterfaceDevice.current().play(.notification)
+        case "rejected", "unavailable":
+            WKInterfaceDevice.current().play(.failure)
+        default:
+            break
         }
     }
 
