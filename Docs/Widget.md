@@ -5,14 +5,19 @@
 WidgetKit extension `ToqdasWidget`, iOS 16+ için `.systemSmall` ve
 `.systemMedium` ailelerinde salt okunur araç özeti sunar:
 
-- Araç adı
+- Araç adı (çoklu garajda "· N araç" rozeti)
 - Taze BLE telemetrisinden kilit durumu
 - Sunucu telemetrisinden batarya yüzdesi ve menzil (km)
-- BLE son ölçüm saati ve eski veri uyarısı
+- Son bilinen toplam kilometre ve dış sıcaklık (orta boyutta; önbellekte yoksa `—`)
+- BLE son ölçüm saati; BLE yoksa bulut telemetri saati ("Bulut · HH:mm")
 
 Widget'tan araç komutu gönderilmez. Eksik alanlar `—` gösterilir; tahmini/boş
 değer sıfır olarak sunulmaz. Widget zaman çizelgesi 15 dakika sonra yenileme
-ister; iOS kendi pil ve widget yenileme kurallarını uygular.
+ister; iOS kendi pil ve widget yenileme kurallarını uygular. Widget içeriği
+VoiceOver için tek özet öğe olarak birleştirilir (`.accessibilityElement
+(children: .combine)`). iOS 17+ üzerinde zorunlu
+`.containerBackground(for: .widget)` API'si kullanılır; iOS 16 eski
+`.background` dalını korur.
 
 ## Veri paylaşımı
 

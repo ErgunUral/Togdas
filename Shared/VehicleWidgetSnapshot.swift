@@ -13,6 +13,12 @@ struct VehicleWidgetSnapshot: Codable, Equatable {
     let bleUpdatedAt: Date?
     let cloudUpdatedAt: Date?
     let savedAt: Date
+    /// Son bilinen toplam kilometre; önbellekte yoksa nil. Tahmin yazılmaz.
+    var odometerKM: Double?
+    /// Son bilinen dış sıcaklık (°C); önbellekte yoksa nil.
+    var outsideTemperatureC: Double?
+    /// Garajdaki araç sayısı; tek araçsa gizlenir, gizlilik için VIN/iskelet yok.
+    var vehicleCount: Int?
 
     static let appGroup = "group.com.toqdas.ios"
     static let storageKey = "toqdas.widget.snapshot.v1"
@@ -52,6 +58,29 @@ struct VehicleWidgetSnapshot: Codable, Equatable {
         case false: return "Kilit açık"
         case nil: return "—"
         }
+    }
+
+    var displayOdometer: String {
+        guard let odometerKM, odometerKM.isFinite, odometerKM >= 0 else { return "— km" }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.maximumFractionDigits = 0
+        let text = formatter.string(from: NSNumber(value: odometerKM.rounded())) ?? "—"
+        return "\(text) km"
+    }
+
+    /// Eksik veri "—" kuralı; gerçek 0°C değeri "0°C" kalır.
+    var displayOutsideTemperature: String {
+        guard let outsideTemperatureC, outsideTemperatureC.isFinite, outsideTemperatureC >= -60, outsideTemperatureC <= 60 else {
+            return "—°C"
+        }
+        return "\(Int(outsideTemperatureC.rounded()))°C"
+    }
+
+    /// Tek araçta sayı gürültüdür; yalnız çoklu garajda gösterilir.
+    var displayVehicleCountBadge: String? {
+        guard let vehicleCount, vehicleCount > 1 else { return nil }
+        return "\(vehicleCount) araç"
     }
 
     /// Veri yaşı rozeti. Öncelik canlı/kaydedilmiş BLE kilit bilgisi; BLE yoksa

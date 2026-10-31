@@ -87,7 +87,7 @@ private struct VehicleStatusView: View {
 
     private func smallContent(_ snapshot: VehicleWidgetSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            header(snapshot.vehicleName)
+            header(snapshot.vehicleName, extra: snapshot.displayVehicleCountBadge)
             Label(snapshot.displayLock, systemImage: snapshot.locked == true ? "lock.fill" : "lock.open.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(lockTint)
@@ -100,12 +100,13 @@ private struct VehicleStatusView: View {
             metric("bolt.car.fill", "Bu ay \(snapshot.displayChargeSpend)")
             freshness(snapshot)
         }
+        .accessibilityElement(children: .combine)
     }
 
     private func mediumContent(_ snapshot: VehicleWidgetSnapshot) -> some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 8) {
-                header(snapshot.vehicleName)
+                header(snapshot.vehicleName, extra: snapshot.displayVehicleCountBadge)
                 Label(snapshot.displayLock, systemImage: snapshot.locked == true ? "lock.fill" : "lock.open.fill")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(lockTint)
@@ -117,8 +118,11 @@ private struct VehicleStatusView: View {
                 metric("Battery.100", snapshot.displayBattery)
                 metric("road.lanes", snapshot.displayRange)
                 metric("bolt.car.fill", "Bu ay \(snapshot.displayChargeSpend)")
+                metric("gauge", snapshot.displayOdometer)
+                metric("thermometer.medium", snapshot.displayOutsideTemperature)
             }
         }
+        .accessibilityElement(children: .combine)
     }
 
     private var unavailableContent: some View {
@@ -134,13 +138,19 @@ private struct VehicleStatusView: View {
         }
     }
 
-    private func header(_ name: String) -> some View {
+    private func header(_ name: String, extra: String?) -> some View {
         HStack(spacing: 5) {
             Circle().fill(Color.cyan).frame(width: 6, height: 6)
             Text(name.isEmpty ? "Toqdas" : name)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.white.opacity(0.75))
                 .lineLimit(1)
+            if let extra {
+                Text("· \(extra)")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .lineLimit(1)
+            }
         }
     }
 

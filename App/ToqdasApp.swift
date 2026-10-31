@@ -453,7 +453,10 @@ final class GarageModel: ObservableObject {
             bleReady: ble.state.isReady,
             bleUpdatedAt: ble.telemetry?.receivedAt,
             cloudUpdatedAt: cloud.updatedAt,
-            savedAt: Date()
+            savedAt: Date(),
+            odometerKM: cloud.odometerKM,
+            outsideTemperatureC: cloud.outsideTemperatureC,
+            vehicleCount: vehicles.count
         )
         VehicleWidgetSnapshotStore.save(snapshot)
         requestWidgetReload(contentChanged: Self.widgetContentChanged(previous: previous, current: snapshot))
@@ -469,6 +472,9 @@ final class GarageModel: ObservableObject {
             || previous.rangeKM != current.rangeKM
             || previous.monthlyChargeSpendTRY != current.monthlyChargeSpendTRY
             || previous.bleReady != current.bleReady
+            || previous.odometerKM != current.odometerKM
+            || previous.outsideTemperatureC != current.outsideTemperatureC
+            || previous.vehicleCount != current.vehicleCount
     }
 
     /// Bulut telemetrisi özeti. GarageModel'den ayrılarak sorumluluk bölündü.
