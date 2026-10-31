@@ -218,10 +218,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 ## 8. İlerleme
 
 - `BLEDiagnosticStore` … `BLECommandRejection` ve `BLECommandReceipt` aşamaları eklendi.
-- `VehicleTelemetry` tipi tipli parça verileriyle test için kuruldu; görev hatası/TODO kalıntısı temizlendi.
+- `VehicleTelemetry` için tip veri kümesi eklendi; görev hatası/TODO kalıntısı
+  temizlendi.
 - Saat komut sonucuna kısa dokunsal geri bildirim veriyor; "forwarded" bildirim
   tipindedir ve başarılı komut demek değildir.
-- UI testleri: `-uiTestFixture` ile ağa çıkmadan pano açılabilir; komutun kapalı olma nedeni test edilir.
+- UI testleri: `-uiTestFixture` ile ağa çıkmadan pano açılabilir; komutun kapalı
+  olma nedeni test edilir.
 - Üst araç kartı semantik fonlara geçirildi; Dynamic Type ile birlikte ölçeklenir.
 - `BLETransport` merkezi (central) yaşam döngüsü ayrıldı; `BleConnection`
   hâlâ servis/karakteristik keşfi, yazma kuyruğu ve el sıkışmayı taşıyor.
