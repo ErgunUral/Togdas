@@ -183,8 +183,18 @@ struct DashboardView: View {
         )
     }
 
-    private var battery: Int { Int((telemetry?.batteryPercent ?? 0).rounded()) }
-    private var range: Int { Int((telemetry?.rangeKM ?? 0).rounded()) }
+    /// Eksik değer "—" olarak gösterilir; 0 değerli araç verisi "0" ve "%0"
+    /// olarak korunur. Eksik veriyi 0'a sıkıştırmayan tipli gösterim.
+    private var battery: Int? {
+        telemetry?.batteryPercent.flatMap { value in
+            value.isFinite && value >= 0 ? Int(value.rounded()) : nil
+        }
+    }
+    private var range: Int? {
+        telemetry?.rangeKM.flatMap { value in
+            value.isFinite && value >= 0 ? Int(value.rounded()) : nil
+        }
+    }
     private var chargeEstimate: ChargingEstimate {
         ChargingEstimate.calculate(
             capacityKWh: chargeCapacityKWh,
@@ -194,6 +204,7 @@ struct DashboardView: View {
         )
     }
     private var batteryColor: Color {
+        guard let battery else { return ToggTheme.muted }
         if battery > 50 { return ToggTheme.green }
         if battery > 20 { return ToggTheme.orange }
         return ToggTheme.red
@@ -2457,8 +2468,9 @@ private struct DashboardHeader: View {
 // MARK: - Araç kartı
 
 private struct VehicleVisualCard: View {
-    let battery: Int
-    let range: Int
+    /// `nil` = veri yok ("—"); 0 = gerçek araç verisi.
+    let battery: Int?
+    let range: Int?
     let batteryColor: Color
     let updatedAt: Date?
     let lockState: Bool?
@@ -2499,7 +2511,7 @@ private struct VehicleVisualCard: View {
                             .font(.system(size: 12, weight: .semibold)).foregroundStyle(ToggTheme.muted)
                     }
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(range > 0 ? "\(range)" : "—")
+                        Text(range.map { "\($0)" } ?? "—")
                             .font(.system(size: 44, weight: .black)).foregroundStyle(.white)
                         Text("KM")
                             .font(.system(size: 18, weight: .bold)).foregroundStyle(ToggTheme.teal)
@@ -2511,7 +2523,7 @@ private struct VehicleVisualCard: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     HStack(spacing: 4) {
                         Image(systemName: "bolt.fill").font(.system(size: 18)).foregroundStyle(batteryColor)
-                        Text(battery > 0 ? "%\(battery)" : "—")
+                        Text(battery.map { "%\($0)" } ?? "—")
                             .font(.system(size: 22, weight: .bold)).foregroundStyle(batteryColor)
                     }
                     .padding(.horizontal, 14).padding(.vertical, 8)
@@ -2526,8 +2538,10 @@ private struct VehicleVisualCard: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(ToggTheme.surfaceVariant)
-                    Capsule().fill(batteryColor)
-                        .frame(width: geo.size.width * CGFloat(min(max(battery, 0), 100)) / 100)
+                    if let battery {
+                        Capsule().fill(batteryColor)
+                            .frame(width: geo.size.width * CGFloat(min(max(battery, 0), 100)) / 100)
+                    }
                 }
             }
             .frame(height: 8)
@@ -2567,8 +2581,8 @@ private struct VehicleVisualCard: View {
 
     private var accessibilitySummary: String {
         let lockText = lockBadge.text.lowercased()
-        let rangeText = range > 0 ? "\(range) kilometre menzil" : "menzil bilgisi yok"
-        let batteryText = battery > 0 ? "batarya yüzde \(battery)" : "batarya bilgisi yok"
+        let rangeText = range.map { "\($0) kilometre menzil" } ?? "menzil bilgisi yok"
+        let batteryText = battery.map { "batarya yüzde \($0)" } ?? "batarya bilgisi yok"
         let odometerText = odometer.map { "kilometre \(Int($0.rounded()))" } ?? "kilometre bilgisi yok"
         let temperatureText = outsideTemperature.map { "dış sıcaklık \(Int($0.rounded())) derece" } ?? "dış sıcaklık bilgisi yok"
         return [lockText, rangeText, batteryText, odometerText, temperatureText].joined(separator: ", ")
