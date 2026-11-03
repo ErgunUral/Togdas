@@ -1350,11 +1350,18 @@ extension BleConnection: BLETransportDelegate {
         }
     }
 
-    func transportDidRestore(peripheral: CBPeripheral, count: Int) {
+    func transportDidRestore(peripheral: CBPeripheral, count: Int, plan: BleRestorePlan) {
         lastPeripheral = peripheral
         lastPeripheralVIN = targetVIN
-        print("[BLE] state restored peripherals=\(count)")
-        recordDiagnostic("gatt_restore · BLE durumu geri yüklendi (\(count) çevrebirim)")
+        print("[BLE] state restored peripherals=\(count) plan=\(plan.action)")
+        switch plan.action {
+        case .resumeSession:
+            recordDiagnostic("gatt_restore · sistem bağlı oturumu geri verdi; el sıkışma sıfırdan değil, mevcut bağlantıyla devam ediyor")
+        case .reconnect:
+            recordDiagnostic("gatt_restore · restore bildirimi geldi; bağlantı kopuk, yeniden bağlanma politikası çalışacak")
+        case .none:
+            recordDiagnostic("gatt_restore · restore bildirimi geldi; plan yok")
+        }
     }
 
     func transportDidDiscover(peripheral: CBPeripheral, name: String, rssi: Int) {

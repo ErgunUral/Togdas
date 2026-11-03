@@ -6,7 +6,7 @@ import Foundation
 /// el sıkışma ve komut mantığı `BleConnection` içinde devam eder.
 protocol BLETransportDelegate: AnyObject {
     func transportDidUpdateState(_ managerState: CBManagerState)
-    func transportDidRestore(peripheral: CBPeripheral, count: Int)
+    func transportDidRestore(peripheral: CBPeripheral, count: Int, plan: BleRestorePlan)
     func transportDidDiscover(peripheral: CBPeripheral, name: String, rssi: Int)
     func transportDidConnect(peripheral: CBPeripheral)
     func transportDidFailToConnect(peripheral: CBPeripheral, error: Error?)
@@ -88,10 +88,22 @@ final class BLETransport: NSObject, CBCentralManagerDelegate, BLETransporting {
     }
 
     func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
-        guard let restored = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral],
+        guard isRadioOn,
+              let restored = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral],
               let peripheral = restored.first else { return }
+        let plan = BleRestorePlan.evaluate(
+            restoredCount: restored.count,
+            systemConnected: peripheral.state == .connected,
+            isRadioOn: isRadioOn
+        )
+        if plan.action == .resumeSession {
+            // Sistem bağlı oturumu verdi: connect çağrısı bağlantılı çevrebirim
+            // üzerinde didConnect tetikler; tam el sıkışma akışı sıfırdan
+            // değil, mevcut bağlantıyla devam eder. (Android boot-parite.)
+            self.connect(peripheral)
+        }
         self.peripheral = peripheral
-        delegate?.transportDidRestore(peripheral: peripheral, count: restored.count)
+        delegate?.transportDidRestore(peripheral: peripheral, count: restored.count, plan: plan)
     }
 
     func centralManager(

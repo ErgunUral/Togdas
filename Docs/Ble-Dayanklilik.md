@@ -95,3 +95,30 @@ Taşınmayanlar:
 
 Bu korumalar kod/test düzeyinde doğrulandı. Android .47'nin yeni alternatif açma
 yolu gerçek araçta gözlemlenmedi ve iOS'ta uygulanmadı.
+
+## 5. Boot-parite arka plan (.57, iOS kısıtlarıyla kısmi)
+
+Android .57 cihaz açılışında servis otomatik başlar ve BLE wake bridge yeniden
+kurulur. iOS'ta boot alıcısı yoktur; paritenin karşılığı CBCentralManager
+**state restoration** ile arka planda yeniden başlatmadır (restore
+identifier: `com.toqdas.ios.central`, `UIBackgroundModes: bluetooth-central`).
+
+`BleRestorePlan` restore olayında izlenecek yolu belirler:
+
+- **resumeSession**: sistem restore anında hâlâ bağlı oturum verdi. Mevcut
+  CoreBluetooth garantisi kullanılır — bağlı çevrebirimde `connect` çağrısı
+  `didConnect` tetikler ve tam el sıkışma akışı sıfırdan değil, mevcut
+  bağlantıyla devam eder.
+- **reconnect**: restore bildirimi geldi ama bağlantı kopuk; mevcut yeniden
+  bağlanma politikası akışı çalışır.
+- **none**: restore yok ya da radyo kapalı; normal başlangıç.
+
+İnvariant: plan **asla komut göndermez**. Arka planda yalnız oturum ve imzalı
+telemetri başlatılır; kilit/açma eylemleri yalnız ön plandaki mevcut kapılarla
+verilir (bkz. `Tests/BleRestorePlanTests.sendsCommand`).
+
+Sınırlar: kullanıcı uygulamayı sweep-kill ile kapatırsa iOS restoration
+teslim etmez; Android otomatik servis başlangıç paritesi bu senaryoda daha
+güçlüdür. Bu sınır bilinçli ve kapatılamaz — iOS platform kuralıdır. Restore
+akışının gerçek araçla diagnostik gözlemi (`gatt_restore` kayıtları) henüz
+yapılmadı.

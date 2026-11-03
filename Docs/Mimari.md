@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 40 dosya, 326 birim testi; `UITests`: 1 dosya, 4 smoke testi.
+- `Tests`: 42 dosya, 331 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -239,6 +239,16 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   politika onay kapısı. Araç komutu göndermez; yakınlık otomasyonu anahtarını
   onaylı olarak yönetir. Bağlantı/tazelik kapısına takılmaz, çünkü hedefi
   cihaz tarafı bir ayardır.
+- Boot-parite arka plan (Android .57 parite, iOS kısıtlarıyla kısmi):
+  iOS'ta boot alıcısı yoktur; karşılık CBCentralManager state restoration
+  (restore identifier `com.toqdas.ios.central`). `BleRestorePlan` restore
+  olayında üç yol verir — sistem bağlı oturum verdimiyse `resumeSession`
+  (CoreBluetooth garantisiyle `connect(connected)` → `didConnect` akışı,
+  el sıkışma sıfırdan değil), kopuksa mevcut `reconnect` politikası, yoksa
+  normal başlangıç. Plan asla komut göndermez (`sendsCommand` invariant
+  testli). Sınır: kullanıcı uygulamayı sweep-kill ile kapatırsa iOS
+  restoration teslim etmez; Android otomatik servis başlangıcı bu senaryoda
+  daha güçlüdür. Fiziksel araçla doğrulama bekliyor.
 - UI testleri: `-uiTestFixture` ile ağa çıkmadan pano açılabilir; komutun kapalı
   olma nedeni test edilir.
 - Üst araç kartı semantik fonlara geçirildi; Dynamic Type ile birlikte ölçeklenir.
