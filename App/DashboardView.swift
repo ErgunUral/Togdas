@@ -104,6 +104,8 @@ struct DashboardView: View {
     /// Android .57 paritesi: yaklaşma karar gecikmesi ölçümü.
     @State private var proximityLatencyMeter = ProximityLatencyMeter()
     @State private var proximityLastLatency: ProximityLatencyMeter.Reading?
+    /// GATT örneklerinden uygun aralık önerisi; kalibrasyonsuz oturumda çalışır.
+    @State private var proximitySuggester = ProximityAutoCalibrationSuggester()
     @State private var showProximityConfirmation = false
     @State private var showProximityGuide = false
     private var drivingStats: DrivingStatsStore { DrivingStatsStore(vin: vehicle.vin) }
@@ -325,6 +327,7 @@ struct DashboardView: View {
             if proximityRSSISamples.count > 5 {
                 proximityRSSISamples.removeFirst(proximityRSSISamples.count - 5)
             }
+            feedProximityCalibrationSuggestion(value)
             processProximityRSSI(value)
         }
         .onReceive(ble.$lastEvent) { event in
@@ -1380,12 +1383,14 @@ struct DashboardView: View {
             proximityGuard = ProximityCycleGuard()
             proximityLatencyMeter = ProximityLatencyMeter()
             proximityLastLatency = nil
+            proximitySuggester.reset()
             if proximityEnabled {
                 proximityStatus = "Eşikler güncellendi; yakınlık izleniyor."
             }
         } else if proximityNearSample != nil, proximityFarSample != nil {
             setProximityEnabled(false)
             proximityStatus = "Ölçüm farkı yetersiz. Yakın/uzak arasında en az 14 dB olmalı."
+            proximitySuggester.reset()
         }
     }
 
@@ -1653,6 +1658,7 @@ struct DashboardView: View {
         if resetGuard {
             proximityGuard = ProximityCycleGuard()
             proximityLatencyMeter = ProximityLatencyMeter()
+            proximitySuggester = ProximityAutoCalibrationSuggester()
         } else {
             // Belirsizlik/fresh cycle: örnek penceresi yeniden başlar.
             proximityLatencyMeter.noteBaseline(now: Date())
@@ -1698,6 +1704,32 @@ struct DashboardView: View {
         VehicleCommandStatusStore.save(
             VehicleCommandStatus(actionLabel: label, sentAt: Date(), verified: verified)
         )
+    }
+
+    /// Uygun yakınlık aralığını GATT örneklerinden otomatik algılar.
+    /// Öneri bildirimi yalnız kullanıcıya haber verir: kalibrasyon yazımı,
+    /// otomasyon açma ve komut **kendiliğinden** olmaz.
+    private func feedProximityCalibrationSuggestion(_ rssi: Int) {
+        guard ble.state.isReady else { return }
+        if let calibration = proximityCalibration, calibration.isValid, !proximityEnabled {
+            // Geçerli kalibrasyon varken öneri takibi gereksizdir.
+            proximitySuggester.reset()
+            return
+        }
+        guard let suggestion = proximitySuggester.feed(rssi) else { return }
+        let text = "Uygun aralık algılandı: yakın \(suggestion.nearSample) dBm, uzak \(suggestion.farSample) dBm."
+        proximityStatus = text + " Onaylamak için yakında/uzakta ölçümleri bu değerlerle kaydedin."
+        ble.recordDiagnostic("proximity_autocal · öneri yakın=\(suggestion.nearSample) uzak=\(suggestion.farSample) fark=\(suggestion.separation) dBm")
+        postCalibrationSuggestionNotification(suggestion)
+    }
+
+    private func postCalibrationSuggestionNotification(_ suggestion: ProximityAutoCalibrationSuggester.Suggestion) {
+        let content = UNMutableNotificationContent()
+        content.title = "Uygun yakınlık aralığı algılandı"
+        content.body = "Yakın ölçüm \(suggestion.nearSample) dBm, uzak ölçüm \(suggestion.farSample) dBm (fark \(suggestion.separation) dBm). Aralık metreye çevrilmez; otomasyonu kendi kendine açmadım. Onay için yakınlık kartındaki ölçüm düğmelerini kullan."
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
     }
 
     private func approve(_ command: DashboardCommand) {

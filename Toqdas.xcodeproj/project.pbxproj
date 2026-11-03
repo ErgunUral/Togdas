@@ -24,6 +24,7 @@
 		B1C2D3E4F5061728394A5B0C /* VehicleCommandStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5061728394A5B /* VehicleCommandStatus.swift */; };
 		C2D3E4F5061728394A5B0C1D /* VehicleCommandStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5061728394A5B /* VehicleCommandStatus.swift */; };
 		D3E4F5061728394A5B0C1D2E /* VehicleCommandStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5061728394A5B /* VehicleCommandStatus.swift */; };
+		E4F5061728394A5B0C1D2E3F /* ProximityAutoCalibrationSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F5061728394A5B0C1D2E30 /* ProximityAutoCalibrationSuggester.swift */; };
 		9E0F1A2B3C4D5E6F0A1B2C3D /* BleRestorePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9E0F1A2B3C4D5E6F0A1B2C /* BleRestorePlan.swift */; };
 		104A62617E10CDC2B0B03B56 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11854A761FC25AD5CF9F967 /* BLEProtocol.swift */; };
 		119EAD8F111DE7DE3BF64BA3 /* BLECommandHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */; };
@@ -220,6 +221,7 @@
 		5A6B7C8D9E0F1A2B3C4D5E6F /* ProximityLatencyMeter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityLatencyMeter.swift; path = Core/ProximityLatencyMeter.swift; sourceTree = "<group>"; };
 		6D9E0F1A2B3C4D5E6F0A1B2C /* BleRestorePlan.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleRestorePlan.swift; path = Core/BleRestorePlan.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5061728394A5B /* VehicleCommandStatus.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VehicleCommandStatus.swift; path = Core/VehicleCommandStatus.swift; sourceTree = "<group>"; };
+		E5F5061728394A5B0C1D2E30 /* ProximityAutoCalibrationSuggester.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityAutoCalibrationSuggester.swift; path = Core/ProximityAutoCalibrationSuggester.swift; sourceTree = "<group>"; };
 		8A7B1C2D3E4F5A6B7C8D9E0F /* KeyValueStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeyValueStore.swift; path = Core/KeyValueStore.swift; sourceTree = "<group>"; };
 		5D4E8A7B1C2F3D4E5F6A7B8C /* CloudSnapshotStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CloudSnapshotStore.swift; path = Core/CloudSnapshotStore.swift; sourceTree = "<group>"; };
 		266AF5BEEDC756597FF5C07D /* PhoneKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PhoneKeyStore.swift; path = Core/PhoneKeyStore.swift; sourceTree = "<group>"; };
@@ -489,6 +491,7 @@
 				5A6B7C8D9E0F1A2B3C4D5E6F /* ProximityLatencyMeter.swift */,
 				6D9E0F1A2B3C4D5E6F0A1B2C /* BleRestorePlan.swift */,
 				A0B1C2D3E4F5061728394A5B /* VehicleCommandStatus.swift */,
+				E5F5061728394A5B0C1D2E30 /* ProximityAutoCalibrationSuggester.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -813,6 +816,7 @@
 				4C5D6E7F8A9B0C1D2E3F0A1B /* ProximityCycleGuard.swift in Sources */,
 				7C8D9E0F1A2B3C4D5E6F0A1B /* ProximityLatencyMeter.swift in Sources */,
 				D3E4F5061728394A5B0C1D2E /* VehicleCommandStatus.swift in Sources */,
+				E4F5061728394A5B0C1D2E3F /* ProximityAutoCalibrationSuggester.swift in Sources */,
 				9E0F1A2B3C4D5E6F0A1B2C3D /* BleRestorePlan.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
