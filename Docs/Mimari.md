@@ -264,7 +264,9 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   ≤%40) eksik/geçersiz telemetride uyarı üretmez ("bilgi yok" ≠ uyarı;
   gerçek 0 kritiktir). `VehicleHealthCard` kartın en üstünde renkli,
   kenarlıklı ve erişilebilir bandı gösterir; sesli `auxiliaryBattery`
-  yanıtı düşük değerlerde "Dikkat/Not" tonu verir.
+  yanıtı düşük değerlerde "Dikkat/Not" tonu verir. iPhone yerel bildirimi:
+  yalnız taze telemetri güncellemesinde, ciddiyet başına günde bir kez,
+  VIN'siz anahtar/metin (lastik uyarısı deseni).
 - EPDK istasyonu sesli sorgusu (Android `nearby_stations` paritesi):
   `VoiceCommand.nearbyStations` salt okunur niyeti; "istasyon bul / ara /
   yakındaki istasyonlar" ayrıştırılır, politika EPDK sekmesine yönlendirir.

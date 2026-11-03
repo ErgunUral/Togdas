@@ -1732,6 +1732,32 @@ struct DashboardView: View {
         UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
     }
 
+    /// 12 V akü düşükse iPhone'a yerel bildirim. Lastik uyarısıyla aynı
+    /// desen: yalnız **taze** telemetri güncellemesinden gelir (önbellekten
+    /// gösterilen eski değere yazılmaz), ciddiyet başına günde bir kez,
+    /// VIN'siz anahtar ve VIN'siz metin. Eksik veri bildirim üretmez
+    /// ("bilgi yok" ≠ uyarı); gerçek 0 kritik bildirimdir.
+    private func checkAuxiliaryBattery(_ percent: Double?) {
+        guard let assessment = AuxiliaryBatteryPolicy.assess(percent) else { return }
+        let key = "toqdas.auxbattery.notified.\(vehicle.vin).\(assessment.severity == .critical ? "critical" : "warning")"
+        let calendar = Calendar.current
+        let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
+        guard !calendar.isDate(last, inSameDayAs: Date()) else { return }
+        UserDefaults.standard.set(Date(), forKey: key)
+
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        let content = UNMutableNotificationContent()
+        content.title = assessment.isCritical ? "12 V akü kritik düşük" : "12 V akü zayıf"
+        content.body = "Akü yüzde \(assessment.percent). "
+            + (assessment.isCritical
+                ? "Uzun parklarda araç açılmayabilir; en kısa sürede şarj/bakım kontrolü önerilir."
+                : "Yakında şarj/bakım kontrolü önerilir.")
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        center.add(request, withCompletionHandler: nil)
+    }
+
     private func approve(_ command: DashboardCommand) {
         let voiceSourced = voiceSourcedConfirm
         let requiresOwnerAuthentication = voiceSourced && command == .unlock
@@ -2434,6 +2460,7 @@ struct DashboardView: View {
                 drivingStats.record(odometer: odo, batteryPercent: parsed.batteryPercent)
             }
             checkTirePressure(parsed.tires)
+            checkAuxiliaryBattery(parsed.auxiliaryBatteryPercent)
             model.noteCloudTelemetry(parsed)
         } catch is CancellationError {
             return
