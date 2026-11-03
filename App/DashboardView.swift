@@ -1948,6 +1948,10 @@ struct DashboardView: View {
             guard let percent = telemetry?.auxiliaryBatteryPercent, percent.isFinite else {
                 return "12 V akü bilgisi yok."
             }
+            if let assessment = AuxiliaryBatteryPolicy.assess(percent) {
+                let level = assessment.isCritical ? "Dikkat: 12 V akü kritik düşük" : "Not: 12 V akü zayıf"
+                return "\(level), yüzde \(assessment.percent). Şarj ve bakım kontrolü önerilir." + voiceCloudAgeNote()
+            }
             return "12 V akü yüzde \(Int(percent.rounded()))." + voiceCloudAgeNote()
         }
     }
@@ -3043,6 +3047,13 @@ private struct VehicleHealthCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
+            // 12 V akü düşükse belirgin uyarı bandı.
+            // Kural: AuxiliaryBatteryPolicy.assess; eksik veri asla uyarıya
+            // dönüştürülmez ("—" gösteriminde kalır).
+            if let batteryAlert = AuxiliaryBatteryPolicy.assess(auxiliaryBattery) {
+                batteryAlertBanner(batteryAlert)
+            }
+
             HStack(spacing: 12) {
                 ZStack {
                     Circle().fill(ToggTheme.green.opacity(0.2)).frame(width: 38, height: 38)
@@ -3194,6 +3205,48 @@ private struct VehicleHealthCard: View {
         case nil: warning = ""
         }
         return pressure + temperature + warning
+    }
+
+    /// 12 V akü uyarı bandı: uyarı "belirgin" olması için kartın en üstünden
+    /// başlar, renk (kritik: kırmızı, uyarı: turuncu) ve kalın metinle
+    /// ayrışır; ekran okuyucu için tam cümle etiketi içerir. VIN/token
+    /// içermez; mesafe/menzil iddiası taşımaz.
+    @ViewBuilder
+    private func batteryAlertBanner(_ assessment: AuxiliaryBatteryAssessment) -> some View {
+        let critical = assessment.isCritical
+        let color: Color = critical ? ToggTheme.red : ToggTheme.orange
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: critical ? "battery.0percent" : "battery.25percent")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(color)
+                Text(critical ? "12 V Akü Kritik Düşük" : "12 V Akü Zayıf")
+                    .font(.system(size: 14, weight: .heavy))
+                    .foregroundStyle(color)
+                Spacer()
+                Text("%\(assessment.percent)")
+                    .font(.system(size: 16, weight: .heavy))
+                    .foregroundStyle(color)
+            }
+            Text(critical
+                 ? "12 V akü %\(assessment.percent). Uzun parklarda araç açılmayabilir; en kısa sürede şarj/bakım kontrolü önerilir."
+                 : "12 V akü %\(assessment.percent). Yakında şarj/bakım kontrolü önerilir.")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(color.opacity(0.16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(color.opacity(0.8), lineWidth: 1.5)
+                )
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(critical ? "Uyarı: 12 volt akü kritik düşük" : "Uyarı: 12 volt akü zayıf")
+        .accessibilityValue("Akü yüzde \(assessment.percent)")
     }
 
     private func statBox(title: String, value: String, icon: String, color: Color) -> some View {

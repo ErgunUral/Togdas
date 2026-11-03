@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 43 dosya, 348 birim testi; `UITests`: 1 dosya, 4 smoke testi.
+- `Tests`: 44 dosya, 352 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -260,6 +260,11 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   ("Uygun yakınlık aralığı algılandı", VIN'siz). Öneri kalibrasyonu yazmaz,
   otomasyonu açmaz; onay hâlâ yakınlık kartındaki ölçüm düğmelerinden
   geçer.
+- 12 V akü düşük uyarısı: `AuxiliaryBatteryPolicy` (kritik ≤%25, uyarı
+  ≤%40) eksik/geçersiz telemetride uyarı üretmez ("bilgi yok" ≠ uyarı;
+  gerçek 0 kritiktir). `VehicleHealthCard` kartın en üstünde renkli,
+  kenarlıklı ve erişilebilir bandı gösterir; sesli `auxiliaryBattery`
+  yanıtı düşük değerlerde "Dikkat/Not" tonu verir.
 - EPDK istasyonu sesli sorgusu (Android `nearby_stations` paritesi):
   `VoiceCommand.nearbyStations` salt okunur niyeti; "istasyon bul / ara /
   yakındaki istasyonlar" ayrıştırılır, politika EPDK sekmesine yönlendirir.
