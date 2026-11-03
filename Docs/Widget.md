@@ -9,6 +9,11 @@ WidgetKit extension `ToqdasWidget`, iOS 16+ için `.systemSmall` ve
 - Taze BLE telemetrisinden kilit durumu
 - Sunucu telemetrisinden batarya yüzdesi ve menzil (km)
 - Son bilinen toplam kilometre ve dış sıcaklık (orta boyutta; önbellekte yoksa `—`)
+- Son komut sonucu (orta boyutta): "Son komut: <etiket> · doğrulandı /
+  doğrulanamadı / doğrulama yok". Kural: `verified` yalnızca **imzalı
+  telemetriyle** kilit doğrulaması geldiğinde `true/false` olur; "başarılı"
+  gibi onay nitelemesi yazılmaz. Kayıt 24 saatten eskiyse satır çıkarılır,
+  tazelik iddiası taşımaz.
 - BLE son ölçüm saati; BLE yoksa bulut telemetri saati ("Bulut · HH:mm")
 
 Widget'tan araç komutu gönderilmez. Eksik alanlar `—` gösterilir; tahmini/boş
@@ -25,6 +30,12 @@ VoiceOver için tek özet öğe olarak birleştirilir (`.accessibilityElement
 `group.com.toqdas.ios` App Group içindeki `UserDefaults`'a yazar. VIN, oturum
 token'ı, sertifika ve özel anahtar aktarılmaz. Uygulama açıldıkça snapshot
 yenilenir; widget salt okunur.
+
+Son komut sonucu aynı App Group'u paylaşır ama ayrı bir anahtar tutar
+(`Core/VehicleCommandStatus.swift`, key `toqdas.widget.commandstatus.v1`):
+etiket + zaman + doğrulama durumu; VIN yoktur. Yazım noktaları manual
+komutlar (`DashboardView.send`) ve yakınlık otomasyonu; `verified` güncellemesi
+yalnız kilit/kilit açma için `lockConfirmationCount` üzerinden gelir.
 
 ## İmzalama gereksinimi
 

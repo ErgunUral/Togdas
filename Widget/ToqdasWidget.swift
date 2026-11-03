@@ -18,19 +18,25 @@ private extension View {
 private struct VehicleStatusEntry: TimelineEntry {
     let date: Date
     let snapshot: VehicleWidgetSnapshot?
+    var command: VehicleCommandStatus?
 }
 
 private struct VehicleStatusProvider: TimelineProvider {
     func placeholder(in context: Context) -> VehicleStatusEntry {
-        VehicleStatusEntry(date: .now, snapshot: nil)
+        VehicleStatusEntry(date: .now, snapshot: nil, command: nil)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (VehicleStatusEntry) -> Void) {
-        completion(VehicleStatusEntry(date: .now, snapshot: VehicleWidgetSnapshotStore.load()))
+        completion(VehicleStatusEntry(date: .now, snapshot: VehicleWidgetSnapshotStore.load(), command: VehicleCommandStatusStore.load()))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<VehicleStatusEntry>) -> Void) {
-        let entry = VehicleStatusEntry(date: .now, snapshot: VehicleWidgetSnapshotStore.load())
+        let entry = VehicleStatusEntry(
+            date: .now,
+            snapshot: VehicleWidgetSnapshotStore.load(),
+            // 24 saatten eski komut kayıtları isStale kuralıyla ekranda çıkarılmaz.
+            command: VehicleCommandStatusStore.load()
+        )
         completion(Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(15 * 60))))
     }
 }
@@ -40,7 +46,7 @@ struct ToqdasVehicleStatusWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: Self.kind, provider: VehicleStatusProvider()) { entry in
-            VehicleStatusView(snapshot: entry.snapshot)
+            VehicleStatusView(snapshot: entry.snapshot, command: entry.command)
         }
         .configurationDisplayName("Toqdas Araç Durumu")
         .description("Kilit, batarya, menzil ve bu ayın şarj harcamasını gösterir. Komut göndermez.")
@@ -55,6 +61,8 @@ struct ToqdasWidgetBundle: WidgetBundle {
 
 private struct VehicleStatusView: View {
     let snapshot: VehicleWidgetSnapshot?
+    /// Son komut sonucu; 24 saatten eski/bilgi yok ise satır çıkarılmaz.
+    let command: VehicleCommandStatus?
 
     private var lockTint: Color {
         guard let snapshot, !snapshot.lockDataIsStale else { return .orange }
@@ -120,6 +128,13 @@ private struct VehicleStatusView: View {
                 metric("bolt.car.fill", "Bu ay \(snapshot.displayChargeSpend)")
                 metric("gauge", snapshot.displayOdometer)
                 metric("thermometer.medium", snapshot.displayOutsideTemperature)
+                if let commandText = command?.displayText {
+                    Text(commandText)
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.65))
+                        .lineLimit(1)
+                        .accessibilityLabel("Son komut sonucu: \(command?.verificationText ?? "bilgi yok")")
+                }
             }
         }
         .accessibilityElement(children: .combine)

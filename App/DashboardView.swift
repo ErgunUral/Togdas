@@ -340,6 +340,12 @@ struct DashboardView: View {
             guard count > previous else { return }
             lastLockSoundCount = count
             LockConfirmationSound.playDoubleBeep()
+            // Kilit/kilit açma komutu imzalı telemetriyle doğrulandıysa widget
+            // kaydına yazılır; klima/bagaj gibi diğer komutlar etiket
+            // filtresiyle dışarıda kalır.
+            VehicleCommandStatusStore.markVerified(true, ifLabelMatches: { label in
+                label.lowercased().contains("kilit")
+            })
             if awaitingProximityLockConfirmation {
                 awaitingProximityLockConfirmation = false
                 pendingAutoLockTask?.cancel()
@@ -1565,6 +1571,7 @@ struct DashboardView: View {
                 case .sendUnlock:
                     if ble.unlock() {
                         proximityGuard.noteUnlockIssued()
+                        recordWidgetCommand("Otomatik kilit açma (yakınlık)")
                         proximityStatus = "Yakınlık algılandı; imzalı kilit açma isteği başlatıldı."
                         ble.recordDiagnostic("Yakınlık otomasyonu kilit açma biletiyle istek başlattı")
                     } else {
@@ -1602,6 +1609,7 @@ struct DashboardView: View {
                     }
                 }
                 if ble.lock() {
+                    recordWidgetCommand("Kilitleme (yakınlık)")
                     proximityStatus = "Uzaklaşma algılandı; cam kapatma ve ardından kapı kilitleme akışı başlatıldı."
                     ble.recordDiagnostic("Yakınlık otomasyonu cam kapatma/kilitleme akışını başlattı")
                 } else {
@@ -1673,15 +1681,23 @@ struct DashboardView: View {
 
     private func send(_ command: DashboardCommand) {
         switch command {
-        case .lock: ble.lock()
-        case .unlock: ble.unlock()
-        case .trunkOpen: ble.trunkOpen()
-        case .trunkClose: ble.trunkClose()
-        case .windowsOpen: ble.windowsOpen()
-        case .windowsClose: ble.windowsClose()
+        case .lock: ble.lock(); recordWidgetCommand("Kilitleme")
+        case .unlock: ble.unlock(); recordWidgetCommand("Kilit açma")
+        case .trunkOpen: ble.trunkOpen(); recordWidgetCommand("Bagaj açma")
+        case .trunkClose: ble.trunkClose(); recordWidgetCommand("Bagaj kapatma")
+        case .windowsOpen: ble.windowsOpen(); recordWidgetCommand("Cam açma")
+        case .windowsClose: ble.windowsClose(); recordWidgetCommand("Cam kapatma")
         // Oto kilit BLE komutu değildir; approve() uygulama anahtarını çevirir.
         case .automaticLockOn, .automaticLockOff: break
         }
+    }
+
+    /// Widget'a son komut yazımı: yalnız etiket ve zaman; VIN/token asla
+    /// yazılmaz. Doğrulama yoksa `verified` nil kalır → "doğrulama yok".
+    private func recordWidgetCommand(_ label: String, verified: Bool? = nil) {
+        VehicleCommandStatusStore.save(
+            VehicleCommandStatus(actionLabel: label, sentAt: Date(), verified: verified)
+        )
     }
 
     private func approve(_ command: DashboardCommand) {
