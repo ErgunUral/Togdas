@@ -43,9 +43,12 @@ Taslak, fiziksel araçta doğrulanmamış özellikler için başarı iddiası ta
 > • Widget tazelik rozetinde bulut telemetri zamanı gösterilir
 > • Erişilebilirlik: üst araç kartı Dynamic Type ile ölçeklenir
 
-### Anahtar kelimeler (öneri, 100 karakter sınırına göre kısaltılmalı)
+### Anahtar kelimeler ( toplam ≤100 karakter )
 
-`togg, dijital anahtar, şarj istasyonu, batarya menzil, araç kilit, EPDK, watch` [onay gerekli]
+- Önerilen set (87/100 karakter): `togg,araba bulun,dijital anahtar,arac kilidi,sarj istasyonu,EPDK,elektrikli araba,watch`
+
+  Kalan ~13 karaktere "lastik basinci" (14) tam sığmaz; eklenmek istenirse
+  "elektrikli araba" ile değiştirme, onayda değerlendirilir. [onay gerekli]
 
 ## 3. Hesap silme akışı (taslak)
 
@@ -57,6 +60,20 @@ Taslak, fiziksel araçta doğrulanmamış özellikler için başarı iddiası ta
   temizlenir, saat bağlantısı sıfırlanır.
 - App Review'a verilecek not: "Hesap silme, Togg ID hesap yönetimi üzerinden
   yapılır" + Togg ID destek/hesap yönetimi URL'si. [onay gerekli — URL]
+
+### 3.1 Hesap silme yönlendirme sayfası metni (web'e host edilecek)
+
+> **Toqdas hesabı nasıl silinir?**
+> Toqdas, oturumunu Togg ID hesabınla açar; uygulama kendi hesap kaydını
+> oluşturmaz ve kendi sunucularında veri tutmaz. Bu nedenle hesabının ve
+> verilerinin silinmesi Togg ID hesap yönetiminden yapılır:
+> [Togg ID hesap yönetimi bağlantısı — onay gerekli]
+>
+> Uygulama tarafında: "Oturumu kapat" seçenek, yerel oturumu tamamen siler;
+> cihazındaki dijital anahtar kaydı, önbellek ve bildirim tercihleri
+> kaldırılır. Uygulamayı yeniden açtığında tekrar oturum açman gerekir.
+>
+> Soruları için: [destek e-posta] [onay gerekli]
 
 ## 4. Gizlilik anketi önerileri (App Store Connect)
 
@@ -86,7 +103,36 @@ Netleştirilecek noktalar [onay gerekli]:
 5. [ ] Fiziksel cihaz + gerçek araç smoke testi: eşleştirme, READY, kilit/bagaj, watch eşleşmesi (`Docs/BLE-Eslesme.md`, `Docs/Ble-Dayanklilik.md`).
 6. [ ] App Review notları: test hesabı/davet (demo gerekiyorsa) ve BLE bağlantı video kaydı gerekebilir. [onay gerekli]
 
-## 6. Sürüm notu
+## 6. App Review'a sunulacak notlar (taslak)
+
+> Toqdas, Togg servileriyle konuşan bağımsız bir iPhone istemcisidir.
+> - Giriş: Togg ID OAuth ekranı; test için demo hesap sağlanabilir [onay gerekli]
+> - BLE komutları (kilit/aç/bagaj/cam) yalnız dijital anahtar eşleştirmesi
+>   + araç kimlik doğrulaması sonrası kullanılabilir; video kaydı ek veya
+>   URL üzerinden gösterilebilir [onay gerekli].
+> - Uygulama kendi sunucu tarafı veri toplamıyor: gizlilik beyanı yalnız
+>   Togg servisi üzerinden geçen verileri kapsar.
+> - Hesap silme: Togg ID hesap yönetimi kanalından yapılır (bkz. §3.1).
+> - Siri/Shortcuts yalnız kapalı komut seti kullanır; serbest metin komut
+>   yürütmüyor. Ses verisi cihaz üstünde tanınır (`requiresOnDeviceRecognition`),
+>   kayıt saklanmaz.
+> - Widget salt okunur; komut göndermez, VIN/anahtar malzemesi görüntülemez.
+> - Yakınlık otomasyonu yalnız ön planda çalışır; arka planda araç komutu
+>   gönderilmez.
+
+## 7. Kullanıcının tamamlaması gerekenler [onay gerekli — hepsi]
+
+1. Domain kararı + gizlilik politikası sayfasının yayınlanması
+   (temel metin `Docs/Gizlilik.md`, HTML'e sarılıp host edilir).
+2. Destek kanalı (e-posta ya da sayfa) kararı + URL.
+3. Hesap silme yönlendirme URL'si (§3.1 metni host edilir).
+4. Anahtar kelimeler son onayı (§2 öneri).
+5. Kategori onayı: birincil **Navigasyon**, ikincil **Yaşam Tarzı** — ya
+   da ikincil **Araçlar** tercihi.
+6. Fiziksel araç smoke testi + BLE bağlantı video kaydı.
+7. App Store Connect "Gizlilik" anketine §4 tablosuyla aynen giriş.
+
+## 8. Sürüm notu
 
 Bu belge yalnızca taslaktır; App Store Connect ekranlarındaki son değerler
 onaylandıkça "[onay gerekli]" işaretleri kaldırılır ve belge gerçek başvuruyla
