@@ -86,4 +86,8 @@ final class VoiceIntentTests: XCTestCase {
         XCTAssertEqual(parser.parse("Otomatik KİLİT AÇ"), .automaticLock(on: true))
         XCTAssertEqual(parser.parse("oto kilit"), .automaticLock(on: nil))
     }
+
+    func testNearbyStationsParity() {
+        XCTAssertEqual(parser.parse("istasyon bul"), .nearbyStations)
+    }
 }

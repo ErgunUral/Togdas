@@ -171,6 +171,14 @@ final class VoiceCommandPolicyTests: XCTestCase {
         }
     }
 
+    func testNearbyStationsGuidesToEpdK() {
+        if case .speak(let text) = policy.decide(.nearbyStations, context: context()) {
+            XCTAssertTrue(text.contains("EPDK"))
+        } else {
+            XCTFail("istasyon sorgusu yönlendirme vermeli")
+        }
+    }
+
     func testAutomaticLockConfirmsWithoutCarGates() {
         // Araç komutu olmadığından bağlantı/telemetri kapılarına takılmaz.
         if case .confirm(let command, let prompt) = policy.decide(

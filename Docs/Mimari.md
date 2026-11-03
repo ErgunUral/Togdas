@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 43 dosya, 344 birim testi; `UITests`: 1 dosya, 4 smoke testi.
+- `Tests`: 43 dosya, 348 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -260,6 +260,11 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   ("Uygun yakınlık aralığı algılandı", VIN'siz). Öneri kalibrasyonu yazmaz,
   otomasyonu açmaz; onay hâlâ yakınlık kartındaki ölçüm düğmelerinden
   geçer.
+- EPDK istasyonu sesli sorgusu (Android `nearby_stations` paritesi):
+  `VoiceCommand.nearbyStations` salt okunur niyeti; "istasyon bul / ara /
+  yakındaki istasyonlar" ayrıştırılır, politika EPDK sekmesine yönlendirir.
+  Ses verisi okumalı istasyon listesi veri hattına bağlı değildir; sonraki
+  adım öneri.)
 - UI testleri: `-uiTestFixture` ile ağa çıkmadan pano açılabilir; komutun kapalı
   olma nedeni test edilir.
 - Üst araç kartı semantik fonlara geçirildi; Dynamic Type ile birlikte ölçeklenir.

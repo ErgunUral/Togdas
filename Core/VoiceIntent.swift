@@ -28,6 +28,8 @@ public enum VoiceIntent: Equatable {
     case findVehicle
     /// Oto kilit (yakınlık otomasyonu) yönetimi; araç komutu göndermez.
     case automaticLock(on: Bool?)
+    /// EPDK şarj istasyonu sorgusu; salt okunur.
+    case nearbyStations
 
     // Diğer
     case help
@@ -125,6 +127,14 @@ public struct VoiceIntentParser {
             if hasCloseVerb { return .climateOff }
             if hasOpenVerb { return .climateOn(temperature: Self.temperature(in: tokens)) }
             if let value = Self.temperature(in: tokens) { return .climateOn(temperature: value) }
+        }
+
+        if text.contains("istasyon")
+            && (text.contains("yakin")
+                || text.contains("nerede")
+                || text.contains("bul")
+                || text.contains("ara")) {
+            return .nearbyStations
         }
 
         if text.contains("sarj") || text.contains("sarz") {

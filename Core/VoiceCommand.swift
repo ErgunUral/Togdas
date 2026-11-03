@@ -43,6 +43,9 @@ public enum VoiceCommand: Equatable, Sendable {
     /// Oto kilit (yakınlık otomasyonu) yönetimi; araç komutu göndermez.
     /// `nil` → eylem belirtilmedi; politika sözlü yönlendirme verir.
     case automaticLock(on: Bool?)
+    /// EPDK şarj istasyonu sorgusu; salt okunur. Veri hattı sağlanana
+    /// kadar politika yönlendirme yanıtını verir.
+    case nearbyStations
     case findVehicle
     case help
     case cancel

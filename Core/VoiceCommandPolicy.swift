@@ -70,6 +70,8 @@ public struct VoiceCommandPolicy: Sendable {
             return .reject("Aracı bulma kornası henüz araçta doğrulanmadı; bu bir önizleme. Komut göndermedim.")
         case .automaticLock(nil):
             return .speak("Oto kilit için fiil eksik; 'oto kilit aç' ya da 'oto kilit kapat' de.")
+        case .nearbyStations:
+            return .speak("Şarj istasyonu arama EPDK sekmesinde; sesli istasyon araması henüz yok.")
         case .automaticLock(let on):
             let intent = VoiceCommand.automaticLock(on: on)
             if context.confirmedCommand == intent {

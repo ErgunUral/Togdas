@@ -107,6 +107,14 @@ public struct VoiceCommandParser: Sendable {
             }
         }
 
+        if text.contains("istasyon")
+            && (text.contains("yakin")
+                || text.contains("nerede")
+                || text.contains("bul")
+                || text.contains("ara")) {
+            return result(.nearbyStations, 0.85, text)
+        }
+
         if text.contains("sarj") || text.contains("sarz") {
             if text.contains("kapak") || text.contains("kapag") || text.contains("kapisi") || text.contains("istasyon") {
                 return result(.unknown, 0.2, text)

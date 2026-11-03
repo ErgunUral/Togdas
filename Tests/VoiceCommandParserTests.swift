@@ -77,6 +77,19 @@ final class VoiceCommandParserTests: XCTestCase {
         XCTAssertEqual(parser.parse("oto kilit aç ve klimayı aç"), .ambiguous)
     }
 
+    // MARK: EPDK istasyonu (Android nearby_stations paritesi, salt okunur)
+
+    func testNearbyStationsIntents() {
+        XCTAssertEqual(parser.parse("yakındaki şarj istasyonları"), .nearbyStations)
+        XCTAssertEqual(parser.parse("istasyon bul"), .nearbyStations)
+        XCTAssertEqual(parser.parse("istasyonları ara"), .nearbyStations)
+    }
+
+    func testStationQuestionWithoutLocateWordsStaysUnknown() {
+        // "şarj istasyonu kapak/şarj durumu" karışmasın; konum sözcüğü yok.
+        XCTAssertEqual(parser.parse("şarj istasyonu kapak"), .unknown)
+    }
+
     func testTrunkAndWindowActions() {
         XCTAssertEqual(parser.parse("Bagajı aç"), .trunk(open: true))
         XCTAssertEqual(parser.parse("Bagajı kapat"), .trunk(open: false))
