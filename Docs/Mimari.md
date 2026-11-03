@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 39 dosya, 313 birim testi; `UITests`: 1 dosya, 4 smoke testi.
+- `Tests`: 40 dosya, 319 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -226,6 +226,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   döngüsünde açma tek biletle sınırlı; eski/geçersiz ölçüm veya başarısız
   gönderim bileti iptal eder ve 30 sn guard devreye girer. Karar çekirdeği
   birim testli; komutun sonucu imzalı telemetriyle doğrulanmaya devam eder.
+- `ProximityLatencyMeter` (Android .57 latency paritesi): yaklaşma karar
+  gecikmesi yalnızca yerel ölçülebilir kanıtlarla raporlanır — döngü tabanı
+  (etkinleştirme/uzaklaşma teyidi/fresh cycle) → karar süresi (ms), pencere
+  örnek sayısı ve profilin beklenen karar penceresi (gerekli örnek × RSSI
+  aralığı). Ölçüm tanı ekranında "Yaklaşma kararı" satırında görünür; araç
+  tarafı ACK süresi ölçülmez, arka plan gecikmesi raporlanmaz. Eksik ölçüm
+  "—" kalır, asla 0 yazılmaz.
 - UI testleri: `-uiTestFixture` ile ağa çıkmadan pano açılabilir; komutun kapalı
   olma nedeni test edilir.
 - Üst araç kartı semantik fonlara geçirildi; Dynamic Type ile birlikte ölçeklenir.

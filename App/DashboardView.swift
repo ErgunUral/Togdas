@@ -98,6 +98,9 @@ struct DashboardView: View {
     @State private var proximityStatus = "Ölçüm bekleniyor"
     /// Android .57 paritesi: tek biletl açma + 30 sn belirsizlik guard'ı.
     @State private var proximityGuard = ProximityCycleGuard()
+    /// Android .57 paritesi: yaklaşma karar gecikmesi ölçümü.
+    @State private var proximityLatencyMeter = ProximityLatencyMeter()
+    @State private var proximityLastLatency: ProximityLatencyMeter.Reading?
     @State private var showProximityConfirmation = false
     @State private var showProximityGuide = false
     private var drivingStats: DrivingStatsStore { DrivingStatsStore(vin: vehicle.vin) }
@@ -403,6 +406,8 @@ struct DashboardView: View {
             if !proximityEnabled, let calibration = proximityCalibration, calibration.isValid {
                 proximityGate = ProximityGate(calibration: calibration, profile: profile)
                 proximityGuard = ProximityCycleGuard()
+                proximityLatencyMeter = ProximityLatencyMeter()
+                proximityLastLatency = nil
             }
         }
         .onChange(of: proximityAutoOffMinutes) { value in
@@ -1092,6 +1097,7 @@ struct DashboardView: View {
                 technicalMetric("Kayıt", "\(ble.diagnosticEvents.count)")
                 technicalMetric("Kilit", ble.lockConfirmationCount > 0 ? "Doğrulandı ✓" : "Bekliyor")
             }
+            proximityLatencyReportRow
             if let telemetry = ble.telemetry {
                 Text("İmzalı telemetri · \(telemetry.receivedAt.formatted(date: .omitted, time: .standard))")
                     .font(.system(size: 10))
@@ -1135,6 +1141,24 @@ struct DashboardView: View {
             Text(value).font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Yaklaşma karar gecikmesi tek satır raporu (Android .57 latency paritesi).
+    /// Eksik ölçü "—" gösterilir, asla 0 yazılmaz; pencere iddia değil profil
+    /// matematiğidir (gerekli örnek × RSSI aralığı).
+    private var proximityLatencyReportText: String {
+        guard let last = proximityLastLatency else {
+            return "Yaklaşma kararı · — · örnek — · pencere ≤ \(TurkishFormat.decimal(ProximityLatencyMeter.Reading.expectedInterval(for: proximityProfile), digits: 2)) sn"
+        }
+        let latency = last.cycleLatencyMs.map { "\(TurkishFormat.integer(Double($0))) ms" } ?? "—"
+        return "Yaklaşma kararı · \(latency) · \(last.samples) örnek · pencere ≤ \(TurkishFormat.decimal(ProximityLatencyMeter.Reading.expectedInterval(for: proximityProfile), digits: 2)) sn · \(last.at.formatted(date: .omitted, time: .shortened))"
+    }
+
+    @ViewBuilder
+    private var proximityLatencyReportRow: some View {
+        Text(proximityLatencyReportText)
+            .font(.system(size: 9, design: .monospaced))
+            .foregroundStyle(ToggTheme.muted)
     }
 
     @ViewBuilder
@@ -1284,6 +1308,8 @@ struct DashboardView: View {
         proximityEnabled = true
         proximityGate = ProximityGate(calibration: calibration, profile: proximityProfile)
         proximityGuard = ProximityCycleGuard()
+        proximityLatencyMeter = ProximityLatencyMeter()
+        proximityLastLatency = nil
         ble.setProximityRSSIPollInterval(proximityProfile.pollInterval)
         proximityStatus = "Etkin; araç bağlantısı aranıyor"
         if proximityAutoOffEnabled, let deadline = proximityAutoOffDeadline {
@@ -1343,6 +1369,8 @@ struct DashboardView: View {
         if let calibration = proximityCalibration, calibration.isValid {
             proximityGate = ProximityGate(calibration: calibration, profile: proximityProfile)
             proximityGuard = ProximityCycleGuard()
+            proximityLatencyMeter = ProximityLatencyMeter()
+            proximityLastLatency = nil
             if proximityEnabled {
                 proximityStatus = "Eşikler güncellendi; yakınlık izleniyor."
             }
@@ -1378,6 +1406,8 @@ struct DashboardView: View {
         UserDefaults.standard.set(true, forKey: proximityEnabledKey)
         proximityGate = ProximityGate(calibration: calibration, profile: proximityProfile)
         proximityGuard = ProximityCycleGuard()
+        proximityLatencyMeter = ProximityLatencyMeter()
+        proximityLastLatency = nil
         proximityRSSISamples.removeAll()
         ble.setProximityRSSIPollInterval(proximityProfile.pollInterval)
         proximityAutoOffDeadline = nil
@@ -1501,6 +1531,7 @@ struct DashboardView: View {
         }
         let transition = gate.update(rssi: rssi)
         proximityGate = gate
+        proximityLatencyMeter.noteSample()
         guard let transition else { return }
         ble.recordDiagnostic(transition == .approached
                              ? "Yakınlık eşiği doğrulandı (\(rssi) dBm)"
@@ -1521,6 +1552,10 @@ struct DashboardView: View {
 
         switch transition {
         case .approached:
+            let lastLatency = proximityLatencyMeter.noteApproachDecision(now: Date())
+            proximityLastLatency = lastLatency
+            let expected = ProximityLatencyMeter.Reading.expectedInterval(for: proximityProfile)
+            ble.recordDiagnostic("proximity_latency · yaklaşma kararı \(lastLatency.cycleLatencyMs.map(String.init) ?? "none") ms · \(lastLatency.samples) örnek · pencere <= \(Int(expected * 1000)) ms")
             if isLocked {
                 let decision = proximityGuard.decideApproach(now: Date())
                 switch decision {
@@ -1544,6 +1579,7 @@ struct DashboardView: View {
         case .departed:
             let now = Date()
             proximityGuard.noteDepartureConfirmed(now: now)
+            proximityLatencyMeter.noteDepartureDecision(now: now)
             guard state.doors.count == 4, state.doors.allSatisfy({ $0 == 0 }) else {
                 proximityStatus = "Uzaklık algılandı ancak kapılar kapalı doğrulanmadı; kilitleme yapılmadı."
                 ble.recordDiagnostic("Yakınlık kilitlemesi atlandı: kapıların tümü kapalı değil/bilinmiyor")
@@ -1605,6 +1641,10 @@ struct DashboardView: View {
         proximityGate = gate
         if resetGuard {
             proximityGuard = ProximityCycleGuard()
+            proximityLatencyMeter = ProximityLatencyMeter()
+        } else {
+            // Belirsizlik/fresh cycle: örnek penceresi yeniden başlar.
+            proximityLatencyMeter.noteBaseline(now: Date())
         }
         proximityRSSISamples.removeAll()
         proximityStatus = "BLE oturumu yenilendi; önce uzak, sonra yeni yaklaşma kanıtı bekleniyor."
