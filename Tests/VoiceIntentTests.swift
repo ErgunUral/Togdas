@@ -74,7 +74,16 @@ final class VoiceIntentTests: XCTestCase {
         XCTAssertTrue(VoiceIntent.unlock.isAction)
         XCTAssertTrue(VoiceIntent.unlock.requiresDeviceUnlock)
         XCTAssertTrue(VoiceIntent.trunkOpen.isAction)
+        XCTAssertTrue(VoiceIntent.automaticLock(on: true).isAction)
+        XCTAssertFalse(VoiceIntent.automaticLock(on: nil).isAction)
         XCTAssertFalse(VoiceIntent.batteryStatus.isAction)
         XCTAssertFalse(VoiceIntent.lock.requiresDeviceUnlock)
+    }
+
+    func testAutomaticLockParity() {
+        XCTAssertEqual(parser.parse("oto kilit aç"), .automaticLock(on: true))
+        XCTAssertEqual(parser.parse("otomatik kilidi kapat"), .automaticLock(on: false))
+        XCTAssertEqual(parser.parse("Otomatik KİLİT AÇ"), .automaticLock(on: true))
+        XCTAssertEqual(parser.parse("oto kilit"), .automaticLock(on: nil))
     }
 }

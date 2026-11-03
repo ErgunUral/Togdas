@@ -160,4 +160,31 @@ final class VoiceCommandPolicyTests: XCTestCase {
             XCTFail("aracı bulma komut göndermemeli")
         }
     }
+
+    // MARK: Oto kilit (Android set_automatic_lock paritesi)
+
+    func testAutomaticLockFallbackGuidesToVerb() {
+        if case .speak(let text) = policy.decide(.automaticLock(on: nil), context: context()) {
+            XCTAssertTrue(text.contains("oto kilit"))
+        } else {
+            XCTFail("fiil yoksa sözlü yönlendirme verilmeli")
+        }
+    }
+
+    func testAutomaticLockConfirmsWithoutCarGates() {
+        // Araç komutu olmadığından bağlantı/telemetri kapılarına takılmaz.
+        if case .confirm(let command, let prompt) = policy.decide(
+            .automaticLock(on: true),
+            context: context(linkReady: false, telemetryAge: nil)
+        ) {
+            XCTAssertEqual(command, .automaticLock(on: true))
+            XCTAssertTrue(prompt.contains("araç komutu göndermez"))
+        } else {
+            XCTFail("oto kilit açma onay istemeli")
+        }
+        XCTAssertEqual(
+            policy.decide(.automaticLock(on: false), context: context(confirmed: .automaticLock(on: false))),
+            .execute(.automaticLock(on: false))
+        )
+    }
 }

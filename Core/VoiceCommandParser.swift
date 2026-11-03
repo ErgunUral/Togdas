@@ -56,8 +56,26 @@ public struct VoiceCommandParser: Sendable {
         let question = Self.isQuestion(tokenSet, text)
         let temperature = Self.temperature(in: tokenSet)
 
+        // Oto kilit (Android set_automatic_lock paritesi): araç komutu değil,
+        // yakınlık otomasyonu yönetimidir; kapı kilitleme konularından önce ayrılır.
+        // "otomatik kilidi" gibi ek almış biçimler de yakalanır ("kilit" kelimesi
+        // birebir geçmese bile "kil" önekli kelimeler sayılır).
+        let autoLockTopic = Self.hasAutoLockPhrase(text: text, tokens: tokenSet)
+
         var topics = Set<VoiceStatusTopic>()
         var action: VoiceCommand?
+
+        if autoLockTopic {
+            if openVerb {
+                action = .automaticLock(on: true)
+            } else if closeVerb || lockVerb {
+                action = .automaticLock(on: false)
+            } else {
+                return result(.automaticLock(on: nil), 0.6, text)
+            }
+            // Konu sayısına katkıda bulunur: "oto kilit aç ve klimayı aç" belirsizdir.
+            topics.insert(.locks)
+        }
 
         if text.contains("bagaj") {
             topics.insert(.trunk)
@@ -71,7 +89,7 @@ public struct VoiceCommandParser: Sendable {
             if closeVerb { action = .windows(open: false) }
         }
 
-        if text.contains("kilit") || text.contains("kapi") {
+        if (text.contains("kilit") || text.contains("kapi")) && !autoLockTopic {
             topics.insert(.locks)
             if unlockVerb {
                 action = .unlock
@@ -203,6 +221,19 @@ public struct VoiceCommandParser: Sendable {
 
     private static func hasLockVerb(_ tokens: Set<String>) -> Bool {
         !tokens.isDisjoint(with: lockVerbs)
+    }
+
+    /// Oto kilit sorgusu: "oto/otomatik/otomotik" + "kil-" önekli kelime
+    /// ("oto kilit", "oto kilidi", "otomatik kilid"...). "kilometre" gibi
+    /// "kil-" önekli ama kilitleme olmayan kelimeler sayılmaz.
+    static func hasAutoLockPhrase(text: String, tokens: Set<String>) -> Bool {
+        let autoWord = tokens.contains { $0 == "oto" || $0.hasPrefix("otomatik") || $0.hasPrefix("otomotik") }
+        let phrase = text.contains("oto kilit") || text.contains("otomatik kilit") || text.contains("otomotik kilit")
+        guard autoWord || phrase else { return false }
+        let lockWord = tokens.contains {
+            $0.hasPrefix("kil") && !$0.hasPrefix("kilo") && !$0.hasPrefix("kilomet")
+        } || text.contains("kilit")
+        return lockWord
     }
 
     private static func isQuestion(_ tokens: Set<String>, _ text: String) -> Bool {

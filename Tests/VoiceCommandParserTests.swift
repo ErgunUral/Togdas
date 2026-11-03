@@ -54,6 +54,29 @@ final class VoiceCommandParserTests: XCTestCase {
         XCTAssertEqual(parser.parse("KAPILARI AÇ!"), .unlock)
     }
 
+    // MARK: Oto kilit (Android set_automatic_lock paritesi)
+
+    func testAutomaticLockActions() {
+        XCTAssertEqual(parser.parse("oto kilit aç"), .automaticLock(on: true))
+        XCTAssertEqual(parser.parse("Otomatik kilidi kapat"), .automaticLock(on: false))
+        XCTAssertEqual(parser.parse("otomotik kilit açsana"), .automaticLock(on: true))
+        XCTAssertEqual(parser.parse("OTO KİLİT KAPATSANA"), .automaticLock(on: false))
+    }
+
+    func testAutomaticLockWithoutVerb() {
+        XCTAssertEqual(parser.parse("oto kilit"), .automaticLock(on: nil))
+        XCTAssertEqual(parser.parse("otomatik kilit açık mı?"), .automaticLock(on: nil))
+    }
+
+    func testAutomaticLockNegativesStayRejected() {
+        XCTAssertEqual(parser.parse("oto kilit açma"), .unknown)
+        XCTAssertEqual(parser.parse("otomatik kilidi kapatma"), .unknown)
+    }
+
+    func testAutomaticLockCombinedTopicIsAmbiguous() {
+        XCTAssertEqual(parser.parse("oto kilit aç ve klimayı aç"), .ambiguous)
+    }
+
     func testTrunkAndWindowActions() {
         XCTAssertEqual(parser.parse("Bagajı aç"), .trunk(open: true))
         XCTAssertEqual(parser.parse("Bagajı kapat"), .trunk(open: false))

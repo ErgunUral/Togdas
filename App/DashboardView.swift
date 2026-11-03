@@ -39,6 +39,7 @@ private enum DashboardAlert: Identifiable {
 
 private enum DashboardCommand: String, Identifiable {
     case lock, unlock, trunkOpen, trunkClose, windowsOpen, windowsClose
+    case automaticLockOn, automaticLockOff
 
     var id: String { rawValue }
 
@@ -50,6 +51,8 @@ private enum DashboardCommand: String, Identifiable {
         case .trunkClose: return "Arka bagaj kapatılacak."
         case .windowsOpen: return "Yan cam açma komutu gönderilecek. Cam konumu ayrıca doğrulanamayabilir; çevrede engel olmadığından emin olun."
         case .windowsClose: return "Yan cam kapatma komutu gönderilecek. Cam konumu ayrıca doğrulanamayabilir; çevrede engel olmadığından emin olun."
+        case .automaticLockOn: return "Yakınlık otomasyonu etkinleştirilecek. Bu onay araç komutu göndermez; yaklaşma/uzaklaşma otomasyonu yönetilir."
+        case .automaticLockOff: return "Yakınlık otomasyonu kapatılacak; araca komut gönderilmez."
         }
     }
 }
@@ -1676,6 +1679,8 @@ struct DashboardView: View {
         case .trunkClose: ble.trunkClose()
         case .windowsOpen: ble.windowsOpen()
         case .windowsClose: ble.windowsClose()
+        // Oto kilit BLE komutu değildir; approve() uygulama anahtarını çevirir.
+        case .automaticLockOn, .automaticLockOff: break
         }
     }
 
@@ -1683,6 +1688,19 @@ struct DashboardView: View {
         let voiceSourced = voiceSourcedConfirm
         let requiresOwnerAuthentication = voiceSourced && command == .unlock
         voiceSourcedConfirm = false
+
+        // Oto kilit araç komutu değildir: uygulama içi otomasyon anahtarı.
+        // Bağlantı/telemetri kapıları uygulanmaz.
+        switch command {
+        case .automaticLockOn:
+            setProximityEnabled(true)
+            return
+        case .automaticLockOff:
+            setProximityEnabled(false)
+            return
+        default:
+            break
+        }
 
         guard ble.state.isReady else {
             error = "Araç bağlantısı hazır değil; komut gönderilmedi."
@@ -1779,6 +1797,12 @@ struct DashboardView: View {
             }
             return prompt + " Onay ekranını açıyorum."
         case .execute(let command):
+            if case .automaticLock(let on) = command, let on {
+                setProximityEnabled(on)
+                return on
+                    ? "Otomatik kilit etkinleştirildi."
+                    : "Otomatik kilit kapatıldı."
+            }
             return "\(command.actionLabel ?? "Komut") için onay gerekiyor."
         case .authenticate(let command, _):
             return "\(command.actionLabel ?? "Komut") için onay ve Face ID gerekiyor."
@@ -1791,6 +1815,7 @@ struct DashboardView: View {
         case .unlock: return .unlock
         case .trunk(let open): return open ? .trunkOpen : .trunkClose
         case .windows(let open): return open ? .windowsOpen : .windowsClose
+        case .automaticLock(let on): return on == true ? .automaticLockOn : on == false ? .automaticLockOff : nil
         default: return nil
         }
     }

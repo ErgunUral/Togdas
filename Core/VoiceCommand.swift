@@ -40,6 +40,9 @@ public enum VoiceCommand: Equatable, Sendable {
     case trunk(open: Bool)
     case windows(open: Bool)
     case climate(on: Bool, temperature: Int?)
+    /// Oto kilit (yakınlık otomasyonu) yönetimi; araç komutu göndermez.
+    /// `nil` → eylem belirtilmedi; politika sözlü yönlendirme verir.
+    case automaticLock(on: Bool?)
     case findVehicle
     case help
     case cancel
@@ -50,11 +53,13 @@ public enum VoiceCommand: Equatable, Sendable {
 }
 
 public extension VoiceCommand {
-    /// Araçta bir şey değiştiren komutlar.
+    /// Araçta ya da otomasyonda bir şey değiştiren komutlar.
     var isAction: Bool {
         switch self {
         case .lock, .unlock, .trunk, .windows, .climate:
             return true
+        case .automaticLock(let on):
+            return on != nil
         default:
             return false
         }
@@ -84,6 +89,7 @@ public extension VoiceCommand {
         case .trunk(let open): return open ? "Bagaj açma" : "Bagaj kapatma"
         case .windows(let open): return open ? "Cam açma" : "Cam kapatma"
         case .climate(let on, _): return on ? "Klima açma" : "Klima kapatma"
+        case .automaticLock(let on): return on == true ? "Oto kilit açma" : on == false ? "Oto kilit kapatma" : nil
         default: return nil
         }
     }

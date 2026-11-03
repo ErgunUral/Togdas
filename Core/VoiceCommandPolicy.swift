@@ -68,6 +68,14 @@ public struct VoiceCommandPolicy: Sendable {
             return .speak("Bu komutu anlayamadım. Örnek: şarjım ne kadar, kapılar kilitli mi, bagajı aç.")
         case .findVehicle:
             return .reject("Aracı bulma kornası henüz araçta doğrulanmadı; bu bir önizleme. Komut göndermedim.")
+        case .automaticLock(nil):
+            return .speak("Oto kilit için fiil eksik; 'oto kilit aç' ya da 'oto kilit kapat' de.")
+        case .automaticLock(let on):
+            let intent = VoiceCommand.automaticLock(on: on)
+            if context.confirmedCommand == intent {
+                return .execute(intent)
+            }
+            return .confirm(command: intent, prompt: VoiceCommandPolicy.confirmationPrompt(for: intent))
         case .climate(_, _) where !context.climateServiceAvailable:
             return .reject("İklimlendirme servisi şu anda yanıt vermiyor; klima komutu gönderemiyorum.")
         default:
@@ -110,7 +118,7 @@ public struct VoiceCommandPolicy: Sendable {
         return .execute(command)
     }
 
-    public static let helpText = "Şarj, menzil, kilit, bagaj, cam, lastik ve dış sıcaklık sorabilirsin. Kilit, bagaj ve cam komutları onay ister; kilit açma Face ID ile doğrulanır."
+    public static let helpText = "Şarj, menzil, kilit, bagaj, cam, klima, lastik ve dış sıcaklık sorabilirsin. Kilit, bagaj ve cam komutları onay ister; kilit açma Face ID ile doğrulanır. Oto kilit aç veya kapat komutu yakınlık otomasyonunu yönetir ve onay ister."
 
     public static func confirmationPrompt(for command: VoiceCommand) -> String {
         switch command {
@@ -129,6 +137,10 @@ public struct VoiceCommandPolicy: Sendable {
                 return "Klimayı \(temperature) dereceye ayarlamak için onaylıyor musun?"
             }
             return (on ? "Klimayı açmak" : "Klimayı kapatmak") + " için onaylıyor musun?"
+        case .automaticLock(let on):
+            return on == true
+                ? "Otomatik kilidi açmak için onaylıyor musun? Bu onay araç komutu göndermez; yakınlık otomasyonunu etkinleştirir."
+                : "Otomatik kilidi kapatmak için onaylıyor musun? Bu onay araç komutu göndermez; yakınlık otomasyonunu kapatır."
         default:
             return "Bu komutu uygulamak için onaylıyor musun?"
         }

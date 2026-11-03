@@ -26,6 +26,8 @@ public enum VoiceIntent: Equatable {
     case climateOn(temperature: Int?)
     case climateOff
     case findVehicle
+    /// Oto kilit (yakınlık otomasyonu) yönetimi; araç komutu göndermez.
+    case automaticLock(on: Bool?)
 
     // Diğer
     case help
@@ -39,6 +41,8 @@ public extension VoiceIntent {
         case .lock, .unlock, .trunkOpen, .trunkClose, .windowsOpen, .windowsClose,
              .climateOn, .climateOff, .findVehicle:
             return true
+        case .automaticLock(let on):
+            return on != nil
         default:
             return false
         }
@@ -98,6 +102,17 @@ public struct VoiceIntentParser {
             if (text.contains("acik") || text.contains("kapali")) && isQuestion { return .windowsStatus }
             if hasOpenVerb { return .windowsOpen }
             if hasCloseVerb { return .windowsClose }
+        }
+
+        let hasAutoLockWord = tokens.contains { $0 == "oto" || $0.hasPrefix("otomatik") || $0.hasPrefix("otomotik") }
+            || text.contains("oto kilit") || text.contains("otomatik kilit") || text.contains("otomotik kilit")
+        let hasLockWord = tokens.contains {
+            $0.hasPrefix("kil") && !$0.hasPrefix("kilo") && !$0.hasPrefix("kilomet")
+        }
+        if hasAutoLockWord, hasLockWord {
+            if hasOpenVerb { return .automaticLock(on: true) }
+            if hasCloseVerb { return .automaticLock(on: false) }
+            return .automaticLock(on: nil)
         }
 
         if text.contains("kilit") || text.contains("kapi") {

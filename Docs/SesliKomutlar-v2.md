@@ -142,6 +142,12 @@ enum VoiceCommand: Equatable {
 - Ayrıştırıcı deterministik; LLM yalnızca **öneri** üretir, komut yürütmez.
 - Belirsizlikte komut çalıştırılmaz; “Neyi kastettin?” sorusu sorulur.
 - “Evet/tamam/peki” `affirm`; tek başına eylem değil.
+- `automaticLock(on: Bool?)`: oto kilit (yakınlık otomasyonu) yönetime hizalı
+  Android `set_automatic_lock` aracı. **Araç komutu göndermez**; hedefi durum
+  ve tazelik kapısına takılmaz, onay kapısı tek zorunluluktur. `nil` fiil yok
+  demektir; sözlü yönlendirme ("oto kilit aç / kapat") verilir. Algılama
+  "oto/otomatik/otomotik" × "kil-" önekli kelimelerle yapılır ("oto kilidi"
+  gibi ekli biçimler dahil); "kilometre" hariç tutulur.
 
 ### 3.5 Politika (saf fonksiyon)
 
