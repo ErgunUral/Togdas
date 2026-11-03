@@ -96,6 +96,8 @@ struct DashboardView: View {
     @State private var proximityGate: ProximityGate?
     @State private var proximityRSSISamples: [Int] = []
     @State private var proximityStatus = "Ölçüm bekleniyor"
+    /// Android .57 paritesi: tek biletl açma + 30 sn belirsizlik guard'ı.
+    @State private var proximityGuard = ProximityCycleGuard()
     @State private var showProximityConfirmation = false
     @State private var showProximityGuide = false
     private var drivingStats: DrivingStatsStore { DrivingStatsStore(vin: vehicle.vin) }
@@ -400,6 +402,7 @@ struct DashboardView: View {
             UserDefaults.standard.set(profile.rawValue, forKey: proximityProfileKey)
             if !proximityEnabled, let calibration = proximityCalibration, calibration.isValid {
                 proximityGate = ProximityGate(calibration: calibration, profile: profile)
+                proximityGuard = ProximityCycleGuard()
             }
         }
         .onChange(of: proximityAutoOffMinutes) { value in
@@ -1280,6 +1283,7 @@ struct DashboardView: View {
         }
         proximityEnabled = true
         proximityGate = ProximityGate(calibration: calibration, profile: proximityProfile)
+        proximityGuard = ProximityCycleGuard()
         ble.setProximityRSSIPollInterval(proximityProfile.pollInterval)
         proximityStatus = "Etkin; araç bağlantısı aranıyor"
         if proximityAutoOffEnabled, let deadline = proximityAutoOffDeadline {
@@ -1338,6 +1342,7 @@ struct DashboardView: View {
 
         if let calibration = proximityCalibration, calibration.isValid {
             proximityGate = ProximityGate(calibration: calibration, profile: proximityProfile)
+            proximityGuard = ProximityCycleGuard()
             if proximityEnabled {
                 proximityStatus = "Eşikler güncellendi; yakınlık izleniyor."
             }
@@ -1372,6 +1377,7 @@ struct DashboardView: View {
         proximityEnabled = true
         UserDefaults.standard.set(true, forKey: proximityEnabledKey)
         proximityGate = ProximityGate(calibration: calibration, profile: proximityProfile)
+        proximityGuard = ProximityCycleGuard()
         proximityRSSISamples.removeAll()
         ble.setProximityRSSIPollInterval(proximityProfile.pollInterval)
         proximityAutoOffDeadline = nil
@@ -1487,9 +1493,10 @@ struct DashboardView: View {
         guard proximityEnabled, ble.state.isReady, var gate = proximityGate else { return }
         guard let sampledAt = ble.rssiUpdatedAt,
               ProximityRSSIPolicy.isFresh(sampledAt: sampledAt, now: Date(), profile: proximityProfile) else {
-            requireFreshProximityCycle(reason: "GATT RSSI ölçümü eski/geçersiz")
-            proximityStatus = "GATT RSSI ölçümü güncel değil; otomatik eylem bekletildi."
-            ble.recordDiagnostic("gatt_rssi_stale · proximity geçişi ve komut iptal edildi")
+            requireFreshProximityCycle(reason: "GATT RSSI ölçümü eski/geçersiz", resetGuard: false)
+            proximityGuard.noteAmbiguity(now: Date())
+            proximityStatus = "GATT RSSI ölçümü güncel değil; açma bileti iptal, 30 sn guard."
+            ble.recordDiagnostic("gatt_rssi_stale · proximity geçişi ve komut iptal edildi, guard devrede")
             return
         }
         let transition = gate.update(rssi: rssi)
@@ -1515,17 +1522,28 @@ struct DashboardView: View {
         switch transition {
         case .approached:
             if isLocked {
-                if ble.unlock() {
-                    proximityStatus = "Yakınlık algılandı; imzalı kilit açma isteği başlatıldı."
-                    ble.recordDiagnostic("Yakınlık otomasyonu kilit açma isteğini başlattı")
-                } else {
-                    proximityStatus = "Yakınlık algılandı; kilit açma gönderilmedi: \(ble.lastEvent)"
-                    ble.recordDiagnostic("Yakınlık otomasyonu kilit açmayı başlatamadı")
+                let decision = proximityGuard.decideApproach(now: Date())
+                switch decision {
+                case .sendUnlock:
+                    if ble.unlock() {
+                        proximityGuard.noteUnlockIssued()
+                        proximityStatus = "Yakınlık algılandı; imzalı kilit açma isteği başlatıldı."
+                        ble.recordDiagnostic("Yakınlık otomasyonu kilit açma biletiyle istek başlattı")
+                    } else {
+                        proximityGuard.noteAmbiguity(now: Date())
+                        proximityStatus = "Yakınlık algılandı; kilit açma gönderilmedi: \(ble.lastEvent)"
+                        ble.recordDiagnostic("Yakınlık otomasyonu kilit açmayı başlatamadı; bilet iptal, guard devrede")
+                    }
+                case .deny(let reason):
+                    proximityStatus = reason
+                    ble.recordDiagnostic("Yakınlık açma guard'ı: komut gönderilmedi")
                 }
             } else {
                 proximityStatus = "Yakınlık algılandı; kapılar zaten açık."
             }
         case .departed:
+            let now = Date()
+            proximityGuard.noteDepartureConfirmed(now: now)
             guard state.doors.count == 4, state.doors.allSatisfy({ $0 == 0 }) else {
                 proximityStatus = "Uzaklık algılandı ancak kapılar kapalı doğrulanmadı; kilitleme yapılmadı."
                 ble.recordDiagnostic("Yakınlık kilitlemesi atlandı: kapıların tümü kapalı değil/bilinmiyor")
@@ -1563,7 +1581,7 @@ struct DashboardView: View {
     @MainActor
     private func handleBLEState(_ state: BleConnection.State) {
         if state.isConnecting || state.isDisconnected || state.isFailed {
-            requireFreshProximityCycle(reason: "BLE oturumu değişti: \(state.description)")
+            requireFreshProximityCycle(reason: "BLE oturumu değişti: \(state.description)", resetGuard: true)
         }
         if state.isReady {
             hasAuthenticatedBLE = true
@@ -1579,12 +1597,15 @@ struct DashboardView: View {
     }
 
     @MainActor
-    private func requireFreshProximityCycle(reason: String) {
+    private func requireFreshProximityCycle(reason: String, resetGuard: Bool) {
         guard proximityEnabled, var gate = proximityGate,
               !gate.isAwaitingFarBaseline,
               gate.presence != .unknown || !proximityRSSISamples.isEmpty else { return }
         gate.requireFreshCycle()
         proximityGate = gate
+        if resetGuard {
+            proximityGuard = ProximityCycleGuard()
+        }
         proximityRSSISamples.removeAll()
         proximityStatus = "BLE oturumu yenilendi; önce uzak, sonra yeni yaklaşma kanıtı bekleniyor."
         ble.recordDiagnostic("proximity_fresh_cycle · \(reason)")

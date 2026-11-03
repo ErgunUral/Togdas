@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 38 dosya, 309 birim testi; `UITests`: 1 dosya, 4 smoke testi.
+- `Tests`: 39 dosya, 313 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -222,6 +222,10 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   temizlendi.
 - Saat komut sonucuna kısa dokunsal geri bildirim veriyor; "forwarded" bildirim
   tipindedir ve başarılı komut demek değildir.
+- `ProximityCycleGuard` (Android 1.0.24.57 paritesi): uzak↔geri-yaklaşma
+  döngüsünde açma tek biletle sınırlı; eski/geçersiz ölçüm veya başarısız
+  gönderim bileti iptal eder ve 30 sn guard devreye girer. Karar çekirdeği
+  birim testli; komutun sonucu imzalı telemetriyle doğrulanmaya devam eder.
 - UI testleri: `-uiTestFixture` ile ağa çıkmadan pano açılabilir; komutun kapalı
   olma nedeni test edilir.
 - Üst araç kartı semantik fonlara geçirildi; Dynamic Type ile birlikte ölçeklenir.
