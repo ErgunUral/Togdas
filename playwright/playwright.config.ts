@@ -17,5 +17,10 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    // KeySharing web UX yüzeyi — EPDK spec'ini dışla (farklı baseURL)
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: '**/epdk-contract.spec.ts' },
+    // EPDK API sözleşme nöbetçisi — Docs/Playwright-EPDK-plan.md
+    { name: 'epdk', use: { ...devices['Desktop Chrome'], baseURL: 'https://apigateway.epdk.gov.tr' }, testMatch: '**/epdk-contract.spec.ts' },
+  ],
 });

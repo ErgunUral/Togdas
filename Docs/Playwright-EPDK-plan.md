@@ -15,7 +15,7 @@ konum senaryoları (telefon konumu EPDK'ya gönderilmez — invariant), UI metin
 
 | # | Senaryo (tek cümle) | Beklenen sonuç | Not |
 |---|---|---|---|
-| E1 | `POST /sarjIstasyonlari` + `{}` gövdesi | 200; `statusCode` ve `numRows` alanları mevcut ve tutarlı | repo dokümanı: GET gövde reddi, Network.framework POST taşıması |
+| E1 | `GET /sarjIstasyonlari` + `{}` gövdesi (iOS `EPDKHTTPGetBodyTransport` tel paritesi) | 200; `statusCode` ve `numRows` alanları mevcut ve tutarlı | repo dokümanı: API gövdeli GET bekler; iOS Network.framework taşıması — `node:https` ile birebir başlıklar |
 | E2 | Her istasyon kaydında ad/marka/işletmeci/adres/koordinat/soket alanları | Şemaya uyumlu; eksik alan `null`/boş olabilir, **0'a zorlanmaz** | tam alan adları ilk koşumda şema snapshot'ıyla sabitlenecek `[doğrulanmadı]` |
 | E3 | `numRows` değeri | > 0; kamu katalogu boş olamaz → `numRows==0` test **hatasıdır** (bu bir "gerçek 0 meşrudur" durumu değildir) | 0 ≠ bilgi yok kuralının istisna kalemi: burada 0 = bozulma |
 | E4 | Koordinatlar Türkiye sınırları içinde | ~35.8–42.1°N, ~25.6–45.0°E dışında koordinat bozulma sinyalidir | repo invariant'ı |

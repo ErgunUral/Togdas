@@ -4,7 +4,7 @@
 
 | Yüzey | Senaryo | Plan | Kod | Son çalıştırma | Durum |
 |---|---|---|---|---|---|
-| EPDK istasyon sitesi | — (UI yok; canlı keşif: `apigateway.epdk.gov.tr` GET→400, kök→404, portal yok) | ✔ | ✖ | — | **planlı** — `Docs/Playwright-EPDK-plan.md` (API sözleşme nöbetçisi; UI planı üretilemez) |
+| EPDK istasyon sitesi | E1–E5 sözleşme + E6 gövdesiz GET→400 | ✔ | ✔ | 2026-11-12 | **kod hazır** — E6 testli (400 paritesi kanıtlandı); E1–E5 ilk yeşil koşum kota penceresinde (bugün 429: saatlik kota doldu, skip-safe) |
 | Togg web servisleri (KeySharing) | K1: geçersiz `seId` → içerik sunulmaz, sunucu çökmez | ✔ | ✔ | 2026-11-12 | **testli** (keşif kanıtlı) |
 | Togg web servisleri (KeySharing) | K2: mükerrer `seId` → 4xx (iOS parite) | ✔ | ✔ | 2026-11-12 | **testli** |
 | Togg web servisleri (KeySharing) | K3: fragment'lı link → 2xx ya da 4xx, 5xx yok | ✔ | ✔ | 2026-11-12 | **testli** |
