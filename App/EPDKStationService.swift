@@ -112,6 +112,29 @@ actor EPDKStationService {
     }
 }
 
+/// Sesli yanıtlar için senkron katalog özeti; VIN/konum içermez.
+struct EPDKCatalogSummary: Equatable {
+    let stationCount: Int
+    let fetchedAt: Date
+}
+
+extension EPDKStationService {
+    /// Dosya önbelleğini aktör izolasyonu dışında okur: sesli yanıt akışı
+    /// senkron olduğundan (VoiceSheet arayüzü korunur) özet için yalnız
+    /// kayıtlı katalog kullanılır; tazeleme arka planda `load()` ile yapılır.
+    /// "Uygun" olmayan (bozuk JSON) önbellek sessizce nil döner.
+    nonisolated static func cachedCatalogSummary() -> EPDKCatalogSummary? {
+        let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("EPDK", isDirectory: true)
+        let cacheURL = directory.appendingPathComponent("public-catalog-v1.json")
+        guard let data = try? Data(contentsOf: cacheURL, options: .mappedIfSafe),
+              let catalog = try? JSONDecoder().decode(EPDKCatalog.self, from: data) else {
+            return nil
+        }
+        return EPDKCatalogSummary(stationCount: catalog.stations.count, fetchedAt: catalog.fetchedAt)
+    }
+}
+
 enum EPDKStationError: LocalizedError {
     case rateLimited(Date)
     case http(Int)

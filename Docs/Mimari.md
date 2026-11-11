@@ -260,6 +260,11 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   ("Uygun yakınlık aralığı algılandı", VIN'siz). Öneri kalibrasyonu yazmaz,
   otomasyonu açmaz; onay hâlâ yakınlık kartındaki ölçüm düğmelerinden
   geçer.
+- EPDK sesli `nearby_stations` veri hattı tamamlandı: kayıtlı katalog
+  özeti (istasyon sayısı + saat) sesli yanıtta gerçek veriyle söylenir,
+  tazeleme arka planda rate-limit'e saygılı `load()` ile tetiklenir.
+  Telefon konumu paylaşılmadığı için mesafe sıralaması yapılmaz ve bu
+  dürüstçe söylenir (Android 5 km açma davranışı taşınmaz).
 - 12 V akü düşük uyarısı: `AuxiliaryBatteryPolicy` (kritik ≤%25, uyarı
   ≤%40) eksik/geçersiz telemetride uyarı üretmez ("bilgi yok" ≠ uyarı;
   gerçek 0 kritiktir). `VehicleHealthCard` kartın en üstünde renkli,

@@ -1830,6 +1830,8 @@ struct DashboardView: View {
         switch parsed.command {
         case .status(let topic):
             return voiceStatusResponse(topic)
+        case .nearbyStations:
+            return voiceNearbyStationsResponse()
         case .unknown:
             if let chat = VoiceChat().reply(for: text) {
                 VoiceLog.debug("sohbet: \(chat.topic)")
@@ -1849,6 +1851,21 @@ struct DashboardView: View {
             climateServiceAvailable: false,
             previewActionsEnabled: true
         )
+    }
+
+    /// Android `nearby_stations` paritesi, iOS kuralıyla: telefon konumu
+    /// paylaşılmaz ve mesafe sıralaması yapılmaz; kayıtlı EPDK kataloğunun
+    /// gerçek özeti söylenir, tazeleme arka planda tetiklenir (rate-limit'e
+    /// saygılı `load()`). Veri yoksa "henüz yüklenmedi" denir, sayı uydurulmaz.
+    private func voiceNearbyStationsResponse() -> String {
+        Task { @MainActor in
+            _ = try? await EPDKStationService.shared.load()
+        }
+        guard let summary = EPDKStationService.cachedCatalogSummary() else {
+            return "EPDK istasyon kataloğu henüz yüklenmedi; istasyonlar sekmesine girince ilk veri çekilir. Telefon konumu paylaşmadığım için mesafe sıralaması yapmıyorum."
+        }
+        let time = TurkishFormat.date(summary.fetchedAt, format: "HH:mm")
+        return "EPDK kataloğu yüklü: \(summary.stationCount) istasyon, saat \(time) verisi. Telefon konumu paylaşmadığım için mesafe sıralaması yapmıyorum; arama istasyonlar sekmesinde."
     }
 
     private func voiceCommandResponse(_ command: VoiceCommand) -> String {
