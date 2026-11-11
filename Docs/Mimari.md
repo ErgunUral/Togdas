@@ -342,7 +342,8 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   (≤%25 kırmızı, ≤%40 turuncu; widget ile aynı kural). P1.3: kritik 12 V
   bildirimine `interruptionLevel = .timeSensitive` (saatte haptikle düşer;
   Critical Alerts yetkisi yok). Karşılaştırma raporu `Docs/Parite-Android57.18-iOS.md`.
-  Test sayısı 369 → 375.
+  Test sayısı 369 → 375. Gözcü `BleLinkCoordinator`'a bağlandı (`ble_watchdog ·`
+  önekiyle tanı günlüğü; etiket değiştiğinde yazar, bağlantı eylemi tetiklemez).
 - Proje değerlendirme raporu: `Docs/Proje-Degerlendirme-2026-11.md`
   (mimari/kalite/test/arayüz; App katmanı test ve DashboardView bölünmesi
   sonraki işler).

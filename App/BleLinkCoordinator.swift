@@ -38,6 +38,14 @@ final class BleLinkCoordinator: ObservableObject {
     private var hasConnectedOnce = false
     private var lastStartAt: Date?
 
+    /// İlk telemetri gözcüsü (Android .57 `j4` paritesi). Etiketler **yalnız
+    /// tanı günlüğüne** yazılır; yeniden bağlanma kararı `BleReconnectPolicy`
+    /// ve mevcut `handleDrop` akışında kalır.
+    private var watchdog = BleStatusWatchdog()
+    private var watchdogSession = 0
+    private var watchdogTask: Task<Void, Never>?
+    private var lastWatchdogLabel = ""
+
     init(ble: BleConnection, api: ToggAPI, preferences: GaragePreferences = GaragePreferences()) {
         self.ble = ble
         self.api = api
@@ -113,6 +121,9 @@ final class BleLinkCoordinator: ObservableObject {
         authTask = nil
         stableTask?.cancel()
         stableTask = nil
+        watchdogTask?.cancel()
+        watchdogTask = nil
+        lastWatchdogLabel = ""
         attempts = 0
         pairingAttempts = 0
         reconnecting = false
@@ -146,6 +157,7 @@ final class BleLinkCoordinator: ObservableObject {
             pairingTask = nil
             pairingAttempts = 0
             status = "Bağlı"
+            beginWatchdog()
             stableTask?.cancel()
             stableTask = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 60_000_000_000)
@@ -162,10 +174,39 @@ final class BleLinkCoordinator: ObservableObject {
             connectedAt = nil
             stableTask?.cancel()
             stableTask = nil
+            watchdogTask?.cancel()
+            watchdogTask = nil
+            lastWatchdogLabel = ""
             handleDrop()
 
         default:
             break
+        }
+    }
+
+    /// Bağlıyken gözcüyü başlatır: 15 sn'de bir etiket üretir ve **yalnızca
+    /// etiket değiştiğinde** tanı günlüğüne yazar. Telemetri yoksa ilk durum
+    /// zaman aşımı, bayat telemetri varsa stale etiketi gelir. Kopmada döngü
+    /// iptal edilir; hiçbir bağlantı eylemi tetiklemez.
+    private func beginWatchdog() {
+        watchdogSession += 1
+        let session = watchdogSession
+        lastWatchdogLabel = ""
+        watchdogTask?.cancel()
+        watchdogTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 15_000_000_000)
+                guard !Task.isCancelled, let self else { return }
+                let age = self.ble.telemetry.map { Date().timeIntervalSince($0.receivedAt) }
+                let label = self.watchdog.reason(
+                    session: session,
+                    now: Date(),
+                    telemetryAge: age
+                )
+                guard !label.isEmpty, label != self.lastWatchdogLabel else { continue }
+                self.lastWatchdogLabel = label
+                self.ble.recordDiagnostic("ble_watchdog · \(label)")
+            }
         }
     }
 
