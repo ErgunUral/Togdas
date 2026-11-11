@@ -354,6 +354,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   (varsayılanlar üretim davranışını korur); `BleLinkCoordinator` api
   bağımlılığı protokole genişletildi. Not: App katmanı birim testleri için
   Xcode birim test hedefi gerekli (Tests/ yalnız Core SPM) — ayrı iş.
+- DashboardView bölünmesi Faz A: 8 alt tip saf taşıma ile kendi dosyasına
+  alındı (`App/Dashboard/`: Header, VehicleVisualCard, QuickActionButton,
+  PremiumControlsSection, ClimateCard, VehicleHealthCard, BLESetupGuideSheet;
+  `App/LoginView.swift`). Yalnız erişim düzeyi açıldı (`private struct` →
+  `struct`, `DashboardCommand` dahil); davranış/yeniden adlandırma yok.
+  `DashboardView.swift` 3592 → 2567 satır. Faz B (ViewModel'e iş mantığı)
+  ayrı oturumda.
 - Proje değerlendirme raporu: `Docs/Proje-Degerlendirme-2026-11.md`
   (mimari/kalite/test/arayüz; App katmanı test ve DashboardView bölünmesi
   sonraki işler).
