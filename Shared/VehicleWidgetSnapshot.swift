@@ -17,6 +17,10 @@ struct VehicleWidgetSnapshot: Codable, Equatable {
     var odometerKM: Double?
     /// Son bilinen dış sıcaklık (°C); önbellekte yoksa nil.
     var outsideTemperatureC: Double?
+    /// Son bilinen 12 V akü yüzdesi; bulut verisi yoksa nil ("—" gösterilir).
+    /// Eşik kararı widget'ta AuxiliaryBatteryPolicy ile verilir; bu alan
+    /// yalnızca ham değer taşır.
+    var auxiliaryBatteryPercent: Double?
     /// Garajdaki araç sayısı; tek araçsa gizlenir, gizlilik için VIN/iskelet yok.
     var vehicleCount: Int?
 
@@ -37,6 +41,16 @@ struct VehicleWidgetSnapshot: Codable, Equatable {
     var displayRange: String {
         guard let rangeKM, rangeKM.isFinite else { return "—" }
         return "\(Int(rangeKM.rounded())) km"
+    }
+
+    /// 12 V akü metni: Android .57 widget paritesi ("—%" / "%X").
+    /// Eksik veri asla 0 gösterilmez.
+    var displayAuxiliaryBattery: String {
+        guard let auxiliaryBatteryPercent, auxiliaryBatteryPercent.isFinite,
+              auxiliaryBatteryPercent >= 0, auxiliaryBatteryPercent <= 100 else {
+            return "—%"
+        }
+        return "%\(Int(auxiliaryBatteryPercent.rounded()))"
     }
 
     var displayChargeSpend: String {

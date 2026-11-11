@@ -456,6 +456,7 @@ final class GarageModel: ObservableObject {
             savedAt: Date(),
             odometerKM: cloud.odometerKM,
             outsideTemperatureC: cloud.outsideTemperatureC,
+            auxiliaryBatteryPercent: cloud.auxiliaryBatteryPercent,
             vehicleCount: vehicles.count
         )
         VehicleWidgetSnapshotStore.save(snapshot)
@@ -468,6 +469,7 @@ final class GarageModel: ObservableObject {
         guard let previous, let current else { return true }
         return previous.vehicleName != current.vehicleName
             || previous.locked != current.locked
+            || previous.auxiliaryBatteryPercent != current.auxiliaryBatteryPercent
             || previous.batteryPercent != current.batteryPercent
             || previous.rangeKM != current.rangeKM
             || previous.monthlyChargeSpendTRY != current.monthlyChargeSpendTRY

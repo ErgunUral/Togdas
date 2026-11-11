@@ -26,6 +26,7 @@
 		D3E4F5061728394A5B0C1D2E /* VehicleCommandStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5061728394A5B /* VehicleCommandStatus.swift */; };
 		E4F5061728394A5B0C1D2E3F /* ProximityAutoCalibrationSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F5061728394A5B0C1D2E30 /* ProximityAutoCalibrationSuggester.swift */; };
 		1A2B3C4D5E6F0718293A4B5C /* AuxiliaryBatteryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */; };
+		3C4D5E6F0A1B2738495A6B7C /* AuxiliaryBatteryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */; };
 		9E0F1A2B3C4D5E6F0A1B2C3D /* BleRestorePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9E0F1A2B3C4D5E6F0A1B2C /* BleRestorePlan.swift */; };
 		104A62617E10CDC2B0B03B56 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11854A761FC25AD5CF9F967 /* BLEProtocol.swift */; };
 		119EAD8F111DE7DE3BF64BA3 /* BLECommandHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */; };
@@ -680,6 +681,7 @@
 				EE230E39862FB025B45615E3 /* ToqdasWidget.swift in Sources */,
 				D996C237D897011FC95738CF /* VehicleWidgetSnapshot.swift in Sources */,
 				B1C2D3E4F5061728394A5B0C /* VehicleCommandStatus.swift in Sources */,
+				3C4D5E6F0A1B2738495A6B7C /* AuxiliaryBatteryPolicy.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

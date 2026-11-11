@@ -105,6 +105,7 @@ private struct VehicleStatusView: View {
                 metric("Battery.100", snapshot.displayBattery)
                 metric("road.lanes", snapshot.displayRange)
             }
+            metric("car.battery", snapshot.displayAuxiliaryBattery, tint: auxiliaryTint(snapshot))
             metric("bolt.car.fill", "Bu ay \(snapshot.displayChargeSpend)")
             freshness(snapshot)
         }
@@ -124,6 +125,7 @@ private struct VehicleStatusView: View {
             Spacer(minLength: 4)
             VStack(alignment: .leading, spacing: 10) {
                 metric("Battery.100", snapshot.displayBattery)
+                metric("car.battery", snapshot.displayAuxiliaryBattery, tint: auxiliaryTint(snapshot))
                 metric("road.lanes", snapshot.displayRange)
                 metric("bolt.car.fill", "Bu ay \(snapshot.displayChargeSpend)")
                 metric("gauge", snapshot.displayOdometer)
@@ -169,13 +171,22 @@ private struct VehicleStatusView: View {
         }
     }
 
-    private func metric(_ icon: String, _ value: String) -> some View {
+    private func metric(_ icon: String, _ value: String, tint: Color? = nil) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon).font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Color.cyan)
+                .foregroundStyle(tint ?? Color.cyan)
             Text(value).font(.system(size: 11, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white).lineLimit(1)
+                .foregroundStyle(tint ?? .white).lineLimit(1)
         }
+    }
+
+    /// 12 V akü rengi: `AuxiliaryBatteryPolicy` kuralı — ≤%25 kırmızı,
+    /// ≤%40 turuncu; bilgi yoksa normal renk ("—" asla uyarıya dönüştürülmez).
+    private func auxiliaryTint(_ snapshot: VehicleWidgetSnapshot) -> Color? {
+        guard let assessment = AuxiliaryBatteryPolicy.assess(snapshot.auxiliaryBatteryPercent) else {
+            return nil
+        }
+        return assessment.isCritical ? Color(red: 1.0, green: 0.32, blue: 0.24) : Color.orange
     }
 
     private func freshness(_ snapshot: VehicleWidgetSnapshot) -> some View {
