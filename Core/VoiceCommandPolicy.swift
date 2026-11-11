@@ -70,6 +70,20 @@ public struct VoiceCommandPolicy: Sendable {
             return .reject("Aracı bulma kornası henüz araçta doğrulanmadı; bu bir önizleme. Komut göndermedim.")
         case .automaticLock(nil):
             return .speak("Oto kilit için fiil eksik; 'oto kilit aç' ya da 'oto kilit kapat' de.")
+        case .autoOff(let enabled, let minutes):
+            // Yerel tercihtir (araç komutu değildir); Android "Onay gerekir"
+            // sözleşmesinden farklı olarak iOS'ta kart anahtarı da onaysız
+            // değişir. Süre aralığı Android paritesi: 1–1440 dakika.
+            if let minutes {
+                guard ProximityAutoOffPolicy.allowedMinutes.contains(minutes) else {
+                    return .speak("Süre 1 ile 1440 dakika arasında olmalı.")
+                }
+                return .execute(.autoOff(enabled: enabled, minutes: minutes))
+            }
+            if let enabled {
+                return .execute(.autoOff(enabled: enabled, minutes: nil))
+            }
+            return .speak("Süre için 'oto kilit 20 dakika' gibi söyle; 1–1440 dakika.")
         case .nearbyStations:
             return .speak("Şarj istasyonu arama EPDK sekmesinde; sesli istasyon araması henüz yok.")
         case .automaticLock(let on):
@@ -120,7 +134,7 @@ public struct VoiceCommandPolicy: Sendable {
         return .execute(command)
     }
 
-    public static let helpText = "Şarj, menzil, kilit, bagaj, cam, klima, lastik ve dış sıcaklık sorabilirsin. Kilit, bagaj ve cam komutları onay ister; kilit açma Face ID ile doğrulanır. Oto kilit aç veya kapat komutu yakınlık otomasyonunu yönetir ve onay ister."
+    public static let helpText = "Şarj, menzil, kilit, bagaj, cam, klima, lastik ve dış sıcaklık sorabilirsin. Kilit, bagaj ve cam komutları onay ister; kilit açma Face ID ile doğrulanır. Oto kilit aç veya kapat komutu yakınlık otomasyonunu yönetir ve onay ister; 'oto kilit 20 dakika' ile otomatik kapanma süresini 1–1440 dakika arasında ayarlayabilirsin."
 
     public static func confirmationPrompt(for command: VoiceCommand) -> String {
         switch command {

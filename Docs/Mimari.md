@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 44 dosya, 352 birim testi; `UITests`: 1 dosya, 4 smoke testi.
+- `Tests`: 44 dosya, 363 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -260,6 +260,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   ("Uygun yakınlık aralığı algılandı", VIN'siz). Öneri kalibrasyonu yazmaz,
   otomasyonu açmaz; onay hâlâ yakınlık kartındaki ölçüm düğmelerinden
   geçer.
+- Sesli oto kilit süre tercihi (Android `set_automatic_lock.autoOff*`
+  paritesi): `VoiceCommand.autoOff(enabled:minutes:)` — "oto kilit 20
+  dakika" süre (1–1440, dışı reddedilir), "oto kilit süresiz / sayacı
+  kapat" sayaç kapama, "sayaç aç" açma. Yalnız belirtilen alan değişir;
+  ana "oto kilit aç/kapat" davranışı korunur. Sayaç yerel tercihtir,
+  araç komutu gönderilmez; sayaç kapalıysa durum dürüstçe söylenir.
 - EPDK sesli `nearby_stations` veri hattı tamamlandı: kayıtlı katalog
   özeti (istasyon sayısı + saat) sesli yanıtta gerçek veriyle söylenir,
   tazeleme arka planda rate-limit'e saygılı `load()` ile tetiklenir.

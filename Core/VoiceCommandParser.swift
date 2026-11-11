@@ -66,6 +66,11 @@ public struct VoiceCommandParser: Sendable {
         var action: VoiceCommand?
 
         if autoLockTopic {
+            // Süre/sayaç ifadeleri ana aç/kapat fiillerinden önce gelir:
+            // "oto kilit süresini 20 dakika yap" bir süre tercihidir.
+            if let preference = Self.autoOff(in: text, tokens: tokenSet) {
+                return result(.autoOff(enabled: preference.enabled, minutes: preference.minutes), 0.9, text)
+            }
             if openVerb {
                 action = .automaticLock(on: true)
             } else if closeVerb || lockVerb {
@@ -234,8 +239,36 @@ public struct VoiceCommandParser: Sendable {
     /// Oto kilit sorgusu: "oto/otomatik/otomotik" + "kil-" önekli kelime
     /// ("oto kilit", "oto kilidi", "otomatik kilid"...). "kilometre" gibi
     /// "kil-" önekli ama kilitleme olmayan kelimeler sayılmaz.
-    static func hasAutoLockPhrase(text: String, tokens: Set<String>) -> Bool {
-        let autoWord = tokens.contains { $0 == "oto" || $0.hasPrefix("otomatik") || $0.hasPrefix("otomotik") }
+    /// Oto kilit süre/sayaç tercihi ayrıştırıcı: "oto kilit 20 dakika",
+    /// "oto kilit süresiz", "oto kilit sayacı kapat/aç". Dakika belirtildiyse
+    /// yalnız süre tercihi döner (ana on/off davranışı değişmez — Android
+    /// "belirtilmeyen alanı gönderme" kuralı). Süre dışı aralıkta da değer
+    /// korunur; aralık denetimi politika ve uygulama katmanındadır.
+    static func autoOff(in text: String, tokens: Set<String>) -> VoiceCommand.VoiceAutoOffPreference? {
+        let mentionsDuration = text.contains("dakika") || tokens.contains("dk")
+            || text.contains("sure") || tokens.contains { $0.hasPrefix("sayac") }
+        guard mentionsDuration else { return nil }
+
+        if text.contains("suresiz")
+            || (tokens.contains { $0.hasPrefix("sayac") } && Self.closeVerbs.contains("kapat") && tokens.contains("kapat"))
+            || (text.contains("sure") && tokens.contains("kapat")) {
+            return VoiceCommand.VoiceAutoOffPreference(enabled: false, minutes: nil)
+        }
+        if tokens.contains { $0.hasPrefix("sayac") } && tokens.contains(where: openVerbs.contains) {
+            return VoiceCommand.VoiceAutoOffPreference(enabled: true, minutes: nil)
+        }
+        // Dakika: ilk sayısal token süre tercihidir ("20 dakika", "20 dk").
+        if text.contains("dakika") || tokens.contains("dk") {
+            let number = text.split(separator: " ").first { Int($0) != nil }.flatMap { Int($0) }
+            if let number, number > 0 {
+                return VoiceCommand.VoiceAutoOffPreference(enabled: nil, minutes: number)
+            }
+        }
+        // Süre/sayaç sözü var ama alan çözülemedi: politika yönlendirsin.
+        return VoiceCommand.VoiceAutoOffPreference(enabled: nil, minutes: nil)
+    }
+
+    static func hasAutoLockPhrase(text: String, tokens: Set<String>) -> Bool {        let autoWord = tokens.contains { $0 == "oto" || $0.hasPrefix("otomatik") || $0.hasPrefix("otomotik") }
         let phrase = text.contains("oto kilit") || text.contains("otomatik kilit") || text.contains("otomotik kilit")
         guard autoWord || phrase else { return false }
         let lockWord = tokens.contains {

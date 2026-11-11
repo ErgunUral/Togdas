@@ -1894,10 +1894,42 @@ struct DashboardView: View {
                     ? "Otomatik kilit etkinleştirildi."
                     : "Otomatik kilit kapatıldı."
             }
+            if case .autoOff(let enabled, let minutes) = command {
+                return applyVoiceAutoOff(enabled: enabled, minutes: minutes)
+            }
             return "\(command.actionLabel ?? "Komut") için onay gerekiyor."
         case .authenticate(let command, _):
             return "\(command.actionLabel ?? "Komut") için onay ve Face ID gerekiyor."
         }
+    }
+
+    /// Sesli autoOff uygulaması: yalnız belirtilen alan değişir (Android
+    /// "belirtilmeyen alanı gönderme" kuralı). Süre aralığı dışı değer
+    /// politikada yakalanır; burada savunmacı olarak da reddedilir.
+    /// Sayaç anahtarı kapalıysa süre yine kaydedilir ve durum dürüstçe söylenir.
+    private func applyVoiceAutoOff(enabled: Bool?, minutes: Int?) -> String {
+        var parts: [String] = []
+        if let enabled {
+            setProximityAutoOffEnabled(enabled)
+            parts.append(enabled
+                ? "Otomatik kapanma sayacı açıldı."
+                : "Otomatik kapanma sayacı kapatıldı.")
+        }
+        if let minutes {
+            guard ProximityAutoOffPolicy.allowedMinutes.contains(minutes) else {
+                return "Süre 1 ile 1440 dakika arasında olmalı; değişiklik yapmadım."
+            }
+            proximityAutoOffMinutes = 0
+            proximityAutoOffCustomText = String(minutes)
+            UserDefaults.standard.set(minutes, forKey: proximityAutoOffCustomKey)
+            let counterNote = proximityAutoOffEnabled
+                ? ""
+                : " Sayaç şu an kapalı; açmak için yakınlık kartındaki anahtarı kullan."
+            parts.append("Otomatik kapanma süresi \(minutes) dakika olarak ayarlandı.\(counterNote)")
+        }
+        return parts.isEmpty
+            ? "Bu tercihi yakınlık kartından yönetebilirsin."
+            : parts.joined(separator: " ")
     }
 
     private func dashboardCommand(for command: VoiceCommand) -> DashboardCommand? {

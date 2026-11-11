@@ -90,6 +90,38 @@ final class VoiceCommandParserTests: XCTestCase {
         XCTAssertEqual(parser.parse("şarj istasyonu kapak"), .unknown)
     }
 
+    // MARK: Oto kilit süre tercihi (Android set_automatic_lock autoOff paritesi)
+
+    func testAutoOffDurationPhrases() {
+        XCTAssertEqual(parser.parse("oto kilit süresini 20 dakika yap"), .autoOff(enabled: nil, minutes: 20))
+        XCTAssertEqual(parser.parse("oto kilit 30 dakika"), .autoOff(enabled: nil, minutes: 30))
+        XCTAssertEqual(parser.parse("oto kilit 15 dk"), .autoOff(enabled: nil, minutes: 15))
+    }
+
+    func testAutoOffDisablePhrases() {
+        XCTAssertEqual(parser.parse("oto kilit süresiz"), .autoOff(enabled: false, minutes: nil))
+        XCTAssertEqual(parser.parse("oto kilit sayacı kapat"), .autoOff(enabled: false, minutes: nil))
+    }
+
+    func testAutoOffEnablePhrases() {
+        XCTAssertEqual(parser.parse("oto kilit sayacı aç"), .autoOff(enabled: true, minutes: nil))
+    }
+
+    func testAutoOffMasterVerbsDoNotChangeDuration() {
+        // "oto kilit aç/kapat" süre belirtmez → ana on/off kalır (değişmez).
+        XCTAssertEqual(parser.parse("oto kilit aç"), .automaticLock(on: true))
+        XCTAssertEqual(parser.parse("oto kilit kapat"), .automaticLock(on: false))
+    }
+
+    func testAutoOffInvalidDurationKeepsNumberForPolicy() {
+        // 1440 dışı değer politika katmanında reddedilir; parser değeri taşır.
+        XCTAssertEqual(parser.parse("oto kilit 500 dakika"), .autoOff(enabled: nil, minutes: 500))
+    }
+
+    func testAutoOffWithoutNumberAsksForDuration() {
+        XCTAssertEqual(parser.parse("oto kilit süresi"), .autoOff(enabled: nil, minutes: nil))
+    }
+
     func testTrunkAndWindowActions() {
         XCTAssertEqual(parser.parse("Bagajı aç"), .trunk(open: true))
         XCTAssertEqual(parser.parse("Bagajı kapat"), .trunk(open: false))

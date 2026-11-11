@@ -43,6 +43,9 @@ public enum VoiceCommand: Equatable, Sendable {
     /// Oto kilit (yakınlık otomasyonu) yönetimi; araç komutu göndermez.
     /// `nil` → eylem belirtilmedi; politika sözlü yönlendirme verir.
     case automaticLock(on: Bool?)
+    /// Oto kilit otomatik kapanma (sayaç) tercihi; araç komutu göndermez.
+    /// Android `set_automatic_lock.autoOff*` alanlarının paritesi.
+    case autoOff(enabled: Bool?, minutes: Int?)
     /// EPDK şarj istasyonu sorgusu; salt okunur. Veri hattı sağlanana
     /// kadar politika yönlendirme yanıtını verir.
     case nearbyStations
@@ -56,6 +59,19 @@ public enum VoiceCommand: Equatable, Sendable {
 }
 
 public extension VoiceCommand {
+    /// Oto kilit süresi/kapama tercihi; `nil` alan "belirtilmedi" demektir.
+    /// Android .57 `set_automatic_lock` araç alanlarının (enabled,
+    /// autoOffEnabled, autoOffMinutes) ses karşılığı.
+    struct VoiceAutoOffPreference: Equatable, Sendable {
+        public let enabled: Bool?
+        public let minutes: Int?
+
+        public init(enabled: Bool?, minutes: Int?) {
+            self.enabled = enabled
+            self.minutes = minutes
+        }
+    }
+
     /// Araçta ya da otomasyonda bir şey değiştiren komutlar.
     var isAction: Bool {
         switch self {
@@ -63,6 +79,8 @@ public extension VoiceCommand {
             return true
         case .automaticLock(let on):
             return on != nil
+        case .autoOff(let enabled, let minutes):
+            return enabled != nil || minutes != nil
         default:
             return false
         }
@@ -93,6 +111,10 @@ public extension VoiceCommand {
         case .windows(let open): return open ? "Cam açma" : "Cam kapatma"
         case .climate(let on, _): return on ? "Klima açma" : "Klima kapatma"
         case .automaticLock(let on): return on == true ? "Oto kilit açma" : on == false ? "Oto kilit kapatma" : nil
+        case .autoOff(let enabled, let minutes):
+            if let enabled { return enabled ? "Oto kilit sayaç açma" : "Oto kilit sayaç kapatma" }
+            if minutes != nil { return "Oto kilit süresi" }
+            return nil
         default: return nil
         }
     }

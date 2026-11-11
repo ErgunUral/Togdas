@@ -28,6 +28,8 @@ public enum VoiceIntent: Equatable {
     case findVehicle
     /// Oto kilit (yakınlık otomasyonu) yönetimi; araç komutu göndermez.
     case automaticLock(on: Bool?)
+    /// Oto kilit otomatik kapanma (sayaç) tercihi; araç komutu göndermez.
+    case autoOff(enabled: Bool?, minutes: Int?)
     /// EPDK şarj istasyonu sorgusu; salt okunur.
     case nearbyStations
 
@@ -112,6 +114,9 @@ public struct VoiceIntentParser {
             $0.hasPrefix("kil") && !$0.hasPrefix("kilo") && !$0.hasPrefix("kilomet")
         }
         if hasAutoLockWord, hasLockWord {
+            if let preference = VoiceCommandParser.autoOff(in: text, tokens: Set(tokens)) {
+                return .autoOff(enabled: preference.enabled, minutes: preference.minutes)
+            }
             if hasOpenVerb { return .automaticLock(on: true) }
             if hasCloseVerb { return .automaticLock(on: false) }
             return .automaticLock(on: nil)

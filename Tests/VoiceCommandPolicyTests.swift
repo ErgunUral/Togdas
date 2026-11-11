@@ -179,6 +179,49 @@ final class VoiceCommandPolicyTests: XCTestCase {
         }
     }
 
+    // MARK: Oto kilit süre tercihi
+
+    func testAutoOffInvalidMinutesRejected() {
+        if case .speak(let text) = policy.decide(.autoOff(enabled: nil, minutes: 1441), context: context()) {
+            XCTAssertTrue(text.contains("1440"))
+        } else {
+            XCTFail("1440 dışı süre reddedilmeli")
+        }
+    }
+
+    func testAutoOffMissingDurationGuidesToPhrase() {
+        if case .speak(let text) = policy.decide(.autoOff(enabled: nil, minutes: nil), context: context()) {
+            XCTAssertTrue(text.contains("dakika"))
+        } else {
+            XCTFail("süre yoksa yönlendirme verilmeli")
+        }
+    }
+
+    func testAutoOffValidMinutesExecutes() {
+        if case .execute(let command) = policy.decide(.autoOff(enabled: nil, minutes: 20), context: context()) {
+            XCTAssertEqual(command, .autoOff(enabled: nil, minutes: 20))
+        } else {
+            XCTFail("geçerli süre yürütülmeli")
+        }
+    }
+
+    func testAutoOffCounterToggleExecutes() {
+        if case .execute(let command) = policy.decide(.autoOff(enabled: false, minutes: nil), context: context()) {
+            XCTAssertEqual(command, .autoOff(enabled: false, minutes: nil))
+        } else {
+            XCTFail("sayaç kapatma yürütülmeli")
+        }
+    }
+
+    func testAutoOffRangeBoundaryAccepted() {
+        if case .execute = policy.decide(.autoOff(enabled: nil, minutes: 1440), context: context()) {} else {
+            XCTFail("1440 sınır değeri kabul edilmeli")
+        }
+        if case .execute = policy.decide(.autoOff(enabled: nil, minutes: 1), context: context()) {} else {
+            XCTFail("1 sınır değeri kabul edilmeli")
+        }
+    }
+
     func testAutomaticLockConfirmsWithoutCarGates() {
         // Araç komutu olmadığından bağlantı/telemetri kapılarına takılmaz.
         if case .confirm(let command, let prompt) = policy.decide(
