@@ -1,0 +1,12 @@
+{
+  "name": "toqdas-playwright",
+  "version": "0.1.0",
+  "description": "Toqdas web yüzeyleri — Playwright doğrulama (KeySharing UX durumları)",
+  "private": true,
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.1"
+  }
+}
