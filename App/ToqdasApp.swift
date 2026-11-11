@@ -550,7 +550,7 @@ struct ToqdasApp: App {
 
 struct GarageView: View {
     @ObservedObject var model: GarageModel
-    @AppStorage("toqdas.theme") private var themeName = ToggThemeStyle.togg.rawValue
+    @AppStorage(StorageKeys.theme) private var themeName = ToggThemeStyle.togg.rawValue
 
     var body: some View {
         NavigationStack {

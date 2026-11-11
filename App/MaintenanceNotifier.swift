@@ -7,7 +7,6 @@ import UserNotifications
 /// yapılır. Aynı bakım için tekrar tekrar bildirim göndermemek üzere
 /// `lastNotifiedKey` ile günlük sınır uygulanır.
 enum MaintenanceNotifier {
-    private static let prefix = "toqdas.maintenance.notify."
 
     static func requestAuthorization() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
@@ -21,7 +20,7 @@ enum MaintenanceNotifier {
         let today = calendar.startOfDay(for: Date())
 
         for item in items {
-            let notifyKey = "\(prefix)\(vin).\(item.id.uuidString)"
+            let notifyKey = StorageKeys.maintenanceNotified(vin, itemID: item.id)
             let last = UserDefaults.standard.object(forKey: notifyKey) as? Date ?? .distantPast
             guard !calendar.isDate(last, inSameDayAs: today) else { continue }
 
@@ -51,7 +50,7 @@ enum MaintenanceNotifier {
     /// Bakım silindiğinde/tamamlandığında bekleyen bildirimleri temizler.
     static func cancel(itemIDs: [UUID], vin: String) {
         let identifiers = itemIDs.flatMap { id -> [String] in
-            let notifyKey = "\(prefix)\(vin).\(id.uuidString)"
+            let notifyKey = StorageKeys.maintenanceNotified(vin, itemID: id)
             UserDefaults.standard.removeObject(forKey: notifyKey)
             return [id.uuidString]
         }

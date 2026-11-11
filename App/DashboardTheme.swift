@@ -86,7 +86,7 @@ enum DashboardLayoutStyle: String, CaseIterable, Identifiable, Hashable {
 /// Tema paletleri koyu tutulur; kartlardaki beyaz metinlerin kontrastı korunur.
 enum ToggTheme {
     private static var selected: ToggThemeStyle {
-        guard let raw = UserDefaults.standard.string(forKey: "toqdas.theme"),
+        guard let raw = UserDefaults.standard.string(forKey: StorageKeys.theme),
               let style = ToggThemeStyle(rawValue: raw) else { return .togg }
         return style
     }

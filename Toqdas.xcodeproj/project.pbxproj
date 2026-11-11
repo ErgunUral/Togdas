@@ -26,10 +26,10 @@
 		D3E4F5061728394A5B0C1D2E /* VehicleCommandStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5061728394A5B /* VehicleCommandStatus.swift */; };
 		E4F5061728394A5B0C1D2E3F /* ProximityAutoCalibrationSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F5061728394A5B0C1D2E30 /* ProximityAutoCalibrationSuggester.swift */; };
 		1A2B3C4D5E6F0718293A4B5C /* AuxiliaryBatteryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */; };
+		3C4D5E6F0A1B2738495A6B7C /* AuxiliaryBatteryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */; };
 		5E6F0A1B2C3D48596A7B8C9D0E /* AuxiliaryBatteryHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5E6F0A1B2C3748495A6B7C8D /* AuxiliaryBatteryHistory.swift */; };
 		8B9C0D1E2F3A4B5C6D7E8F9A /* BleStatusWatchdog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8B9C0D1E2F3A4B5C6D7E8F /* BleStatusWatchdog.swift */; };
 		9C0D1E2F3A4B5C6D7E8F9A0B /* AuxiliaryBatteryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */; };
-		3C4D5E6F0A1B2738495A6B7C /* AuxiliaryBatteryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */; };
 		9E0F1A2B3C4D5E6F0A1B2C3D /* BleRestorePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9E0F1A2B3C4D5E6F0A1B2C /* BleRestorePlan.swift */; };
 		104A62617E10CDC2B0B03B56 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11854A761FC25AD5CF9F967 /* BLEProtocol.swift */; };
 		119EAD8F111DE7DE3BF64BA3 /* BLECommandHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */; };
@@ -110,6 +110,7 @@
 		AC2161870B64999080BB67E4 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411E3E4ABBC6C73898F4546D /* SessionStore.swift */; };
 		AEAB8AF4B539754BA77A2B6A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 05F08FBFC60D10D394CA5BA2 /* Assets.xcassets */; };
 		AF7550342ECF8FBD1B0124AD /* BleLinkCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1886C2A1192CEB680C24EB80 /* BleLinkCoordinator.swift */; };
+		7F8A9B0C1D2E3F4A5B6C7D8E /* StorageKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7F8A9B0C1D2E3F4A5B6C7D /* StorageKeys.swift */; };
 		B2A064C07BBD72E85430FC2E /* TirePressurePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 215F2C49326A1FA6F27313DF /* TirePressurePolicy.swift */; };
 		B7539723A4119F46D96C5661 /* BLECommandReceipt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05046024F855B991FC795F0F /* BLECommandReceipt.swift */; };
 		B902A0E9D7F0D2BA13AC0A4B /* TurkishFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC000EFC9F6259DC15B3CDA /* TurkishFormat.swift */; };
@@ -214,6 +215,7 @@
 		11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLECommandHistoryStore.swift; path = Core/BLECommandHistoryStore.swift; sourceTree = "<group>"; };
 		17BD712EE0834958833A382D /* ProximityDetectionMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityDetectionMonitor.swift; path = App/ProximityDetectionMonitor.swift; sourceTree = "<group>"; };
 		1886C2A1192CEB680C24EB80 /* BleLinkCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleLinkCoordinator.swift; path = App/BleLinkCoordinator.swift; sourceTree = "<group>"; };
+		6E7F8A9B0C1D2E3F4A5B6C7D /* StorageKeys.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = StorageKeys.swift; path = App/StorageKeys.swift; sourceTree = "<group>"; };
 		19744B31775E323987033834 /* BLECommandPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLECommandPolicy.swift; path = Core/BLECommandPolicy.swift; sourceTree = "<group>"; };
 		1A4DD3F5F17FD7AB467DE8B0 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = App/Assets.xcassets; sourceTree = "<group>"; };
 		1A90646A8F064CC74B8E1653 /* GaragePreferences.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/GaragePreferences.swift; sourceTree = "<group>"; };
@@ -395,6 +397,7 @@
 				4D3F7A0A3A858FECE4000FF1 /* AccountCenterView.swift */,
 				4DB38BAF3BBC341BD7A379E7 /* BleAuth.swift */,
 				1886C2A1192CEB680C24EB80 /* BleLinkCoordinator.swift */,
+				6E7F8A9B0C1D2E3F4A5B6C7D /* StorageKeys.swift */,
 				08AD3BFEDDDC63D034E95BD7 /* ChargingStationsView.swift */,
 				A2259D07012A3A5E766C38E4 /* CommandView.swift */,
 				87E9AD0C3188E52B427A89BA /* DashboardTheme.swift */,
@@ -754,6 +757,7 @@
 				5AEEE9B34A0AAC2CF800A3FF /* AccountCenterView.swift in Sources */,
 				76475D2E0285CC3A1895A043 /* BleAuth.swift in Sources */,
 				AF7550342ECF8FBD1B0124AD /* BleLinkCoordinator.swift in Sources */,
+				7F8A9B0C1D2E3F4A5B6C7D8E /* StorageKeys.swift in Sources */,
 				86D0885E4002411D6A889565 /* ChargingStationsView.swift in Sources */,
 				204E8BAA0F4896339DCED951 /* CommandView.swift in Sources */,
 				A698B0565F64FB462C00F9EF /* DashboardTheme.swift in Sources */,
@@ -933,7 +937,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Watch/Info.plist;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.dev.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -955,7 +959,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Watch/Info.plist;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.dev.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -995,7 +999,7 @@
 				INFOPLIST_FILE = Widget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.dev.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1036,7 +1040,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1058,7 +1062,7 @@
 				INFOPLIST_FILE = Widget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.dev.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1136,7 +1140,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = com.toqdas.ios.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;

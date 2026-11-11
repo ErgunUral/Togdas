@@ -30,9 +30,9 @@ final class ProximityDetectionMonitor: ObservableObject {
     }
 
     private var enabledKey: String { GaragePreferences.proximityKey(for: vin) }
-    private var nearKey: String { "toqdas.proximity.near.\(vin)" }
-    private var farKey: String { "toqdas.proximity.far.\(vin)" }
-    private var profileKey: String { "toqdas.proximity.profile.\(vin)" }
+    private var nearKey: String { StorageKeys.proximityNear(vin) }
+    private var farKey: String { StorageKeys.proximityFar(vin) }
+    private var profileKey: String { StorageKeys.proximityProfile(vin) }
 
     static func logKey(for vin: String) -> String { "toqdas.proximity.log.\(vin)" }
 

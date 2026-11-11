@@ -11,8 +11,8 @@ struct EPDKCatalogLoad: Equatable {
 actor EPDKStationService {
     static let shared = EPDKStationService()
     private static let refreshInterval: TimeInterval = 60 * 60
-    private static let fetchedAtKey = "toqdas.epdk.fetchedAt"
-    private static let nextFetchAtKey = "toqdas.epdk.nextFetchAt"
+    private static let fetchedAtKey = StorageKeys.epdkFetchedAt
+    private static let nextFetchAtKey = StorageKeys.epdkNextFetchAt
 
     private var cachedCatalog: EPDKCatalog?
     private let cacheURL: URL = {

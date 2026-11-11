@@ -60,8 +60,8 @@ private enum DashboardCommand: String, Identifiable {
 struct DashboardView: View {
     @ObservedObject var model: GarageModel
     let vehicle: Vehicle
-    @AppStorage("toqdas.theme") private var themeName = ToggThemeStyle.togg.rawValue
-    @AppStorage("toqdas.dashboardLayout") private var layoutName = DashboardLayoutStyle.classic.rawValue
+    @AppStorage(StorageKeys.theme) private var themeName = ToggThemeStyle.togg.rawValue
+    @AppStorage(StorageKeys.dashboardLayout) private var layoutName = DashboardLayoutStyle.classic.rawValue
 
     @EnvironmentObject private var ble: BleConnection
 
@@ -85,7 +85,7 @@ struct DashboardView: View {
     @State private var alert: DashboardAlert?
     @State private var autoKeyStarted = false
     @State private var hasAuthenticatedBLE = false
-    @AppStorage("toqdas.ble.keepConnected") private var keepBLEConnected = false
+    @AppStorage(GaragePreferences.keepConnectedKey) private var keepBLEConnected = false
     @State private var reconnectAttempts = 0
     @State private var reconnectTask: Task<Void, Never>?
     @State private var stableConnectionTask: Task<Void, Never>?
@@ -130,7 +130,7 @@ struct DashboardView: View {
         let vin = vehicle.vin
         var notifiedAny = false
         for alert in alerts {
-            let key = "toqdas.tire.notified.\(vin).\(alert.position.rawValue).\(alert.severity)"
+            let key = StorageKeys.tireNotified(vin, position: alert.position.rawValue, severity: String(describing: alert.severity))
             let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
             guard !calendar.isDate(last, inSameDayAs: Date()) else { continue }
             UserDefaults.standard.set(Date(), forKey: key)
@@ -173,8 +173,8 @@ struct DashboardView: View {
     @State private var chargeStartPercent = 20.0
     @State private var chargeTargetPercent = 80.0
     @State private var chargeStartInitialized = false
-    @AppStorage("toqdas.chargeCapacityKWh") private var chargeCapacityKWh = 88.5
-    @AppStorage("toqdas.chargePricePerKWh") private var chargePricePerKWh = 10.0
+    @AppStorage(StorageKeys.chargeCapacityKWh) private var chargeCapacityKWh = 88.5
+    @AppStorage(StorageKeys.chargePricePerKWh) private var chargePricePerKWh = 10.0
 
     private var dashboardHeader: some View {
         DashboardHeader(
@@ -239,15 +239,15 @@ struct DashboardView: View {
         return raw
     }
 
-    private var climateTargetKey: String { "toqdas.climateTarget.\(vehicle.vin)" }
-    private var proximityEnabledKey: String { "toqdas.proximity.enabled.\(vehicle.vin)" }
-    private var proximityNearKey: String { "toqdas.proximity.near.\(vehicle.vin)" }
-    private var proximityFarKey: String { "toqdas.proximity.far.\(vehicle.vin)" }
-    private var proximityProfileKey: String { "toqdas.proximity.profile.\(vehicle.vin)" }
-    private var proximityAutoOffEnabledKey: String { "toqdas.proximity.autoOff.enabled.\(vehicle.vin)" }
-    private var proximityAutoOffMinutesKey: String { "toqdas.proximity.autoOff.minutes.\(vehicle.vin)" }
-    private var proximityAutoOffCustomKey: String { "toqdas.proximity.autoOff.custom.\(vehicle.vin)" }
-    private var proximityAutoOffDeadlineKey: String { "toqdas.proximity.autoOff.deadline.\(vehicle.vin)" }
+    private var climateTargetKey: String { StorageKeys.climateTarget(vehicle.vin) }
+    private var proximityEnabledKey: String { StorageKeys.proximityEnabled(vehicle.vin) }
+    private var proximityNearKey: String { StorageKeys.proximityNear(vehicle.vin) }
+    private var proximityFarKey: String { StorageKeys.proximityFar(vehicle.vin) }
+    private var proximityProfileKey: String { StorageKeys.proximityProfile(vehicle.vin) }
+    private var proximityAutoOffEnabledKey: String { StorageKeys.proximityAutoOffEnabled(vehicle.vin) }
+    private var proximityAutoOffMinutesKey: String { StorageKeys.proximityAutoOffMinutes(vehicle.vin) }
+    private var proximityAutoOffCustomKey: String { StorageKeys.proximityAutoOffCustom(vehicle.vin) }
+    private var proximityAutoOffDeadlineKey: String { StorageKeys.proximityAutoOffDeadline(vehicle.vin) }
     private var proximityCalibration: ProximityCalibration? {
         guard let near = proximityNearSample, let far = proximityFarSample else { return nil }
         return ProximityCalibration(nearSample: near, farSample: far)
@@ -1752,7 +1752,7 @@ struct DashboardView: View {
             saveAuxiliaryHistory()
         }
         guard let assessment = AuxiliaryBatteryPolicy.assess(percent) else { return }
-        let key = "toqdas.auxbattery.notified.\(vehicle.vin).\(assessment.severity == .critical ? "critical" : "warning")"
+        let key = StorageKeys.auxiliaryNotified(vehicle.vin, severity: assessment.severity == .critical ? "critical" : "warning")
         let calendar = Calendar.current
         let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
         guard !calendar.isDate(last, inSameDayAs: Date()) else { return }
@@ -1777,7 +1777,7 @@ struct DashboardView: View {
         center.add(request, withCompletionHandler: nil)
     }
 
-    private var auxiliaryHistoryKey: String { "toqdas.aux.history.\(vehicle.vin)" }
+    private var auxiliaryHistoryKey: String { StorageKeys.auxiliaryHistory(vehicle.vin) }
 
     /// Görüntü için geçmiş: taze kayıt varsa state; yoksa kayıtlı veri.
     /// Bilinçli olarak salt-okunurdur (body değerlendirmesinde state
