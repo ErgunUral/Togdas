@@ -402,10 +402,19 @@ final class GarageModel: ObservableObject {
         }
     }
 
-    private func publishWatchSnapshot() {
+    func publishWatchSnapshot() {
         publishWidgetSnapshot()
         guard let vin = selectedVin,
               let vehicle = vehicles.first(where: { $0.vin == vin }) else { return }
+        // Son komut sonucu (widget kuralı): 24 saatten eski kayıt gösterilmez.
+        let commandStatus = VehicleCommandStatusStore.load()
+        let lastCommandText: String?
+        if let status = commandStatus, !status.isStale {
+            lastCommandText = "\(status.actionLabel) · \(status.verificationText) · "
+                + TurkishFormat.date(status.sentAt, format: "HH:mm")
+        } else {
+            lastCommandText = nil
+        }
         let telemetry = ble.telemetry
         let age = telemetry.map { Date().timeIntervalSince($0.receivedAt) }
         watch.publish(snapshot: WatchSnapshot(
@@ -427,7 +436,8 @@ final class GarageModel: ObservableObject {
             odometerKM: cloud.odometerKM,
             chargingState: cloud.chargingState,
             proximityEnabled: preferences.proximityEnabled(for: vin),
-            recovering: link.silentRecovery
+            recovering: link.silentRecovery,
+            lastCommandText: lastCommandText
         ))
         refreshCloudIfStale()
     }

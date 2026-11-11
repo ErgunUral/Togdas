@@ -599,6 +599,7 @@ struct DashboardView: View {
     private var healthTab: some View {
         VehicleHealthCard(
             auxiliaryBattery: telemetry?.auxiliaryBatteryPercent,
+            auxiliaryHistoryLine: auxiliaryHistoryLine,
             tires: telemetry?.tires ?? [],
             insideTemperature: telemetry?.insideTemperatureC,
             brakeWarning: telemetry?.brakeWarning,
@@ -1704,6 +1705,8 @@ struct DashboardView: View {
         VehicleCommandStatusStore.save(
             VehicleCommandStatus(actionLabel: label, sentAt: Date(), verified: verified)
         )
+        // Saat de aynı sonucu görsün (24 saatten eski kayıt süzülür).
+        model.publishWatchSnapshot()
     }
 
     /// Uygun yakınlık aralığını GATT örneklerinden otomatik algılar.
@@ -1737,8 +1740,14 @@ struct DashboardView: View {
     /// gösterilen eski değere yazılmaz), ciddiyet başına günde bir kez,
     /// VIN'siz anahtar ve VIN'siz metin. Eksik veri bildirim üretmez
     /// ("bilgi yok" ≠ uyarı); gerçek 0 kritik bildirimdir.
+    /// 12 V akü günlük geçmişi (Android aux_history paritesi); yalnız
+    /// taze telemetri kaydı yapılır, eksik gün "—" kalır.
+    @State private var auxiliaryHistory = AuxiliaryBatteryHistory()
+
     private func checkAuxiliaryBattery(_ percent: Double?) {
         guard let assessment = AuxiliaryBatteryPolicy.assess(percent) else { return }
+        auxiliaryHistory.record(percent: percent, on: Date())
+        saveAuxiliaryHistory()
         let key = "toqdas.auxbattery.notified.\(vehicle.vin).\(assessment.severity == .critical ? "critical" : "warning")"
         let calendar = Calendar.current
         let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
@@ -1756,6 +1765,40 @@ struct DashboardView: View {
         content.sound = .default
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         center.add(request, withCompletionHandler: nil)
+    }
+
+    private var auxiliaryHistoryKey: String { "toqdas.aux.history.\(vehicle.vin)" }
+
+    private func loadAuxiliaryHistory() {
+        guard let data = UserDefaults.standard.data(forKey: auxiliaryHistoryKey),
+              let history = try? JSONDecoder().decode(AuxiliaryBatteryHistory.self, from: data) else {
+            auxiliaryHistory = AuxiliaryBatteryHistory()
+            return
+        }
+        auxiliaryHistory = history
+    }
+
+    private func saveAuxiliaryHistory() {
+        if let data = try? JSONEncoder().encode(auxiliaryHistory) {
+            UserDefaults.standard.set(data, forKey: auxiliaryHistoryKey)
+        }
+    }
+
+    private var auxiliaryHistoryLine: String? {
+        loadAuxiliaryHistoryIfNeeded()
+        let values = auxiliaryHistory.displayValues(count: 3, today: Date())
+        guard values.contains(where: { $0 != "—" }) else { return nil }
+        return "Son 3 gün (12 V): " + values.joined(separator: " · ")
+    }
+
+    private func loadAuxiliaryHistoryIfNeeded() {
+        // Geçmiş günler yalnız taze telemetri akışında yazılır; kartın
+        // her çiziminde önbellek + kayıtlı veri birleşir.
+        if auxiliaryHistory.samples.isEmpty,
+           let data = UserDefaults.standard.data(forKey: auxiliaryHistoryKey),
+           let history = try? JSONDecoder().decode(AuxiliaryBatteryHistory.self, from: data) {
+            auxiliaryHistory = history
+        }
     }
 
     private func approve(_ command: DashboardCommand) {
@@ -3106,6 +3149,8 @@ private struct ClimateCard: View {
 
 private struct VehicleHealthCard: View {
     let auxiliaryBattery: Double?
+    /// "Son 3 gün (12 V): %72 · %74 · —" satırı; kayıt yoksa nil.
+    let auxiliaryHistoryLine: String?
     let tires: [TireReading]
     let insideTemperature: Double?
     let brakeWarning: Bool?
@@ -3181,6 +3226,13 @@ private struct VehicleHealthCard: View {
                         icon: "car.battery", color: ToggTheme.teal)
                 statBox(title: "Şarj Durumu", value: chargingState,
                         icon: "bolt.circle", color: ToggTheme.cyan)
+            }
+
+            if let auxiliaryHistoryLine {
+                Text(auxiliaryHistoryLine)
+                    .font(.system(size: 9, design: .monospaced))
+                    .foregroundStyle(ToggTheme.muted)
+                    .accessibilityLabel("Son üç gün 12 volt akü geçmişi")
             }
 
             HStack(spacing: 12) {

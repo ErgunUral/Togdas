@@ -48,13 +48,17 @@ struct WatchSnapshot: Codable {
     let proximityEnabled: Bool
     /// Telefon oturumu sessizce yeniden kuruyorsa saat "yeniden bağlanıyor" der.
     let recovering: Bool?
+    /// iPhone'daki son komut sonucunun gösterim metni; 24 saatten eski
+    /// kayıt iPhone tarafında süzülür (widget kuralı). VIN/içerik ayrıntısı
+    /// yazılmaz; yalnız etiket + doğrulama durumu + saat.
+    let lastCommandText: String?
 
     private enum CodingKeys: String, CodingKey {
         case vin, vehicleName, locked, doorCount, openDoors, trunkAjar, powerState
         case ready, bleState, updatedAt, telemetryAge
         case batteryPercent, rangeKM, outsideTemperatureC
         case auxiliaryBatteryPercent, odometerKM, chargingState, proximityEnabled
-        case recovering
+        case recovering, lastCommandText
     }
 
     init(vin: String, vehicleName: String, locked: Bool?, doorCount: Int, openDoors: Int,
@@ -63,7 +67,7 @@ struct WatchSnapshot: Codable {
          batteryPercent: Double?, rangeKM: Double?, outsideTemperatureC: Double?,
          auxiliaryBatteryPercent: Double? = nil, odometerKM: Double? = nil,
          chargingState: String? = nil, proximityEnabled: Bool = false,
-         recovering: Bool? = nil) {
+         recovering: Bool? = nil, lastCommandText: String? = nil) {
         self.vin = vin
         self.vehicleName = vehicleName
         self.locked = locked
@@ -83,6 +87,7 @@ struct WatchSnapshot: Codable {
         self.chargingState = chargingState
         self.proximityEnabled = proximityEnabled
         self.recovering = recovering
+        self.lastCommandText = lastCommandText
     }
 
     init(from decoder: Decoder) throws {
@@ -106,6 +111,7 @@ struct WatchSnapshot: Codable {
         chargingState = try c.decodeIfPresent(String.self, forKey: .chargingState)
         proximityEnabled = try c.decodeIfPresent(Bool.self, forKey: .proximityEnabled) ?? false
         recovering = try c.decodeIfPresent(Bool.self, forKey: .recovering)
+        lastCommandText = try c.decodeIfPresent(String.self, forKey: .lastCommandText)
     }
 }
 

@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 44 dosya, 363 birim testi; `UITests`: 1 dosya, 4 smoke testi.
+- `Tests`: 45 dosya, 369 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -260,6 +260,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   ("Uygun yakınlık aralığı algılandı", VIN'siz). Öneri kalibrasyonu yazmaz,
   otomasyonu açmaz; onay hâlâ yakınlık kartındaki ölçüm düğmelerinden
   geçer.
+- 12 V akü günlük geçmişi (Android `aux_history` paritesi):
+  `AuxiliaryBatteryHistory` — gün başına en güncel ölçüm, 30 gün üst sınırı,
+  eksik gün `—` (asla 0 değil; gerçek 0 `%0`), geriye yazım engellenir.
+  Sağlık kartında "Son 3 gün (12 V)" satırı; kayıt yalnız taze telemetriyle.
+- Saatte son komut sonucu: `WatchSnapshot.lastCommandText` — metin iPhone
+  tarafında kurulur (etiket · doğrulama · saat), 24 saatten eski kayıt
+  widget kuralıyla süzülür; saat yalnız gösterir, VIN/içerik ayrıntısı geçmez.
 - Sesli oto kilit süre tercihi (Android `set_automatic_lock.autoOff*`
   paritesi): `VoiceCommand.autoOff(enabled:minutes:)` — "oto kilit 20
   dakika" süre (1–1440, dışı reddedilir), "oto kilit süresiz / sayacı

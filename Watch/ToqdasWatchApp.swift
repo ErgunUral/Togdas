@@ -168,6 +168,15 @@ struct WatchGarageView: View {
                         .multilineTextAlignment(.center)
                         .padding(.top, 2)
 
+                    // iPhone uygulamasından yapılan son komutun sonucu
+                    // (metin iPhone tarafında hazırlandı; 24 saatten eski kayıt süzülür).
+                    if let lastCommand = snapshot?.lastCommandText {
+                        Text(lastCommand)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+
                     Text("Bagaj komutu iPhone üzerinden iletilir; cam komutları kapalı.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
