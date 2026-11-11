@@ -7,7 +7,16 @@ struct SessionTokens: Codable {
     let expiresAt: Date
 }
 
-struct SessionStore {
+/// Oturum depolama arayüzü: `ToggAPI` testlerde Keychain'e dokunmayan
+/// sahte depo ile kurulabilsin (test edilebilirlik invariant'ı: üretim
+/// davranışı değişmez, yalnızca enjekte noktası açılır).
+protocol SessionStoring {
+    func load() throws -> SessionTokens?
+    func save(_ tokens: SessionTokens) throws
+    func clear() throws
+}
+
+struct SessionStore: SessionStoring {
     private var query: [String: Any] {
         [kSecClass as String: kSecClassGenericPassword,
          kSecAttrService as String: "com.toqdas.ios.session",

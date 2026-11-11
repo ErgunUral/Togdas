@@ -48,8 +48,44 @@ private struct HTTPStatusError: Error {
 }
 
 @MainActor
-final class ToggAPI {
-    private let store = SessionStore()
+/// `ToggAPI`'nin görünüm ve koordinatör katmanına açık yüzeyi.
+///
+/// Neden gerekli: koordinatörler ve görüşler sahte istemciyle
+/// test edilebilsin; üretime davranış değişikliği getirmez
+/// (ToggAPI tek somut uyumcu olarak kalır).
+/// Not: protokolde varsayılan parametre değerleri bildirilemez;
+/// varsayılanlar somut sınıfta kalır.
+protocol ToggAPIClient: AnyObject {
+    func hasSession() throws -> Bool
+    func logout() throws
+    func login(code: String, verifier: String) async throws
+    func vehicles() async throws -> [Vehicle]
+    func details(for vehicle: Vehicle) async throws -> String
+    func climateStatus(vin: String) async throws -> ClimateStatus
+    func setClimate(vin: String, active: Bool, temperature: Double) async throws -> ClimateCommandResult
+    func driveExperience(vin: String, kind: String, period: String,
+                         offset: Int, anchor: String?, id: String?) async throws -> Data
+    func serviceCards(for vin: String) async throws -> Data
+    func notifications() async throws -> Data
+    func supportTickets() async throws -> Data
+    func subscriptions() async throws -> Data
+    func ticketNotes(for ticketId: String) async throws -> Data
+    func checkPhoneRelation(publicKey: String, language: String, platform: String) async throws -> Data
+    func acceptSharedKeyInvitation(vin: String, invitationURL: String) async throws
+    func readSharedCertificate(vin: String) async throws -> CertificateRecord
+    func getCertificate(phonePublicKey: String, vin: String, isOwner: Bool) async throws -> Data
+    func createCertificate(phonePublicKey: String, vin: String,
+                           shortCertificateBase64: String?,
+                           isOwnerCertificate: Bool) async throws -> Data
+    func ensureCertificate(vin: String, phonePublicKeyHex: String, overwriteOwner: Bool,
+                           isShared: Bool) async throws -> CertificateRecord
+    func claimCar(ownerPublicKey: String, vin: String, overwritePhoneRelation: Bool) async throws -> Data
+    func accountUUID() throws -> String
+    func accountEmail() -> String?
+}
+
+final class ToggAPI: ToggAPIClient {
+    private let store: SessionStoring
     private let session: URLSession
     private var refreshTask: Task<SessionTokens, Error>?
     private var generation = 0
@@ -66,13 +102,19 @@ final class ToggAPI {
         return URLSession(configuration: config, delegate: NoRedirects(), delegateQueue: nil)
     }()
 
-    init() {
-        let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 35
-        config.timeoutIntervalForResource = 50
-        config.httpCookieStorage = nil
-        config.urlCache = nil
-        session = URLSession(configuration: config, delegate: NoRedirects(), delegateQueue: nil)
+    init(session injected: URLSession? = nil, store: SessionStoring = SessionStore()) {
+        self.store = store
+        if let injected {
+            // Test enjeksiyonu: mock URLProtocol ile ağ davranışı denetlenebilir.
+            session = injected
+        } else {
+            let config = URLSessionConfiguration.ephemeral
+            config.timeoutIntervalForRequest = 35
+            config.timeoutIntervalForResource = 50
+            config.httpCookieStorage = nil
+            config.urlCache = nil
+            session = URLSession(configuration: config, delegate: NoRedirects(), delegateQueue: nil)
+        }
     }
 
     func hasSession() throws -> Bool { try store.load() != nil }

@@ -348,6 +348,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   — geçersiz değer `nil`, çağıran "—"/"—%" gösterir); saat, widget, pano ve
   uygulama menü çubuğu aynı yardımcıyı kullanır (+2 test). UserDefaults
   anahtar biçimleri `App/StorageKeys.swift`'te tek kaynağa alındı.
+- Test edilebilirlik temeli: `SessionStoring` protokolü (SessionStore
+  Keychain'den arayüze ayrıldı) ve `ToggAPIClient` protokolü eklendi;
+  `ToggAPI`'nin init'ine URLSession/SessionStore enjeksiyonu açıldı
+  (varsayılanlar üretim davranışını korur); `BleLinkCoordinator` api
+  bağımlılığı protokole genişletildi. Not: App katmanı birim testleri için
+  Xcode birim test hedefi gerekli (Tests/ yalnız Core SPM) — ayrı iş.
 - Proje değerlendirme raporu: `Docs/Proje-Degerlendirme-2026-11.md`
   (mimari/kalite/test/arayüz; App katmanı test ve DashboardView bölünmesi
   sonraki işler).

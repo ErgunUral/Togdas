@@ -21,7 +21,7 @@ final class BleLinkCoordinator: ObservableObject {
     @Published private(set) var silentRecovery = false
 
     private let ble: BleConnection
-    private let api: ToggAPI
+    private let api: ToggAPIClient
     private let preferences: GaragePreferences
     private var vin = ""
     private var isSharedVehicle = false
