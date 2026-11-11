@@ -140,7 +140,7 @@ struct WatchGarageView: View {
                             metric(telemetryFresh(at: now) ? trunkText : "Bagaj —", systemImage: "car.side")
                         }
                         HStack(spacing: 6) {
-                            metric(auxBatteryText, systemImage: "bolt.batteryblock")
+                            metric(auxBatteryText, systemImage: "bolt.batteryblock", tint: auxTint)
                             metric(odometerText, systemImage: "speedometer")
                         }
                     }
@@ -233,6 +233,14 @@ struct WatchGarageView: View {
         return "12V %\(Int(value.rounded()))"
     }
 
+    /// 12 V renk kuralı widget ile aynıdır (`AuxiliaryBatteryPolicy`):
+    /// ≤%25 kırmızı, ≤%40 turuncu; eksik veri (nil) renklenmez ("bilgi
+    /// yok" ≠ uyarı).
+    private var auxTint: Color? {
+        guard let assessment = AuxiliaryBatteryPolicy.assess(snapshot?.auxiliaryBatteryPercent) else { return nil }
+        return assessment.isCritical ? .red : .orange
+    }
+
     private var odometerText: String {
         guard let value = snapshot?.odometerKM else { return "— km" }
         return "\(Int(value.rounded()).formatted()) km"
@@ -292,9 +300,10 @@ struct WatchGarageView: View {
         }
     }
 
-    private func metric(_ text: String, systemImage: String) -> some View {
+    private func metric(_ text: String, systemImage: String, tint: Color? = nil) -> some View {
         Label(text, systemImage: systemImage)
             .font(.caption2.weight(.semibold))
+            .foregroundStyle(tint ?? .primary)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             .frame(maxWidth: .infinity, alignment: .leading)

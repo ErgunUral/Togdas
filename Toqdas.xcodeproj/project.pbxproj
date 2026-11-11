@@ -27,6 +27,8 @@
 		E4F5061728394A5B0C1D2E3F /* ProximityAutoCalibrationSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F5061728394A5B0C1D2E30 /* ProximityAutoCalibrationSuggester.swift */; };
 		1A2B3C4D5E6F0718293A4B5C /* AuxiliaryBatteryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */; };
 		5E6F0A1B2C3D48596A7B8C9D0E /* AuxiliaryBatteryHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5E6F0A1B2C3748495A6B7C8D /* AuxiliaryBatteryHistory.swift */; };
+		8B9C0D1E2F3A4B5C6D7E8F9A /* BleStatusWatchdog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8B9C0D1E2F3A4B5C6D7E8F /* BleStatusWatchdog.swift */; };
+		9C0D1E2F3A4B5C6D7E8F9A0B /* AuxiliaryBatteryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */; };
 		3C4D5E6F0A1B2738495A6B7C /* AuxiliaryBatteryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */; };
 		9E0F1A2B3C4D5E6F0A1B2C3D /* BleRestorePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9E0F1A2B3C4D5E6F0A1B2C /* BleRestorePlan.swift */; };
 		104A62617E10CDC2B0B03B56 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11854A761FC25AD5CF9F967 /* BLEProtocol.swift */; };
@@ -229,6 +231,7 @@
 		4D5E6F0A1B2C3748495A6B7C8D /* AuxiliaryBatteryHistory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AuxiliaryBatteryHistory.swift; path = Core/AuxiliaryBatteryHistory.swift; sourceTree = "<group>"; };
 		8A7B1C2D3E4F5A6B7C8D9E0F /* KeyValueStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeyValueStore.swift; path = Core/KeyValueStore.swift; sourceTree = "<group>"; };
 		5D4E8A7B1C2F3D4E5F6A7B8C /* CloudSnapshotStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CloudSnapshotStore.swift; path = Core/CloudSnapshotStore.swift; sourceTree = "<group>"; };
+		7A8B9C0D1E2F3A4B5C6D7E8F /* BleStatusWatchdog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleStatusWatchdog.swift; path = Core/BleStatusWatchdog.swift; sourceTree = "<group>"; };
 		266AF5BEEDC756597FF5C07D /* PhoneKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PhoneKeyStore.swift; path = Core/PhoneKeyStore.swift; sourceTree = "<group>"; };
 		2C03C4E5036E16BC226F6839 /* ToqdasSmokeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasSmokeTests.swift; path = UITests/ToqdasSmokeTests.swift; sourceTree = "<group>"; };
 		2E78CC5BA15E8412DB097101 /* ToqdasWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasWatchApp.swift; path = Watch/ToqdasWatchApp.swift; sourceTree = "<group>"; };
@@ -499,6 +502,7 @@
 				E5F5061728394A5B0C1D2E30 /* ProximityAutoCalibrationSuggester.swift */,
 				2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */,
 				4D5E6F0A1B2C3748495A6B7C8D /* AuxiliaryBatteryHistory.swift */,
+				7A8B9C0D1E2F3A4B5C6D7E8F /* BleStatusWatchdog.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -712,6 +716,7 @@
 				C614A7D049EC7F0F9A9AB2D7 /* BluetoothDiscovery.swift in Sources */,
 				9CBC366849E488FE1A0AC93C /* WatchLink.swift in Sources */,
 				0458E095B333ACDFBC5ED61F /* ToqdasWatchApp.swift in Sources */,
+				9C0D1E2F3A4B5C6D7E8F9A0B /* AuxiliaryBatteryPolicy.swift in Sources */,
 				4317E884109146BF8BB94813 /* VoiceCommand.swift in Sources */,
 				2BC29DA791506A09A071A7BB /* VoiceCommandParser.swift in Sources */,
 				576615B3E04219C9B996F314 /* VoiceCommandPolicy.swift in Sources */,
@@ -827,6 +832,7 @@
 				E4F5061728394A5B0C1D2E3F /* ProximityAutoCalibrationSuggester.swift in Sources */,
 				1A2B3C4D5E6F0718293A4B5C /* AuxiliaryBatteryPolicy.swift in Sources */,
 				5E6F0A1B2C3D48596A7B8C9D0E /* AuxiliaryBatteryHistory.swift in Sources */,
+				8B9C0D1E2F3A4B5C6D7E8F9A /* BleStatusWatchdog.swift in Sources */,
 				9E0F1A2B3C4D5E6F0A1B2C3D /* BleRestorePlan.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

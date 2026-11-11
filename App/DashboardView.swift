@@ -1767,6 +1767,12 @@ struct DashboardView: View {
                 ? "Uzun parklarda araç açılmayabilir; en kısa sürede şarj/bakım kontrolü önerilir."
                 : "Yakında şarj/bakım kontrolü önerilir.")
         content.sound = .default
+        // Kritik bandı time-sensitive taşınır: kilitli ekranda ve
+        // eşlenmiş saatte yoğun olmayan haptikle görünür (Critical Alerts
+        // yetkisi yok; kullanıcının bildirim ayarı geçerlidir).
+        if assessment.isCritical {
+            content.interruptionLevel = .timeSensitive
+        }
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         center.add(request, withCompletionHandler: nil)
     }

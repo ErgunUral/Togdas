@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 45 dosya, 369 birim testi; `UITests`: 1 dosya, 4 smoke testi.
+- `Tests`: 46 dosya, 375 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -335,6 +335,17 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 - Gizlilik: uygulama, watch ve widget hedeflerine `PrivacyInfo.xcprivacy`
   eklendi; UserDefaults ve dosya zaman damgası erişim gerekçeleri bildirildi.
   Veri akışı ve App Store öncesi eksikler `Docs/Gizlilik.md` içinde.
+- Faz 1 (Android .57.18 parite): `BleStatusWatchdog` (Android `j4` paritesi —
+  15 sn eşikler, `stale_telemetry_reconnect`/`first_status_timeout`, 3 deneme
+  eşiği; etiketler gösterim/günlük amaçlı, davranış `BleReconnectPolicy`'de)
+  + 6 test. Watch P1.1: 12 V metnine `AuxiliaryBatteryPolicy` renk bandı
+  (≤%25 kırmızı, ≤%40 turuncu; widget ile aynı kural). P1.3: kritik 12 V
+  bildirimine `interruptionLevel = .timeSensitive` (saatte haptikle düşer;
+  Critical Alerts yetkisi yok). Karşılaştırma raporu `Docs/Parite-Android57.18-iOS.md`.
+  Test sayısı 369 → 375.
+- Proje değerlendirme raporu: `Docs/Proje-Degerlendirme-2026-11.md`
+  (mimari/kalite/test/arayüz; App katmanı test ve DashboardView bölünmesi
+  sonraki işler).
 
 ## 9. İlkeler
 
