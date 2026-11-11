@@ -7,6 +7,9 @@ final class GaragePreferencesTests: XCTestCase {
         var values: [String: Any] = [:]
         func string(forKey key: String) -> String? { values[key] as? String }
         func bool(forKey key: String) -> Bool { values[key] as? Bool ?? false }
+        func object(forKey key: String) -> Any? { values[key] }
+        func integer(forKey key: String) -> Int { values[key] as? Int ?? 0 }
+        func data(forKey key: String) -> Data? { values[key] as? Data }
         func set(_ value: Any?, forKey key: String) {
             if let value { values[key] = value } else { values.removeValue(forKey: key) }
         }

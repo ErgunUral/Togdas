@@ -9,6 +9,9 @@ import Foundation
 protocol KeyValueStore: AnyObject {
     func string(forKey key: String) -> String?
     func bool(forKey key: String) -> Bool
+    func object(forKey key: String) -> Any?
+    func integer(forKey key: String) -> Int
+    func data(forKey key: String) -> Data?
     func set(_ value: Any?, forKey key: String)
     func removeObject(forKey key: String)
 }

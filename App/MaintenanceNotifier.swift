@@ -13,16 +13,17 @@ enum MaintenanceNotifier {
     }
 
     /// Yaklaşan ve gecikmiş bakımlar için bildirim gönderir.
-    /// Aynı bakım aynı gün içinde ikinci kez bildirilmez.
+    /// Aynı bakım aynı gün içinde ikinci kez bildirilmez
+    /// (`NotificationDedupe`; kayıt yalnız başarılı gönderimde yapılır).
     static func notify(items: [MaintenanceItem], odometer: Double, vin: String) {
         let center = UNUserNotificationCenter.current()
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
+        let dedupe = NotificationDedupe(store: UserDefaults.standard)
 
         for item in items {
             let notifyKey = StorageKeys.maintenanceNotified(vin, itemID: item.id)
-            let last = UserDefaults.standard.object(forKey: notifyKey) as? Date ?? .distantPast
-            guard !calendar.isDate(last, inSameDayAs: today) else { continue }
+            guard dedupe.shouldNotify(key: notifyKey, now: today) else { continue }
 
             let overdue = item.dueKm <= odometer
             let remaining = item.remainingKm(currentOdometer: odometer)
@@ -41,7 +42,7 @@ enum MaintenanceNotifier {
             )
             center.add(request) { error in
                 if error == nil {
-                    UserDefaults.standard.set(today, forKey: notifyKey)
+                    dedupe.record(key: notifyKey, now: today)
                 }
             }
         }
@@ -50,8 +51,7 @@ enum MaintenanceNotifier {
     /// Bakım silindiğinde/tamamlandığında bekleyen bildirimleri temizler.
     static func cancel(itemIDs: [UUID], vin: String) {
         let identifiers = itemIDs.flatMap { id -> [String] in
-            let notifyKey = StorageKeys.maintenanceNotified(vin, itemID: id)
-            UserDefaults.standard.removeObject(forKey: notifyKey)
+            NotificationDedupe(store: UserDefaults.standard).reset(key: StorageKeys.maintenanceNotified(vin, itemID: id))
             return [id.uuidString]
         }
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: identifiers)

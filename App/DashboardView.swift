@@ -127,15 +127,13 @@ struct DashboardView: View {
         let alerts = policy.alerts(for: tires)
         guard !alerts.isEmpty else { return }
 
-        // Aynı lastik için günde bir kez bildirim.
-        let calendar = Calendar.current
+        // Aynı lastik için günde bir kez bildirim (`NotificationDedupe`).
         let vin = vehicle.vin
         var notifiedAny = false
         for alert in alerts {
             let key = StorageKeys.tireNotified(vin, position: alert.position.rawValue, severity: String(describing: alert.severity))
-            let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
-            guard !calendar.isDate(last, inSameDayAs: Date()) else { continue }
-            UserDefaults.standard.set(Date(), forKey: key)
+            guard notificationDedupe.shouldNotify(key: key) else { continue }
+            notificationDedupe.record(key: key)
             notifiedAny = true
         }
         guard notifiedAny else { return }
@@ -1746,6 +1744,10 @@ struct DashboardView: View {
     /// taze telemetri kaydı yapılır, eksik gün "—" kalır.
     @State private var auxiliaryHistory = AuxiliaryBatteryHistory()
 
+    /// 12 V geçmiş ve bildirim tekniği ortak altyapısı (Core; testli).
+    private let auxiliaryHistoryStore = AuxiliaryBatteryHistoryStore(store: UserDefaults.standard)
+    private let notificationDedupe = NotificationDedupe(store: UserDefaults.standard)
+
     private func checkAuxiliaryBattery(_ percent: Double?) {
         // Geçmiş kaydı uyarıdan bağımsızdır: sağlıklı değer (> %40) de günün
         // en güncel ölçümü olarak yazılır; eksik/aralık dışı değer record
@@ -1755,10 +1757,8 @@ struct DashboardView: View {
         }
         guard let assessment = AuxiliaryBatteryPolicy.assess(percent) else { return }
         let key = StorageKeys.auxiliaryNotified(vehicle.vin, severity: assessment.severity == .critical ? "critical" : "warning")
-        let calendar = Calendar.current
-        let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
-        guard !calendar.isDate(last, inSameDayAs: Date()) else { return }
-        UserDefaults.standard.set(Date(), forKey: key)
+        guard notificationDedupe.shouldNotify(key: key) else { return }
+        notificationDedupe.record(key: key)
 
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
@@ -1786,17 +1786,11 @@ struct DashboardView: View {
     /// yazımı yapılmaz).
     private var storedAuxiliaryHistory: AuxiliaryBatteryHistory {
         if !auxiliaryHistory.samples.isEmpty { return auxiliaryHistory }
-        if let data = UserDefaults.standard.data(forKey: auxiliaryHistoryKey),
-           let history = try? JSONDecoder().decode(AuxiliaryBatteryHistory.self, from: data) {
-            return history
-        }
-        return AuxiliaryBatteryHistory()
+        return auxiliaryHistoryStore.load(key: auxiliaryHistoryKey)
     }
 
     private func saveAuxiliaryHistory() {
-        if let data = try? JSONEncoder().encode(auxiliaryHistory) {
-            UserDefaults.standard.set(data, forKey: auxiliaryHistoryKey)
-        }
+        auxiliaryHistoryStore.save(auxiliaryHistory, key: auxiliaryHistoryKey)
     }
 
     private var auxiliaryHistoryLine: String? {

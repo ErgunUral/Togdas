@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 46 dosya, 377 birim testi; `UITests`: 1 dosya, 4 smoke testi.
+- `Tests`: 48 dosya, 387 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -361,6 +361,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   `struct`, `DashboardCommand` dahil); davranış/yeniden adlandırma yok.
   `DashboardView.swift` 3592 → 2567 satır. Faz B (ViewModel'e iş mantığı)
   ayrı oturumda.
+- Faz B1 (iş mantığı Core'a): `NotificationDedupe` (anahtar başına günde
+  bir kez bildirim; aux/tire/bakım tek kaynağı) ve
+  `AuxiliaryBatteryHistoryStore` (12 V geçmiş kalıcılığı, `KeyValueStore`
+  enjeksiyonu) eklendi (+10 test, bozuk veri boş geçmiş döner);
+  `KeyValueStore` protokolüne `object/integer/data` üyeleri eklendi.
+  DashboardView ve MaintenanceNotifier yeni tiplere bağlandı; davranış
+  birebir korundu (bakımda kayıt yalnız başarılı gönderimde). Test 377 → 387.
 - Proje değerlendirme raporu: `Docs/Proje-Degerlendirme-2026-11.md`
   (mimari/kalite/test/arayüz; App katmanı test ve DashboardView bölünmesi
   sonraki işler).
