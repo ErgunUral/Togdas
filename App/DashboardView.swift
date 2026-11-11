@@ -1745,9 +1745,13 @@ struct DashboardView: View {
     @State private var auxiliaryHistory = AuxiliaryBatteryHistory()
 
     private func checkAuxiliaryBattery(_ percent: Double?) {
+        // Geçmiş kaydı uyarıdan bağımsızdır: sağlıklı değer (> %40) de günün
+        // en güncel ölçümü olarak yazılır; eksik/aralık dışı değer record
+        // içinde reddedilir. Uyarı değerlendirmesi yalnız bildirimi yönetir.
+        if auxiliaryHistory.record(percent: percent, on: Date()) {
+            saveAuxiliaryHistory()
+        }
         guard let assessment = AuxiliaryBatteryPolicy.assess(percent) else { return }
-        auxiliaryHistory.record(percent: percent, on: Date())
-        saveAuxiliaryHistory()
         let key = "toqdas.auxbattery.notified.\(vehicle.vin).\(assessment.severity == .critical ? "critical" : "warning")"
         let calendar = Calendar.current
         let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
@@ -1769,13 +1773,16 @@ struct DashboardView: View {
 
     private var auxiliaryHistoryKey: String { "toqdas.aux.history.\(vehicle.vin)" }
 
-    private func loadAuxiliaryHistory() {
-        guard let data = UserDefaults.standard.data(forKey: auxiliaryHistoryKey),
-              let history = try? JSONDecoder().decode(AuxiliaryBatteryHistory.self, from: data) else {
-            auxiliaryHistory = AuxiliaryBatteryHistory()
-            return
+    /// Görüntü için geçmiş: taze kayıt varsa state; yoksa kayıtlı veri.
+    /// Bilinçli olarak salt-okunurdur (body değerlendirmesinde state
+    /// yazımı yapılmaz).
+    private var storedAuxiliaryHistory: AuxiliaryBatteryHistory {
+        if !auxiliaryHistory.samples.isEmpty { return auxiliaryHistory }
+        if let data = UserDefaults.standard.data(forKey: auxiliaryHistoryKey),
+           let history = try? JSONDecoder().decode(AuxiliaryBatteryHistory.self, from: data) {
+            return history
         }
-        auxiliaryHistory = history
+        return AuxiliaryBatteryHistory()
     }
 
     private func saveAuxiliaryHistory() {
@@ -1785,20 +1792,9 @@ struct DashboardView: View {
     }
 
     private var auxiliaryHistoryLine: String? {
-        loadAuxiliaryHistoryIfNeeded()
-        let values = auxiliaryHistory.displayValues(count: 3, today: Date())
+        let values = storedAuxiliaryHistory.displayValues(count: 3, today: Date())
         guard values.contains(where: { $0 != "—" }) else { return nil }
         return "Son 3 gün (12 V): " + values.joined(separator: " · ")
-    }
-
-    private func loadAuxiliaryHistoryIfNeeded() {
-        // Geçmiş günler yalnız taze telemetri akışında yazılır; kartın
-        // her çiziminde önbellek + kayıtlı veri birleşir.
-        if auxiliaryHistory.samples.isEmpty,
-           let data = UserDefaults.standard.data(forKey: auxiliaryHistoryKey),
-           let history = try? JSONDecoder().decode(AuxiliaryBatteryHistory.self, from: data) {
-            auxiliaryHistory = history
-        }
     }
 
     private func approve(_ command: DashboardCommand) {
