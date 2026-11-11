@@ -10,7 +10,7 @@ değildir; BLE protokolü, sertifika akışı ve saha doğrulamaları korunacakt
 
 - `App`: 29 Swift dosyası, yaklaşık 11.258 satır.
 - `Core`: 41 Swift dosyası, yaklaşık 7.676 satır.
-- `Tests`: 46 dosya, 375 birim testi; `UITests`: 1 dosya, 4 smoke testi.
+- `Tests`: 46 dosya, 377 birim testi; `UITests`: 1 dosya, 4 smoke testi.
 - `App/DashboardView.swift`: 3.208 satır, 58 `@State`.
 - `Core/BleConnection.swift`: 1.445 satır, 17 `@Published`.
 - `App/ToqdasApp.swift`: 615 satır; `GarageModel` ve `GarageView` aynı dosyada.
@@ -344,6 +344,10 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   Critical Alerts yetkisi yok). Karşılaştırma raporu `Docs/Parite-Android57.18-iOS.md`.
   Test sayısı 369 → 375. Gözcü `BleLinkCoordinator`'a bağlandı (`ble_watchdog ·`
   önekiyle tanı günlüğü; etiket değiştiğinde yazar, bağlantı eylemi tetiklemez).
+- 12 V metin formatı tek kaynağa alındı (`AuxiliaryBatteryPolicy.percentText`
+  — geçersiz değer `nil`, çağıran "—"/"—%" gösterir); saat, widget, pano ve
+  uygulama menü çubuğu aynı yardımcıyı kullanır (+2 test). UserDefaults
+  anahtar biçimleri `App/StorageKeys.swift`'te tek kaynağa alındı.
 - Proje değerlendirme raporu: `Docs/Proje-Degerlendirme-2026-11.md`
   (mimari/kalite/test/arayüz; App katmanı test ve DashboardView bölünmesi
   sonraki işler).

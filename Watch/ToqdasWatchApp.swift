@@ -230,7 +230,7 @@ struct WatchGarageView: View {
 
     private var auxBatteryText: String {
         guard let value = snapshot?.auxiliaryBatteryPercent else { return "12V —" }
-        return "12V %\(Int(value.rounded()))"
+        return "12V \(AuxiliaryBatteryPolicy.percentText(value) ?? "—")"
     }
 
     /// 12 V renk kuralı widget ile aynıdır (`AuxiliaryBatteryPolicy`):

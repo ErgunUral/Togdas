@@ -15,6 +15,7 @@ import Foundation
 /// - Yüzdeler tamsayıya yuvarlanarak gösterilir; metreye/menzile çevrim
 ///   yapılmaz.
 struct AuxiliaryBatteryAssessment: Equatable {
+
     enum Severity: Equatable {
         case critical
         case warning
@@ -42,5 +43,13 @@ enum AuxiliaryBatteryPolicy {
             return AuxiliaryBatteryAssessment(percent: rounded, severity: .warning)
         }
         return nil
+    }
+
+    /// Gösterim metni: yüzdeler tamsayıya yuvarlanır ("%25"). Geçersiz
+    /// değer `nil` döner — çağıran kendi "bilgi yok" metnini ("—", "—%")
+    /// seçer; asla 0 gösterilmez.
+    static func percentText(_ value: Double) -> String? {
+        guard value.isFinite, value >= 0, value <= 100 else { return nil }
+        return "%\(Int(value.rounded()))"
     }
 }

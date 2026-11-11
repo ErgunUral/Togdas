@@ -626,7 +626,7 @@ struct VehicleDetail: View {
                         .accessibilityLabel("Batarya yüzde \(Int(percent.rounded()))")
                 }
                 if let auxiliary = telemetry?.auxiliaryBatteryPercent {
-                    Label("12 V akü: %\(Int(auxiliary.rounded()))", systemImage: "bolt.batteryblock")
+                    Label("12 V akü: \(AuxiliaryBatteryPolicy.percentText(auxiliary) ?? "—")", systemImage: "bolt.batteryblock")
                         .font(.subheadline)
                 }
                 if let receivedAt {

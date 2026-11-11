@@ -34,4 +34,18 @@ final class AuxiliaryBatteryPolicyTests: XCTestCase {
         // 24.6 → 25 → kritik eşik dahil.
         XCTAssertEqual(AuxiliaryBatteryPolicy.assess(24.6)?.severity, .critical)
     }
+
+    func testPercentTextValidValues() {
+        XCTAssertEqual(AuxiliaryBatteryPolicy.percentText(24.6), "%25")
+        XCTAssertEqual(AuxiliaryBatteryPolicy.percentText(0), "%0")
+        XCTAssertEqual(AuxiliaryBatteryPolicy.percentText(100), "%100")
+    }
+
+    func testPercentTextInvalidValuesReturnNil() {
+        // Geçersiz değer asla "%0"ya düşmez; çağıran "bilgi yok" gösterir.
+        XCTAssertNil(AuxiliaryBatteryPolicy.percentText(-1))
+        XCTAssertNil(AuxiliaryBatteryPolicy.percentText(101))
+        XCTAssertNil(AuxiliaryBatteryPolicy.percentText(.nan))
+        XCTAssertNil(AuxiliaryBatteryPolicy.percentText(.infinity))
+    }
 }

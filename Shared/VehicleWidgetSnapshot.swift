@@ -50,7 +50,7 @@ struct VehicleWidgetSnapshot: Codable, Equatable {
               auxiliaryBatteryPercent >= 0, auxiliaryBatteryPercent <= 100 else {
             return "—%"
         }
-        return "%\(Int(auxiliaryBatteryPercent.rounded()))"
+        return AuxiliaryBatteryPolicy.percentText(auxiliaryBatteryPercent) ?? "—%"
     }
 
     var displayChargeSpend: String {

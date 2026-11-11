@@ -3224,7 +3224,7 @@ private struct VehicleHealthCard: View {
             }
 
             HStack(spacing: 12) {
-                statBox(title: "12 V Akü", value: auxiliaryBattery.map { "%\(Int($0.rounded()))" } ?? "—",
+                statBox(title: "12 V Akü", value: auxiliaryBattery.flatMap { AuxiliaryBatteryPolicy.percentText($0) } ?? "—",
                         icon: "car.battery", color: ToggTheme.teal)
                 statBox(title: "Şarj Durumu", value: chargingState,
                         icon: "bolt.circle", color: ToggTheme.cyan)
