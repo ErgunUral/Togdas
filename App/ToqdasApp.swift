@@ -21,6 +21,8 @@ final class GarageModel: ObservableObject {
     let link: BleLinkCoordinator
     let geofence = GeofenceManager()
     private var watchCancellables = Set<AnyCancellable>()
+    /// Saat snapshot gönderim darboğazı (değişim + 30 sn minimum aralık).
+    private var watchSnapshotThrottle = WatchSnapshotThrottle()
     let cloudStore = CloudSnapshotStore()
     let cloud = CloudTelemetryStore()
     private var lastWidgetReloadAt = Date.distantPast
@@ -417,7 +419,7 @@ final class GarageModel: ObservableObject {
         }
         let telemetry = ble.telemetry
         let age = telemetry.map { Date().timeIntervalSince($0.receivedAt) }
-        watch.publish(snapshot: WatchSnapshot(
+        publishSnapshotIfChanged(WatchSnapshot(
             vin: vin,
             vehicleName: vehicle.title,
             locked: telemetry?.isLocked,
@@ -440,6 +442,18 @@ final class GarageModel: ObservableObject {
             lastCommandText: lastCommandText
         ))
         refreshCloudIfStale()
+    }
+
+    /// Saat darboğazı: değer değişmedikçe/minimum aralık dolmadan
+    /// application context yazılmaz (saat pili). Önemli alan değişimi
+    /// (bağlantı durumu, komut sonucu) hemen geçer.
+    private func publishSnapshotIfChanged(_ snapshot: WatchSnapshot) {
+        guard watchSnapshotThrottle.shouldSend(
+            now: Date(),
+            fingerprint: snapshot.displayFingerprint,
+            importantFingerprint: snapshot.importantFingerprint
+        ) else { return }
+        watch.publish(snapshot: snapshot)
     }
 
     /// Widget'e yalnızca gösterim için araç adı ve telemetri özeti yazar.

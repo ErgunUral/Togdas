@@ -66,8 +66,7 @@ struct WatchSnapshot: Codable {
         self.lastCommandText = lastCommandText
     }
 
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
+    init(from decoder: Decoder) throws {        let c = try decoder.container(keyedBy: CodingKeys.self)
         vin = try c.decode(String.self, forKey: .vin)
         vehicleName = try c.decode(String.self, forKey: .vehicleName)
         locked = try c.decodeIfPresent(Bool.self, forKey: .locked)
@@ -88,5 +87,46 @@ struct WatchSnapshot: Codable {
         proximityEnabled = try c.decodeIfPresent(Bool.self, forKey: .proximityEnabled) ?? false
         recovering = try c.decodeIfPresent(Bool.self, forKey: .recovering)
         lastCommandText = try c.decodeIfPresent(String.self, forKey: .lastCommandText)
+    }
+}
+
+// MARK: - Gönderim darboğazı parmak izleri
+
+extension WatchSnapshot {
+    /// Saate gönderim kararında kullanılan gösterim parmak izi.
+    /// Zaman damgaları (`updatedAt`, `telemetryAge`) bilinçli dışarıda:
+    /// sürekli değişirler ve darboğaz kararını sürüklerler.
+    var displayFingerprint: String {
+        var parts: [String] = []
+        parts.append(vin)
+        parts.append(vehicleName)
+        parts.append(locked.map { String($0) } ?? "n")
+        parts.append(String(doorCount))
+        parts.append(String(openDoors))
+        parts.append(trunkAjar.map { String($0) } ?? "n")
+        parts.append(powerState.map { String($0) } ?? "n")
+        parts.append(String(ready))
+        parts.append(bleState)
+        parts.append(batteryPercent.map { String($0) } ?? "n")
+        parts.append(rangeKM.map { String($0) } ?? "n")
+        parts.append(outsideTemperatureC.map { String($0) } ?? "n")
+        parts.append(auxiliaryBatteryPercent.map { String($0) } ?? "n")
+        parts.append(odometerKM.map { String($0) } ?? "n")
+        parts.append(chargingState ?? "n")
+        parts.append(String(proximityEnabled))
+        parts.append(recovering.map { String($0) } ?? "n")
+        parts.append(lastCommandText ?? "n")
+        return parts.joined(separator: "|")
+    }
+
+    /// Darboğaza takılmadan hemen gönderilmesini gerektiren alanların
+    /// parmak izi: bağlantı/komut durumu anında gitmeli.
+    var importantFingerprint: String {
+        var parts: [String] = []
+        parts.append(String(ready))
+        parts.append(bleState)
+        parts.append(lastCommandText ?? "n")
+        parts.append(recovering.map { String($0) } ?? "n")
+        return parts.joined(separator: "|")
     }
 }

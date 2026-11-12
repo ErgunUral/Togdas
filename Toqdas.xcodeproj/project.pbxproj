@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		C0A1B2C3D4E5061728394A16 /* WatchComplicationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A1B2C3D4E5061728394A11 /* WatchComplicationStore.swift */; };
+		940D0BCBB340B016F1FFC382 /* WatchSnapshotThrottle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCE54B172EFC4782ADC217C1 /* WatchSnapshotThrottle.swift */; };
+		B9F50718B5D0B377D8C5E301 /* WatchSnapshotThrottle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCE54B172EFC4782ADC217C1 /* WatchSnapshotThrottle.swift */; };
 		C0A1B2C3D4E5061728394A15 /* WatchSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */; };
 		C0A1B2C3D4E5061728394A14 /* AuxiliaryBatteryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */; };
 		C0A1B2C3D4E5061728394A02 /* ToqdasWatchWidget.appex in Embed Watch Widgets */ = {isa = PBXBuildFile; fileRef = C0A1B2C3D4E5061728394A01 /* ToqdasWatchWidget.appex */; };
@@ -376,6 +378,7 @@
 		C0A1B2C3D4E5061728394A0D /* ToqdasWatchWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasWatchWidget.swift; path = Watch/Widget/ToqdasWatchWidget.swift; sourceTree = "<group>"; };
 		C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchSnapshot.swift; path = Shared/WatchSnapshot.swift; sourceTree = "<group>"; };
 		C0A1B2C3D4E5061728394A11 /* WatchComplicationStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchComplicationStore.swift; path = Core/WatchComplicationStore.swift; sourceTree = "<group>"; };
+		DCE54B172EFC4782ADC217C1 /* WatchSnapshotThrottle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchSnapshotThrottle.swift; path = Core/WatchSnapshotThrottle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -835,6 +838,7 @@
 				9CBC366849E488FE1A0AC93C /* WatchLink.swift in Sources */,
 				C0A1B2C3D4E5061728394A10 /* WatchSnapshot.swift in Sources */,
 				C0A1B2C3D4E5061728394A12 /* WatchComplicationStore.swift in Sources */,
+				940D0BCBB340B016F1FFC382 /* WatchSnapshotThrottle.swift in Sources */,
 				0458E095B333ACDFBC5ED61F /* ToqdasWatchApp.swift in Sources */,
 				9C0D1E2F3A4B5C6D7E8F9A0B /* AuxiliaryBatteryPolicy.swift in Sources */,
 				4317E884109146BF8BB94813 /* VoiceCommand.swift in Sources */,
@@ -911,6 +915,7 @@
 				768BE458489998C0C6392676 /* WatchLink.swift in Sources */,
 				C0A1B2C3D4E5061728394A15 /* WatchSnapshot.swift in Sources */,
 				C0A1B2C3D4E5061728394A16 /* WatchComplicationStore.swift in Sources */,
+				B9F50718B5D0B377D8C5E301 /* WatchSnapshotThrottle.swift in Sources */,
 				E2C77100638F03D023917A1A /* VoiceCommand.swift in Sources */,
 				BD0BBD5CD2C6D7F467B88621 /* VoiceCommandParser.swift in Sources */,
 				F5D5C31BD023B399FEE9614C /* VoiceCommandPolicy.swift in Sources */,
@@ -983,6 +988,7 @@
 				C0A1B2C3D4E5061728394A0E /* ToqdasWatchWidget.swift in Sources */,
 				C0A1B2C3D4E5061728394A10 /* WatchSnapshot.swift in Sources */,
 				C0A1B2C3D4E5061728394A12 /* WatchComplicationStore.swift in Sources */,
+				940D0BCBB340B016F1FFC382 /* WatchSnapshotThrottle.swift in Sources */,
 				C0A1B2C3D4E5061728394A14 /* AuxiliaryBatteryPolicy.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
