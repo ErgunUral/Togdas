@@ -595,6 +595,10 @@ struct GarageView: View {
         }
         .preferredColorScheme(.dark)
         .tint(ToggTheme.teal)
+        // Tip ölçeği (ToggTheme.text) Dynamic Type'a uyumlu; kart düzgünü
+        // çok adımlı erişilebilirlik büyümelerinde taşar — standart adımlar
+        // desteklenir, ötesi sınırlanır (VoiceOver etiketleri telafi eder).
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 
     private var emptyGarage: some View {

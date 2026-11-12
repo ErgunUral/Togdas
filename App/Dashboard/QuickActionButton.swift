@@ -21,15 +21,15 @@ struct QuickActionButton: View {
                         .fill(active ? activeColor : ToggTheme.outline.opacity(0.3))
                         .frame(width: 40, height: 40)
                     Image(systemName: icon)
-                        .font(.system(size: 18))
+                        .font(ToggTheme.text(.headline))
                         .foregroundStyle(active ? .black : .white)
                 }
                 Text(title)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(ToggTheme.text(.caption, weight: .bold))
                     .foregroundStyle(active ? activeColor : .white)
                     .lineLimit(1).minimumScaleFactor(0.7)
                 Text(subtitle)
-                    .font(.system(size: 10))
+                    .font(ToggTheme.text(.micro))
                     .foregroundStyle(ToggTheme.muted)
                     .lineLimit(1).minimumScaleFactor(0.7)
             }

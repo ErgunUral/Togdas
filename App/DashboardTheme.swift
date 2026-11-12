@@ -113,6 +113,55 @@ enum ToggTheme {
     }
 }
 
+/// Adlandırılmış metin ölçeği: eskiden `App` genelinde 20'den fazla sabit
+/// `.system(size:)` değeri kullanılıyordu (yalnız DashboardView'da 99);
+/// bunlar tek ölçek tablosuna taşındı. SwiftUI semantik stil temelli
+/// olduğu için Dynamic Type otomatik çalışır; varsayılan boyut eski
+/// sabit boyuta en yakın değerdir.
+///
+/// Kasıtlı sınırlar:
+/// - Monospace meta satırları (parmak izi, saat damgası) ölçek tablosuna
+///   girmez: sabit boyut kalır, satır hizası kaymasın.
+/// - Dashboard kökünde Dynamic Type `xxxLarge` ile sınırlanır: kart
+///   düzgünü çok adımlı büyümede taşar; VoiceOver etiketleri telafi eder.
+enum ToggText {
+    /// 9–10pt → `.caption2` (iOS'un en küçük semantik stili; 12pt taban).
+    case micro
+    /// 11–12pt → `.footnote` (13pt taban).
+    case caption
+    /// 13–14pt → `.subheadline` (15pt taban).
+    case body
+    /// 15–16pt → `.callout` (16pt taban).
+    case lead
+    /// 17–18pt → `.body` (17pt taban).
+    case headline
+    /// 20–22pt → `.title3` (20pt taban).
+    case title
+    /// 24pt+ → `.title2` (22pt taban).
+    case display
+
+    var textStyle: Font.TextStyle {
+        switch self {
+        case .micro: return .caption2
+        case .caption: return .footnote
+        case .body: return .subheadline
+        case .lead: return .callout
+        case .headline: return .body
+        case .title: return .title3
+        case .display: return .title2
+        }
+    }
+}
+
+extension ToggTheme {
+    /// Ölçek tablosundan semantik font; ağırlık korunur. `Font.system(_:design:)`
+    /// iOS 16.1+ olduğu için tasarım parametresi bilinçli yok (kapsamda
+    /// rounded/serif kullanım yok; gerekirse 16.1 guard ile eklenir).
+    static func text(_ style: ToggText, weight: Font.Weight = .regular) -> Font {
+        Font.system(style.textStyle).weight(weight)
+    }
+}
+
 extension Color {
     init(hex: UInt32) {
         self.init(

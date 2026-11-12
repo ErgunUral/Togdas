@@ -11,7 +11,7 @@ struct PremiumControlsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Cam ve Güvenlik")
-                .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
 
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 10) {
@@ -27,16 +27,16 @@ struct PremiumControlsSection: View {
 
                 HStack(spacing: 10) {
                     Image(systemName: "sun.max")
-                        .font(.system(size: 17)).foregroundStyle(ToggTheme.muted)
+                        .font(ToggTheme.text(.headline)).foregroundStyle(ToggTheme.muted)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Panoramik cam tavan").font(.system(size: 12, weight: .semibold))
+                        Text("Panoramik cam tavan").font(ToggTheme.text(.caption, weight: .semibold))
                             .foregroundStyle(.white)
-                        Text("Araç protokolünde komut yok").font(.system(size: 10))
+                        Text("Araç protokolünde komut yok").font(ToggTheme.text(.micro))
                             .foregroundStyle(ToggTheme.muted)
                     }
                     Spacer()
                     Text("Desteklenmiyor")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(ToggTheme.text(.micro, weight: .bold))
                         .foregroundStyle(ToggTheme.muted)
                         .padding(.horizontal, 8).padding(.vertical, 4)
                         .background(Capsule().fill(ToggTheme.muted.opacity(0.15)))
@@ -47,16 +47,16 @@ struct PremiumControlsSection: View {
 
                 HStack(spacing: 10) {
                     Image(systemName: "shield.lefthalf.filled")
-                        .font(.system(size: 17)).foregroundStyle(ToggTheme.muted)
+                        .font(ToggTheme.text(.headline)).foregroundStyle(ToggTheme.muted)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Nöbetçi (Sentry) güvenlik").font(.system(size: 12, weight: .semibold))
+                        Text("Nöbetçi (Sentry) güvenlik").font(ToggTheme.text(.caption, weight: .semibold))
                             .foregroundStyle(.white)
-                        Text("Araç API'sinde açma/kapama yok").font(.system(size: 10))
+                        Text("Araç API'sinde açma/kapama yok").font(ToggTheme.text(.micro))
                             .foregroundStyle(ToggTheme.muted)
                     }
                     Spacer()
                     Text("Desteklenmiyor")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(ToggTheme.text(.micro, weight: .bold))
                         .foregroundStyle(ToggTheme.muted)
                         .padding(.horizontal, 8).padding(.vertical, 4)
                         .background(Capsule().fill(ToggTheme.muted.opacity(0.15)))
@@ -78,11 +78,11 @@ struct PremiumControlsSection: View {
                               color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color)
+                Image(systemName: icon).font(ToggTheme.text(.lead)).foregroundStyle(color)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(title).font(.system(size: 10, weight: .bold)).foregroundStyle(.white)
+                    Text(title).font(ToggTheme.text(.micro, weight: .bold)).foregroundStyle(.white)
                         .lineLimit(1).minimumScaleFactor(0.7)
-                    Text(subtitle).font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                    Text(subtitle).font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                         .lineLimit(1).minimumScaleFactor(0.7)
                 }
                 Spacer(minLength: 0)

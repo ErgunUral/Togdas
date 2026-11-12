@@ -54,21 +54,21 @@ struct DashboardHeader: View {
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 15)).foregroundStyle(ToggTheme.teal)
+                        .font(ToggTheme.text(.lead)).foregroundStyle(ToggTheme.teal)
                     Text(email)
-                        .font(.system(size: 12, weight: .bold)).foregroundStyle(ToggTheme.teal)
+                        .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(ToggTheme.teal)
                         .lineLimit(1)
                 }
                 Spacer()
                 Text("Togg ID Aktif")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(ToggTheme.text(.micro, weight: .bold))
                     .foregroundStyle(ToggTheme.green)
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(RoundedRectangle(cornerRadius: 6).fill(ToggTheme.green.opacity(0.15)))
 
                 Button(action: onOpenVoice) {
                     Image(systemName: "mic.fill")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(ToggTheme.text(.body, weight: .bold))
                         .foregroundStyle(ToggTheme.teal)
                         .frame(width: 34, height: 30)
                         .background(RoundedRectangle(cornerRadius: 8).fill(ToggTheme.surfaceVariant))
@@ -80,26 +80,26 @@ struct DashboardHeader: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 8) {
                         Text("TRUMORE")
-                            .font(.system(size: 22, weight: .black))
+                            .font(ToggTheme.text(.title, weight: .black))
                             .tracking(2)
                             .foregroundStyle(ToggTheme.teal)
                         Text(badge)
-                            .font(.system(size: 11, weight: .bold))
+                            .font(ToggTheme.text(.caption, weight: .bold))
                             .foregroundStyle(Color(hex: 0x86F8F0))
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(RoundedRectangle(cornerRadius: 4).fill(ToggTheme.tealContainer))
                     }
                     HStack(spacing: 4) {
                         Image(systemName: "car.side.fill")
-                            .font(.system(size: 12)).foregroundStyle(ToggTheme.teal)
+                            .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.teal)
                         Text("\(vehicle.title) • \(vehicle.plate.isEmpty ? vehicle.vin : vehicle.plate)")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(ToggTheme.text(.caption, weight: .semibold))
                             .foregroundStyle(ToggTheme.muted)
                             .lineLimit(1)
                     }
                     if vehicle.isShared {
                         Label("Paylaşılan araç · sahip devri yok", systemImage: "person.2.fill")
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(ToggTheme.text(.micro, weight: .semibold))
                             .foregroundStyle(ToggTheme.teal)
                     }
                 }
@@ -109,9 +109,9 @@ struct DashboardHeader: View {
                         Circle()
                             .fill(connected ? (telemetryIsFresh ? ToggTheme.green : ToggTheme.orange) : ToggTheme.pink)
                             .frame(width: 7, height: 7)
-                        Image(systemName: "wifi").font(.system(size: 12)).foregroundStyle(ToggTheme.teal)
+                        Image(systemName: "wifi").font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.teal)
                         Text(connected ? (telemetryIsFresh ? "Aracım Bağlı" : "Son Veri") : "Veri yok")
-                            .font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
+                            .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(.white)
                     }
                     .padding(.horizontal, 10).padding(.vertical, 7)
                     .background(Capsule().fill(ToggTheme.surfaceVariant))
@@ -154,7 +154,7 @@ struct DashboardHeader: View {
                         Button("Çıkış yap", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) { onLogout() }
                     } label: {
                         Image(systemName: "gearshape.fill")
-                            .font(.system(size: 16))
+                            .font(ToggTheme.text(.lead))
                             .foregroundStyle(ToggTheme.teal)
                             .frame(width: 32, height: 32)
                     }
@@ -167,11 +167,11 @@ struct DashboardHeader: View {
                         Image(systemName: telemetryIsFresh
                               ? "sensor.tag.radiowaves.forward.fill"
                               : "clock.arrow.circlepath")
-                            .font(.system(size: 13)).foregroundStyle(telemetryColor)
+                            .font(ToggTheme.text(.body)).foregroundStyle(telemetryColor)
                         Text(telemetryLabel)
-                            .font(.system(size: 11, weight: .bold)).foregroundStyle(telemetryColor)
+                            .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(telemetryColor)
                         Text(updatedText)
-                            .font(.system(size: 11)).foregroundStyle(ToggTheme.muted)
+                            .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
                     }
                     Spacer()
                     if busy {
@@ -179,9 +179,9 @@ struct DashboardHeader: View {
                     } else {
                         HStack(spacing: 4) {
                             Image(systemName: "location.fill")
-                                .font(.system(size: 11)).foregroundStyle(ToggTheme.teal)
+                                .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.teal)
                             Text(location ?? "Konum yok")
-                                .font(.system(size: 10, weight: .medium)).foregroundStyle(.white)
+                                .font(ToggTheme.text(.micro, weight: .medium)).foregroundStyle(.white)
                                 .lineLimit(1).minimumScaleFactor(0.75)
                         }
                     }

@@ -14,6 +14,10 @@ struct ClimateCard: View {
     let onToggle: () -> Void
     let onApplyTemperature: () -> Void
 
+    /// Hero sıcaklık sayısı: 38pt sabit boyut ölçek tablosuna girmeyecek
+    /// kadar büyük; `@ScaledMetric` ile Dynamic Type'a oranlı büyür.
+    @ScaledMetric(relativeTo: .title) private var heroTemperatureSize: CGFloat = 38
+
     private var subtitle: String {
         if busy { return "İşlem sürüyor…" }
         if !known { return "Durum bilinmiyor · dokunarak dene" }
@@ -29,14 +33,14 @@ struct ClimateCard: View {
                             .fill(isOn ? ToggTheme.cyan.opacity(0.2) : ToggTheme.surfaceVariant)
                             .frame(width: 36, height: 36)
                         Image(systemName: "snowflake")
-                            .font(.system(size: 18))
+                            .font(ToggTheme.text(.headline))
                             .foregroundStyle(isOn ? ToggTheme.cyan : ToggTheme.muted)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Klima & İklimlendirme")
-                            .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                            .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
                         Text(subtitle)
-                            .font(.system(size: 12)).foregroundStyle(ToggTheme.muted)
+                            .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
                     }
                 }
                 Spacer()
@@ -62,10 +66,10 @@ struct ClimateCard: View {
                 Spacer()
                 VStack(spacing: 2) {
                     Text("\(TurkishFormat.decimal(temperature, digits: 1))°C")
-                        .font(.system(size: 38, weight: .black))
+                        .font(.system(size: heroTemperatureSize, weight: .black))
                         .foregroundStyle(isOn ? ToggTheme.cyan : ToggTheme.muted)
                     Text("Hedef Sıcaklık")
-                        .font(.system(size: 11)).foregroundStyle(ToggTheme.muted)
+                        .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
                 }
                 Spacer()
                 circleButton("plus") { temperature = min(30, temperature + 0.5) }
@@ -75,7 +79,7 @@ struct ClimateCard: View {
             if isOn {
                 Button(action: onApplyTemperature) {
                     Label("Sıcaklığı Uygula", systemImage: "thermometer.medium")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(ToggTheme.text(.body, weight: .bold))
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .background(
@@ -107,7 +111,7 @@ struct ClimateCard: View {
     private func circleButton(_ icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
+                .font(ToggTheme.text(.headline, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 48, height: 48)
                 .background(Circle().fill(ToggTheme.surfaceVariant))

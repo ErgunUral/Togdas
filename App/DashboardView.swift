@@ -581,16 +581,16 @@ struct DashboardView: View {
             Button { showExperience = true } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "chart.bar.xaxis")
-                        .font(.system(size: 15)).foregroundStyle(ToggTheme.teal)
+                        .font(ToggTheme.text(.lead)).foregroundStyle(ToggTheme.teal)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Seyahatname")
-                            .font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
+                            .font(ToggTheme.text(.body, weight: .bold)).foregroundStyle(.white)
                         Text("Yolculuk, şarj ve karşılaştırma kayıtları")
-                            .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                            .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .bold)).foregroundStyle(ToggTheme.muted)
+                        .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(ToggTheme.muted)
                 }
                 .padding(14)
                 .frame(maxWidth: .infinity)
@@ -623,13 +623,13 @@ struct DashboardView: View {
                 ZStack {
                     Circle().fill(bleStatusColor.opacity(0.2)).frame(width: 38, height: 38)
                     Image(systemName: "dot.radiowaves.left.and.right")
-                        .font(.system(size: 17)).foregroundStyle(bleStatusColor)
+                        .font(ToggTheme.text(.headline)).foregroundStyle(bleStatusColor)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Bluetooth Dijital Anahtar")
-                        .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                        .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
                     Text(bleStateTitle)
-                        .font(.system(size: 12))
+                        .font(ToggTheme.text(.caption))
                         .foregroundStyle(ble.state.isReady && !model.silentRecovery ? ToggTheme.green : ToggTheme.muted)
                 }
                 Spacer()
@@ -639,7 +639,7 @@ struct DashboardView: View {
             if !model.silentRecovery {
                 if let summary = ble.failureSummary, ble.state.isFailed {
                     Label(summary, systemImage: "exclamationmark.triangle.fill")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(ToggTheme.text(.caption, weight: .semibold))
                         .foregroundStyle(ToggTheme.orange)
                         .lineLimit(2)
                 } else if !ble.lastEvent.isEmpty {
@@ -655,7 +655,7 @@ struct DashboardView: View {
 
             Button { showBLESetupGuide = true } label: {
                 Label("Kurulumu adım adım dinle", systemImage: "speaker.wave.2.fill")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(ToggTheme.text(.caption, weight: .semibold))
                     .foregroundStyle(ToggTheme.teal)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -663,15 +663,15 @@ struct DashboardView: View {
 
             if let rssi = ble.rssi {
                 Text("Bağlantı sinyali: \(rssi) dBm")
-                    .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                    .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
             }
 
             if ble.needsRepair {
                 VStack(alignment: .leading, spacing: 6) {
                     Label("Eşleşme sıfırlanmalı", systemImage: "exclamationmark.triangle.fill")
-                        .font(.system(size: 12, weight: .bold)).foregroundStyle(ToggTheme.orange)
+                        .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(ToggTheme.orange)
                     Text("Araç, iPhone'un eşleşme bilgisini sildi. iPhone'da Ayarlar > Bluetooth'tan aracı unut; araç ekranından telefonu kaldır. İki cihazı yeniden başlatıp buradan tekrar bağlan.")
-                        .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                        .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -699,12 +699,12 @@ struct DashboardView: View {
 
                 HStack(spacing: 8) {
                     Image(systemName: "power.circle.fill")
-                        .font(.system(size: 13)).foregroundStyle(powerStateColor(telemetry))
+                        .font(ToggTheme.text(.body)).foregroundStyle(powerStateColor(telemetry))
                     Text("Güç durumu")
-                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                        .font(ToggTheme.text(.caption, weight: .semibold)).foregroundStyle(ToggTheme.muted)
                     Spacer()
                     Text(telemetry.powerStateText)
-                        .font(.system(size: 11, weight: .bold)).foregroundStyle(powerStateColor(telemetry))
+                        .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(powerStateColor(telemetry))
                 }
                 .padding(.horizontal, 10).padding(.vertical, 7)
                 .background(RoundedRectangle(cornerRadius: 10).fill(ToggTheme.surfaceVariant))
@@ -715,7 +715,7 @@ struct DashboardView: View {
                     Label(connectTitle,
                           systemImage: ble.state.isDisconnected || ble.state.isFailed
                             ? "antenna.radiowaves.left.and.right" : "xmark.circle")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(ToggTheme.text(.caption, weight: .bold))
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity, minHeight: 42)
                         .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.teal))
@@ -731,7 +731,7 @@ struct DashboardView: View {
                         }
                         Text(ble.state.isReady ? "Anahtar hazır" : "Sertifikayı sun")
                     }
-                    .font(.system(size: 12, weight: .bold))
+                    .font(ToggTheme.text(.caption, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, minHeight: 42)
                     .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.surfaceVariant))
@@ -743,14 +743,14 @@ struct DashboardView: View {
             if !ble.state.isReady {
                 Button { showRepairConfirm = true } label: {
                     Label("Dijital anahtarı yeniden eşleştir", systemImage: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(ToggTheme.text(.caption, weight: .semibold))
                         .foregroundStyle(ToggTheme.teal)
                 }
                 .buttonStyle(.plain)
 
                 Button { showKeyDiscovery = true } label: {
                     Label("Cihaz ortamında aday seç", systemImage: "list.bullet.rectangle")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(ToggTheme.text(.caption, weight: .semibold))
                         .foregroundStyle(ToggTheme.teal)
                 }
                 .buttonStyle(.plain)
@@ -781,9 +781,9 @@ struct DashboardView: View {
             Button { showCommands = true } label: {
                 HStack {
                     Text("Ayrıntılı komutlar ve kanallar")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(ToggTheme.text(.caption, weight: .semibold))
                     Spacer()
-                    Image(systemName: "chevron.right").font(.system(size: 11))
+                    Image(systemName: "chevron.right").font(ToggTheme.text(.caption))
                 }
                 .foregroundStyle(ToggTheme.teal)
             }
@@ -798,14 +798,14 @@ struct DashboardView: View {
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Label("Yakınlıkla Kapı Kilidi", systemImage: "dot.radiowaves.left.and.right")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(ToggTheme.text(.lead, weight: .bold))
                     .foregroundStyle(.white)
                 Spacer()
                 Button {
                     showProximityGuide = true
                 } label: {
                     Image(systemName: "questionmark.circle")
-                        .font(.system(size: 16))
+                        .font(ToggTheme.text(.lead))
                         .foregroundStyle(ToggTheme.teal)
                 }
                 .buttonStyle(.plain)
@@ -830,13 +830,13 @@ struct DashboardView: View {
             }
 
             Text(proximityStatus)
-                .font(.system(size: 11, weight: .medium))
+                .font(ToggTheme.text(.caption, weight: .medium))
                 .foregroundStyle(proximityEnabled ? ToggTheme.teal : ToggTheme.muted)
 
             HStack(spacing: 10) {
                 Button { captureProximitySample(isNear: true) } label: {
                     Label("Yakında ölç", systemImage: "figure.walk")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(ToggTheme.text(.caption, weight: .bold))
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity, minHeight: 38)
                         .background(RoundedRectangle(cornerRadius: 12).fill(ToggTheme.teal))
@@ -846,7 +846,7 @@ struct DashboardView: View {
 
                 Button { captureProximitySample(isNear: false) } label: {
                     Label("Uzakta ölç", systemImage: "figure.walk.departure")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(ToggTheme.text(.caption, weight: .bold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity, minHeight: 38)
                         .background(RoundedRectangle(cornerRadius: 12).fill(ToggTheme.surfaceVariant))
@@ -864,7 +864,7 @@ struct DashboardView: View {
             .disabled(proximityEnabled)
             .tint(ToggTheme.teal)
             Text(proximityProfile.explanation)
-                .font(.system(size: 10))
+                .font(ToggTheme.text(.micro))
                 .foregroundStyle(proximityProfile == .fast || proximityProfile == .aggressive
                                  ? ToggTheme.orange : ToggTheme.muted)
 
@@ -872,7 +872,7 @@ struct DashboardView: View {
                 get: { proximityAutoOffEnabled },
                 set: { setProximityAutoOffEnabled($0) }
             ))
-            .font(.system(size: 11, weight: .medium))
+            .font(ToggTheme.text(.caption, weight: .medium))
             .tint(ToggTheme.teal)
 
             if proximityAutoOffEnabled {
@@ -890,7 +890,7 @@ struct DashboardView: View {
                 if proximityAutoOffMinutes == 0 {
                     HStack {
                         Text("Özel süre (dakika)")
-                            .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                            .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                         TextField("30", text: $proximityAutoOffCustomText)
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
@@ -900,11 +900,11 @@ struct DashboardView: View {
 
                 if !proximityAutoOffStatus.isEmpty {
                     Text(proximityAutoOffStatus)
-                        .font(.system(size: 10))
+                        .font(ToggTheme.text(.micro))
                         .foregroundStyle(ToggTheme.muted)
                 }
                 Text("Sayaç ilk doğrulanmış otomatik kilitten sonra başlar. Süre dolunca araca komut gönderilmez; iOS uygulamayı arka planda askıya alırsa kapanma gecikebilir.")
-                    .font(.system(size: 9))
+                    .font(ToggTheme.text(.micro))
                     .foregroundStyle(ToggTheme.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -917,23 +917,23 @@ struct DashboardView: View {
                    let nearThreshold = calibration.nearThreshold(margin: proximityProfile.thresholdMargin),
                    let farThreshold = calibration.farThreshold(margin: proximityProfile.thresholdMargin) {
                     Text("Açma eşiği ≥ \(nearThreshold) dBm · Kilitleme eşiği ≤ \(farThreshold) dBm")
-                        .font(.system(size: 10))
+                        .font(ToggTheme.text(.micro))
                         .foregroundStyle(ToggTheme.muted)
                 } else {
                     Text("Ölçümler arasında en az 14 dB fark olmalı; aynı telefon konumuyla yeniden ölçün.")
-                        .font(.system(size: 10))
+                        .font(ToggTheme.text(.micro))
                         .foregroundStyle(ToggTheme.orange)
                 }
             } else {
                 Text("Önce araç yanında, sonra araçtan birkaç metre uzakta ölçüm alın.")
-                    .font(.system(size: 10))
+                    .font(ToggTheme.text(.micro))
                     .foregroundStyle(ToggTheme.muted)
             }
 
             let backgroundLog = ProximityDetectionMonitor.transitionsLog(for: vehicle.vin)
             if !backgroundLog.isEmpty {
                 Text("Son geçişler (arka plan; yalnızca algılama)")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(ToggTheme.text(.micro, weight: .semibold))
                     .foregroundStyle(ToggTheme.muted)
                 ForEach(backgroundLog.suffix(4).reversed()) { entry in
                     Text("\(entry.at.formatted(date: .omitted, time: .shortened)) · \(entry.approached ? "Yaklaşma" : "Uzaklaşma") · \(entry.rssi) dBm")
@@ -943,11 +943,11 @@ struct DashboardView: View {
             }
 
             Text("Kilit komutları yalnızca uygulama ekrandayken ve araç bağlantısı ile güncel araç durumu hazırken gönderilir. Arka planda yalnızca algılama yapılır: geçişler günlüğe yazılır, bildirim düşer, araca komut gönderilmez.")
-                .font(.system(size: 10))
+                .font(ToggTheme.text(.micro))
                 .foregroundStyle(ToggTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
             Text("Tepki profilleri iOS RSSI örnekleme hızına göre uyarlanmıştır; Android filtresinin birebir kopyası değildir.")
-                .font(.system(size: 9))
+                .font(ToggTheme.text(.micro))
                 .foregroundStyle(ToggTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -960,10 +960,10 @@ struct DashboardView: View {
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Label("Geofence (Ev/iş)", systemImage: "location.circle")
-                    .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                    .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
                 Spacer()
                 Text(geofenceStatusBadge)
-                    .font(.system(size: 9, weight: .bold))
+                    .font(ToggTheme.text(.micro, weight: .bold))
                     .foregroundStyle(model.geofence.enabled ? ToggTheme.green : ToggTheme.muted)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Capsule().fill((model.geofence.enabled ? ToggTheme.green : ToggTheme.muted).opacity(0.15)))
@@ -987,16 +987,16 @@ struct DashboardView: View {
                 Button(model.geofence.homeCoordinate == nil ? "Ev konumunu ayarla" : "Ev konumunu güncelle") {
                     model.geofence.setHomeToCurrentLocation()
                 }
-                .font(.system(size: 11, weight: .semibold)).buttonStyle(.bordered)
+                .font(ToggTheme.text(.caption, weight: .semibold)).buttonStyle(.bordered)
 
                 if model.geofence.homeCoordinate != nil {
                     Button("Konumu sil") { model.geofence.clearHomeLocation() }
-                        .font(.system(size: 11)).buttonStyle(.bordered).tint(ToggTheme.pink)
+                        .font(ToggTheme.text(.caption)).buttonStyle(.bordered).tint(ToggTheme.pink)
                 }
             }
 
             HStack {
-                Text("Bölge yarıçapı").font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                Text("Bölge yarıçapı").font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                 Slider(
                     value: Binding(
                         get: { model.geofence.radiusMeters },
@@ -1017,16 +1017,16 @@ struct DashboardView: View {
             }
 
             if let error = model.geofence.lastError {
-                Text(error).font(.system(size: 9)).foregroundStyle(ToggTheme.pink)
+                Text(error).font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.pink)
             } else if let notice = geofenceNotice ?? (!readiness.canEnable ? readiness.message : nil) {
-                Text(notice).font(.system(size: 9)).foregroundStyle(ToggTheme.orange)
+                Text(notice).font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.orange)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                Text(readiness.message).font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                Text(readiness.message).font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
             }
 
             Text("Konum yalnızca cihazda kullanılır. Arka planda komut gönderilmez; bölgeye girince/çıkınca uygulama uyanır ve komut READY + taze telemetri koşuluna tabidir.")
-                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(18).toggCardBackground()
@@ -1063,21 +1063,21 @@ struct DashboardView: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Label("Sürüş İstatistikleri", systemImage: "chart.bar.fill")
-                    .font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                    .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
                 Spacer()
-                Text(monthTitle(stats.month)).font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                Text(monthTitle(stats.month)).font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
             }
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(Int(stats.km.rounded())) km")
-                        .font(.system(size: 22, weight: .bold)).foregroundStyle(ToggTheme.teal)
+                        .font(ToggTheme.text(.title, weight: .bold)).foregroundStyle(ToggTheme.teal)
                     Text("Bu ay · \(stats.daysWithData) gün veri")
                         .font(.caption).foregroundStyle(ToggTheme.muted)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("\(TurkishFormat.decimal(stats.estimatedCostTRY, digits: 0)) ₺")
-                        .font(.system(size: 22, weight: .bold)).foregroundStyle(ToggTheme.orange)
+                        .font(ToggTheme.text(.title, weight: .bold)).foregroundStyle(ToggTheme.orange)
                     Text("\(TurkishFormat.decimal(stats.estimatedKWh, digits: 1)) kWh \(stats.consumptionIsMeasured ? "" : "tahmini")")
                         .font(.caption).foregroundStyle(ToggTheme.muted)
                 }
@@ -1087,20 +1087,20 @@ struct DashboardView: View {
                 Text("Son 7 gün").font(.caption).foregroundStyle(ToggTheme.muted)
                 Spacer()
                 Text(stats.daysWithData > 0 ? "\(Int(weekKm.rounded())) km" : "—")
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                    .font(ToggTheme.text(.body, weight: .semibold)).foregroundStyle(.white)
             }
             HStack {
                 Text("Tüketim").font(.caption).foregroundStyle(ToggTheme.muted)
                 Spacer()
                 Text(consumptionText(stats))
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                    .font(ToggTheme.text(.body, weight: .semibold)).foregroundStyle(.white)
             }
             Text(stats.daysWithData > 1
                  ? (stats.consumptionIsMeasured
                     ? "Tüketim batarya yüzdesi farkından ölçülür (88,5 kWh batarya). Maliyet \(priceText) varsayımıyla, kayıp yok."
                     : "Tüketim için yeterli batarya ölçümü yok; 17 kWh/100 km varsayılanı kullanılıyor. Maliyet \(priceText) varsayımıyla, kayıp yok.")
                  : "Yeterli veri yok. Birkaç günlük odometer ve batarya okumasından sonra km, tüketim ve maliyet hesaplanır.")
-                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
         }
         .padding(18).toggCardBackground()
     }
@@ -1109,11 +1109,11 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 11) {
             HStack {
                 Label("Canlı BLE Tanısı", systemImage: "waveform.path.ecg")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(ToggTheme.text(.caption, weight: .bold))
                     .foregroundStyle(ToggTheme.teal)
                 Spacer()
                 Text(ble.state.description)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(ToggTheme.text(.micro, weight: .semibold))
                     .foregroundStyle(ToggTheme.muted)
             }
             HStack(spacing: 12) {
@@ -1125,19 +1125,19 @@ struct DashboardView: View {
             proximityLatencyReportRow
             if let telemetry = ble.telemetry {
                 Text("İmzalı telemetri · \(telemetry.receivedAt.formatted(date: .omitted, time: .standard))")
-                    .font(.system(size: 10))
+                    .font(ToggTheme.text(.micro))
                     .foregroundStyle(ToggTheme.muted)
             }
             if !ble.diagnosticEvents.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Son olaylar").font(.system(size: 9, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                    Text("Son olaylar").font(ToggTheme.text(.micro, weight: .semibold)).foregroundStyle(ToggTheme.muted)
                     ForEach(Array(ble.diagnosticEvents.suffix(5).reversed())) { event in
                         HStack(spacing: 6) {
                             Text(event.timestamp.formatted(date: .omitted, time: .standard))
                                 .font(.system(size: 9, design: .monospaced))
                                 .foregroundStyle(ToggTheme.muted)
                             Text(event.message)
-                                .font(.system(size: 10, weight: .medium))
+                                .font(ToggTheme.text(.micro, weight: .medium))
                                 .foregroundStyle(.white)
                                 .lineLimit(1)
                         }
@@ -1151,7 +1151,7 @@ struct DashboardView: View {
                     Image(systemName: carProofVerified ? "checkmark.seal.fill" : "seal")
                         .foregroundStyle(carProofVerified ? ToggTheme.green : ToggTheme.orange)
                     Text(carProofVerified ? "Araç kanıtı doğrulandı" : "Araç kanıtı bekleniyor")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(ToggTheme.text(.micro, weight: .medium))
                         .foregroundStyle(.white)
                 }
             }
@@ -1162,7 +1162,7 @@ struct DashboardView: View {
 
     func technicalMetric(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title).font(.system(size: 9, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+            Text(title).font(ToggTheme.text(.micro, weight: .semibold)).foregroundStyle(ToggTheme.muted)
             Text(value).font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1194,13 +1194,13 @@ struct DashboardView: View {
            let warning = state.securityWarning {
             VStack(alignment: .leading, spacing: 5) {
                 Label("Araç güvenlik uyarısı", systemImage: "exclamationmark.triangle.fill")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(ToggTheme.text(.body, weight: .bold))
                     .foregroundStyle(ToggTheme.pink)
                 Text(warning)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(ToggTheme.text(.caption, weight: .semibold))
                     .foregroundStyle(.white)
                 Text("Uyarı güncel, imzalı BLE araç durumuna dayanıyor.")
-                    .font(.system(size: 10))
+                    .font(ToggTheme.text(.micro))
                     .foregroundStyle(ToggTheme.muted)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1237,8 +1237,8 @@ struct DashboardView: View {
 
     private func statusPill(icon: String, text: String, color: Color) -> some View {
         HStack(spacing: 5) {
-            Image(systemName: icon).font(.system(size: 11))
-            Text(text).font(.system(size: 11, weight: .bold))
+            Image(systemName: icon).font(ToggTheme.text(.caption))
+            Text(text).font(ToggTheme.text(.caption, weight: .bold))
         }
         .foregroundStyle(color)
         .padding(.horizontal, 10).padding(.vertical, 6)
@@ -1250,11 +1250,11 @@ struct DashboardView: View {
     private func doorTile(index: Int, open: Bool) -> some View {
         VStack(spacing: 3) {
             Image(systemName: open ? "door.left.hand.open" : "door.left.hand.closed")
-                .font(.system(size: 14)).foregroundStyle(open ? ToggTheme.pink : ToggTheme.green)
+                .font(ToggTheme.text(.body)).foregroundStyle(open ? ToggTheme.pink : ToggTheme.green)
             Text("Kapı \(index + 1)")
-                .font(.system(size: 9, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                .font(ToggTheme.text(.micro, weight: .semibold)).foregroundStyle(ToggTheme.muted)
             Text(open ? "Açık" : "Kapalı")
-                .font(.system(size: 10, weight: .bold)).foregroundStyle(open ? ToggTheme.pink : ToggTheme.green)
+                .font(ToggTheme.text(.micro, weight: .bold)).foregroundStyle(open ? ToggTheme.pink : ToggTheme.green)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
@@ -2134,7 +2134,7 @@ struct DashboardView: View {
     private var quickActions: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Hızlı Araç Kontrolleri")
-                .font(.system(size: 16, weight: .bold))
+                .font(ToggTheme.text(.lead, weight: .bold))
                 .foregroundStyle(.white)
 
             HStack(spacing: 12) {
@@ -2184,9 +2184,9 @@ struct DashboardView: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Trugo Akıllı Şarj Yönetimi")
-                        .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                        .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
                     Text(chargingLabel == "—" ? "Şarj durumu bilinmiyor" : chargingLabel)
-                        .font(.system(size: 12)).foregroundStyle(ToggTheme.muted)
+                        .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
                 }
                 Spacer()
             }
@@ -2202,20 +2202,20 @@ struct DashboardView: View {
         Button { tab = .charging } label: {
             HStack(spacing: 12) {
                 Image(systemName: "bolt.car.fill")
-                    .font(.system(size: 18))
+                    .font(ToggTheme.text(.headline))
                     .foregroundStyle(ToggTheme.green)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Şarj ve istasyonlar")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(ToggTheme.text(.body, weight: .bold))
                         .foregroundStyle(.white)
                     Text("Durum: \(chargingLabel) · tahmin ve geçmiş")
-                        .font(.system(size: 10))
+                        .font(ToggTheme.text(.micro))
                         .foregroundStyle(ToggTheme.muted)
                         .lineLimit(1)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(ToggTheme.text(.caption, weight: .bold))
                     .foregroundStyle(ToggTheme.muted)
             }
             .padding(14)
@@ -2234,9 +2234,9 @@ struct DashboardView: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Şarj Hesaplama")
-                        .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                        .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
                     Text("Kapasite ve fiyat varsayımdır")
-                        .font(.system(size: 12)).foregroundStyle(ToggTheme.muted)
+                        .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
                 }
                 Spacer()
             }
@@ -2253,16 +2253,16 @@ struct DashboardView: View {
 
             VStack(spacing: 8) {
                 HStack {
-                    Text("Tahmini enerji").font(.system(size: 13)).foregroundStyle(ToggTheme.muted)
+                    Text("Tahmini enerji").font(ToggTheme.text(.body)).foregroundStyle(ToggTheme.muted)
                     Spacer()
                     Text(chargeEstimate.energyText)
-                        .font(.system(size: 16, weight: .bold)).foregroundStyle(.white).monospacedDigit()
+                        .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white).monospacedDigit()
                 }
                 HStack {
-                    Text("Tahmini ücret").font(.system(size: 13)).foregroundStyle(ToggTheme.muted)
+                    Text("Tahmini ücret").font(ToggTheme.text(.body)).foregroundStyle(ToggTheme.muted)
                     Spacer()
                     Text(chargeEstimate.costText)
-                        .font(.system(size: 16, weight: .bold)).foregroundStyle(ToggTheme.teal).monospacedDigit()
+                        .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(ToggTheme.teal).monospacedDigit()
                 }
             }
             .padding(14)
@@ -2280,10 +2280,10 @@ struct DashboardView: View {
                             range: ClosedRange<Double>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                Text(title).font(ToggTheme.text(.body, weight: .semibold)).foregroundStyle(ToggTheme.muted)
                 Spacer()
                 Text("%\(Int(value.wrappedValue.rounded()))")
-                    .font(.system(size: 14, weight: .bold)).foregroundStyle(ToggTheme.teal).monospacedDigit()
+                    .font(ToggTheme.text(.body, weight: .bold)).foregroundStyle(ToggTheme.teal).monospacedDigit()
             }
             Slider(value: value, in: range, step: 1)
                 .tint(ToggTheme.teal)
@@ -2294,11 +2294,11 @@ struct DashboardView: View {
                                range: ClosedRange<Double>, step: Double, unit: String) -> some View {
         HStack(spacing: 10) {
             Text(title)
-                .font(.system(size: 12)).foregroundStyle(ToggTheme.muted)
+                .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
                 .lineLimit(1).minimumScaleFactor(0.8)
             Spacer(minLength: 4)
             Text("\(ExperienceFormat.oneDecimal(value.wrappedValue)) \(unit)")
-                .font(.system(size: 13, weight: .bold)).foregroundStyle(.white).monospacedDigit()
+                .font(ToggTheme.text(.body, weight: .bold)).foregroundStyle(.white).monospacedDigit()
                 .lineLimit(1)
             Stepper("", value: value, in: range, step: step)
                 .labelsHidden()
@@ -2314,18 +2314,18 @@ struct DashboardView: View {
             HStack(spacing: 6) {
                 Image(systemName: "bolt.car.fill").foregroundStyle(ToggTheme.teal)
                 Text("En Yakın Trugo Şarj İstasyonları")
-                    .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                    .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
             }
             VStack(spacing: 8) {
                 Image(systemName: "mappin.and.ellipse")
-                    .font(.system(size: 26)).foregroundStyle(ToggTheme.teal)
+                    .font(ToggTheme.text(.display)).foregroundStyle(ToggTheme.teal)
                 Text("Yakındaki istasyonları gör")
-                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                    .font(ToggTheme.text(.body, weight: .semibold)).foregroundStyle(.white)
                 Text("Apple Maps üzerinden Trugo ve elektrikli araç şarj noktalarını haritada bul.")
                     .font(.caption).foregroundStyle(ToggTheme.muted).multilineTextAlignment(.center)
                 Button { showStations = true } label: {
                     Label("Haritayı aç", systemImage: "map.fill")
-                        .font(.system(size: 12, weight: .bold)).foregroundStyle(.black)
+                        .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(.black)
                         .padding(.horizontal, 16).frame(height: 38)
                         .background(Capsule().fill(ToggTheme.teal))
                 }
@@ -2345,9 +2345,9 @@ struct DashboardView: View {
             ForEach(DashboardTab.allCases) { item in
                 Button { tab = item } label: {
                     VStack(spacing: 4) {
-                        Image(systemName: item.icon).font(.system(size: 20))
+                        Image(systemName: item.icon).font(ToggTheme.text(.title))
                         Text(item.title)
-                            .font(.system(size: 10, weight: tab == item ? .bold : .regular))
+                            .font(ToggTheme.text(.micro, weight: tab == item ? .bold : .regular))
                             .lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity)

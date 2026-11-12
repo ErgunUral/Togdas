@@ -40,23 +40,23 @@ struct VehicleHealthCard: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Araç Sağlığı & Lastik Basınçları")
-                        .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                        .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
                     Text(updatedAt.map { "Canlı API • \($0.formatted(date: .omitted, time: .shortened))" }
                          ?? "Canlı veri bekleniyor")
-                        .font(.system(size: 12)).foregroundStyle(ToggTheme.muted)
+                        .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
                 }
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("Lastik Basınçları (TPMS - PSI)")
-                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(ToggTheme.muted)
+                        .font(ToggTheme.text(.body, weight: .semibold)).foregroundStyle(ToggTheme.muted)
                     Spacer()
                     Button {
                         withAnimation(.snappy) { showTireSettings.toggle() }
                     } label: {
                         Label("Eşik", systemImage: "slider.horizontal.3")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(ToggTheme.text(.micro, weight: .semibold))
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(ToggTheme.teal)
@@ -71,11 +71,11 @@ struct VehicleHealthCard: View {
                     tireThresholdEditor
                 } else {
                     Text(tireThresholdSummary)
-                        .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                        .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                 }
                 if !tirePressureAvailable {
                     Text("Lastik basıncı verisi şu an gelmiyor. Araç uyanıkken tekrar deneyin; eksik değer 0 PSI olarak gösterilmez.")
-                        .font(.system(size: 9)).foregroundStyle(ToggTheme.orange)
+                        .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.orange)
                 }
             }
 
@@ -124,10 +124,10 @@ struct VehicleHealthCard: View {
         let policy = TirePressureSettings().policy
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("Uyarı eşiği").font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                Text("Uyarı eşiği").font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                 Spacer()
                 Text("\(Int(tireLowThreshold.rounded())) PSI")
-                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(ToggTheme.teal)
+                    .font(ToggTheme.text(.caption, weight: .semibold)).foregroundStyle(ToggTheme.teal)
             }
             Slider(
                 value: $tireLowThreshold,
@@ -138,12 +138,12 @@ struct VehicleHealthCard: View {
             }
             .tint(ToggTheme.teal)
             Text("Kritik eşik otomatik olarak \(Int(max(TirePressurePolicy.minimumAllowedThreshold, tireLowThreshold - 4).rounded())) PSI olur. Değerler PSI'dır.")
-                .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
             Button("Varsayılana dön (\(Int(TirePressurePolicy.default.lowThresholdPSI)) PSI)") {
                 tireLowThreshold = TirePressurePolicy.default.lowThresholdPSI
                 saveTireThreshold()
             }
-            .font(.system(size: 10)).buttonStyle(.bordered)
+            .font(ToggTheme.text(.micro)).buttonStyle(.bordered)
         }
         .onAppear { tireLowThreshold = policy.lowThresholdPSI }
     }
@@ -162,14 +162,14 @@ struct VehicleHealthCard: View {
         let tint: Color = severity == .critical ? ToggTheme.pink : (severity == .low ? ToggTheme.orange : .white)
         return VStack(spacing: 4) {
             Image(systemName: severity == nil ? "car.side.fill" : "exclamationmark.triangle.fill")
-                .font(.system(size: 15))
+                .font(ToggTheme.text(.lead))
                 .foregroundStyle(severity == nil ? ToggTheme.teal : tint)
             Text(reading?.pressurePSI.map { "\(TurkishFormat.decimal($0, digits: 1)) PSI" } ?? "— PSI")
-                .font(.system(size: 13, weight: .bold)).foregroundStyle(tint)
+                .font(ToggTheme.text(.body, weight: .bold)).foregroundStyle(tint)
                 .lineLimit(1).minimumScaleFactor(0.7)
             Text(reading?.temperatureC.map { "\(Int($0.rounded()))°C" } ?? "—°C")
-                .font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
-            Text(position.title).font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
+                .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
+            Text(position.title).font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                 .lineLimit(1).minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity)
@@ -204,20 +204,20 @@ struct VehicleHealthCard: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Image(systemName: critical ? "battery.0percent" : "battery.25percent")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(ToggTheme.text(.title, weight: .bold))
                     .foregroundStyle(color)
                 Text(critical ? "12 V Akü Kritik Düşük" : "12 V Akü Zayıf")
-                    .font(.system(size: 14, weight: .heavy))
+                    .font(ToggTheme.text(.body, weight: .heavy))
                     .foregroundStyle(color)
                 Spacer()
                 Text("%\(assessment.percent)")
-                    .font(.system(size: 16, weight: .heavy))
+                    .font(ToggTheme.text(.lead, weight: .heavy))
                     .foregroundStyle(color)
             }
             Text(critical
                  ? "12 V akü %\(assessment.percent). Uzun parklarda araç açılmayabilir; en kısa sürede şarj/bakım kontrolü önerilir."
                  : "12 V akü %\(assessment.percent). Yakında şarj/bakım kontrolü önerilir.")
-                .font(.system(size: 12, weight: .semibold))
+                .font(ToggTheme.text(.caption, weight: .semibold))
                 .foregroundStyle(.white)
         }
         .padding(14)
@@ -237,10 +237,10 @@ struct VehicleHealthCard: View {
 
     private func statBox(title: String, value: String, icon: String, color: Color) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: icon).font(.system(size: 20)).foregroundStyle(color)
+            Image(systemName: icon).font(ToggTheme.text(.title)).foregroundStyle(color)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
-                Text(value).font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                Text(title).font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
+                Text(value).font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
             }
             Spacer(minLength: 0)
         }
@@ -257,11 +257,11 @@ struct VehicleHealthCard: View {
         let color = active ? ToggTheme.red : ToggTheme.green
         return HStack(spacing: 10) {
             Image(systemName: active ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                .font(.system(size: 20)).foregroundStyle(color)
+                .font(ToggTheme.text(.title)).foregroundStyle(color)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 10)).foregroundStyle(ToggTheme.muted)
+                Text(title).font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                 Text(warning == nil ? "—" : (active ? "Uyarı var" : "Yok"))
-                    .font(.system(size: 15, weight: .bold)).foregroundStyle(color)
+                    .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(color)
             }
             Spacer(minLength: 0)
         }

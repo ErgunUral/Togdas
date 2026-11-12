@@ -50,10 +50,10 @@ struct BLESetupGuideSheet: View {
                     }
 
                     Text(step.title)
-                        .font(.system(size: 22, weight: .bold))
+                        .font(ToggTheme.text(.title, weight: .bold))
                         .foregroundStyle(.white)
                     Text(step.narration)
-                        .font(.system(size: 15))
+                        .font(ToggTheme.text(.lead))
                         .foregroundStyle(ToggTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)
 
@@ -61,7 +61,7 @@ struct BLESetupGuideSheet: View {
                         Circle().fill(ble.state.isReady ? ToggTheme.green : ToggTheme.orange)
                             .frame(width: 8, height: 8)
                         Text(liveStatus)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(ToggTheme.text(.caption, weight: .semibold))
                             .foregroundStyle(ble.state.isReady ? ToggTheme.green : ToggTheme.orange)
                     }
                     .padding(12)
@@ -72,7 +72,7 @@ struct BLESetupGuideSheet: View {
                         speaker.speak(step.narration)
                     } label: {
                         Label("Bu adımı seslendir", systemImage: "speaker.wave.2.fill")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(ToggTheme.text(.body, weight: .bold))
                             .foregroundStyle(.black)
                             .frame(maxWidth: .infinity, minHeight: 46)
                             .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.teal))
@@ -94,11 +94,11 @@ struct BLESetupGuideSheet: View {
                         .buttonStyle(.borderedProminent)
                         .tint(ToggTheme.teal)
                     }
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(ToggTheme.text(.caption, weight: .semibold))
                     .frame(maxWidth: .infinity, alignment: .trailing)
 
                     Text("Ses cihazda üretilir. Mikrofon açılmaz; ses kaydı veya transkript gönderilmez.")
-                        .font(.system(size: 10))
+                        .font(ToggTheme.text(.micro))
                         .foregroundStyle(ToggTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)
 
