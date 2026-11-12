@@ -10,16 +10,18 @@ import Foundation
 /// loglanmaz (VIN anahtar adında olsa da tanı günlüğüne yazılmaz).
 enum StorageKeys {
     // MARK: VIN'li anahtarlar
+    // Not: biçimler Core'daki sahiplerinde tanımlıdır (byte-identical);
+    // buradaki fonksiyonlar ince delegasyondur.
 
-    static func climateTarget(_ vin: String) -> String { "toqdas.climateTarget.\(vin)" }
-    static func proximityEnabled(_ vin: String) -> String { "toqdas.proximity.enabled.\(vin)" }
-    static func proximityNear(_ vin: String) -> String { "toqdas.proximity.near.\(vin)" }
-    static func proximityFar(_ vin: String) -> String { "toqdas.proximity.far.\(vin)" }
-    static func proximityProfile(_ vin: String) -> String { "toqdas.proximity.profile.\(vin)" }
-    static func proximityAutoOffEnabled(_ vin: String) -> String { "toqdas.proximity.autoOff.enabled.\(vin)" }
-    static func proximityAutoOffMinutes(_ vin: String) -> String { "toqdas.proximity.autoOff.minutes.\(vin)" }
-    static func proximityAutoOffCustom(_ vin: String) -> String { "toqdas.proximity.autoOff.custom.\(vin)" }
-    static func proximityAutoOffDeadline(_ vin: String) -> String { "toqdas.proximity.autoOff.deadline.\(vin)" }
+    static func climateTarget(_ vin: String) -> String { ClimateSettings.targetKey(vin) }
+    static func proximityEnabled(_ vin: String) -> String { GaragePreferences.proximityKey(for: vin) }
+    static func proximityNear(_ vin: String) -> String { ProximitySettings.nearKey(vin) }
+    static func proximityFar(_ vin: String) -> String { ProximitySettings.farKey(vin) }
+    static func proximityProfile(_ vin: String) -> String { ProximitySettings.profileKey(vin) }
+    static func proximityAutoOffEnabled(_ vin: String) -> String { ProximitySettings.autoOffEnabledKey(vin) }
+    static func proximityAutoOffMinutes(_ vin: String) -> String { ProximitySettings.autoOffMinutesKey(vin) }
+    static func proximityAutoOffCustom(_ vin: String) -> String { ProximitySettings.autoOffCustomKey(vin) }
+    static func proximityAutoOffDeadline(_ vin: String) -> String { ProximitySettings.autoOffDeadlineKey(vin) }
     static func auxiliaryHistory(_ vin: String) -> String { "toqdas.aux.history.\(vin)" }
     /// 12 V bildirim tekniği: ciddiyet başına günde bir kez (`critical`/`warning`).
     static func auxiliaryNotified(_ vin: String, severity: String) -> String { "toqdas.auxbattery.notified.\(vin).\(severity)" }

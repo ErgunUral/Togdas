@@ -368,6 +368,14 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   `KeyValueStore` protokolüne `object/integer/data` üyeleri eklendi.
   DashboardView ve MaintenanceNotifier yeni tiplere bağlandı; davranış
   birebir korundu (bakımda kayıt yalnız başarılı gönderimde). Test 377 → 387.
+- Faz B2 (kalıcılık store'ları): `ProximitySettings` (profil, yakın/uzak
+  kalibrasyon, oto-kapanma tercihi/deadline kalıcılığı; anahtar biçimleri
+  tek kaynak, byte-identical) ve `ClimateSettings` (klima hedef sıcaklık
+  kalıcılığı, `hasTarget` ile "ilk hedef alma" kararı korunur) Core'a
+  alındı (+9 test); `StorageKeys` ince delegasyona çevrildi;
+  DashboardView'daki tüm yakınlık/klima `UserDefaults` çağrıları yeni
+  store'lara bağlandı. Açma/kapama (`enabled`) durumu `GaragePreferences`
+  kaynağında kaldı. Test 387 → 396.
 - Proje değerlendirme raporu: `Docs/Proje-Degerlendirme-2026-11.md`
   (mimari/kalite/test/arayüz; App katmanı test ve DashboardView bölünmesi
   sonraki işler).

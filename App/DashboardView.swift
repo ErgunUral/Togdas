@@ -411,10 +411,10 @@ struct DashboardView: View {
         }
         #endif
         .onChange(of: targetTemperature) { value in
-            UserDefaults.standard.set(value, forKey: climateTargetKey)
+            climateSettings.setTarget(value, vin: vehicle.vin)
         }
         .onChange(of: proximityProfile) { profile in
-            UserDefaults.standard.set(profile.rawValue, forKey: proximityProfileKey)
+            proximitySettings.setProfileRaw(profile.rawValue, vin: vehicle.vin)
             if !proximityEnabled, let calibration = proximityCalibration, calibration.isValid {
                 proximityGate = ProximityGate(calibration: calibration, profile: profile)
                 proximityGuard = ProximityCycleGuard()
@@ -423,11 +423,11 @@ struct DashboardView: View {
             }
         }
         .onChange(of: proximityAutoOffMinutes) { value in
-            UserDefaults.standard.set(value, forKey: proximityAutoOffMinutesKey)
+            proximitySettings.setAutoOffMinutes(value, vin: vehicle.vin)
         }
         .onChange(of: proximityAutoOffCustomText) { value in
             if let minutes = Int(value), (1...1440).contains(minutes) {
-                UserDefaults.standard.set(minutes, forKey: proximityAutoOffCustomKey)
+                proximitySettings.setAutoOffCustomMinutes(minutes, vin: vehicle.vin)
             }
         }
         .onChange(of: telemetry?.batteryPercent) { value in
@@ -1281,30 +1281,29 @@ struct DashboardView: View {
 
     @MainActor
     private func loadProximitySettings() {
-        if let savedProfile = UserDefaults.standard.string(forKey: proximityProfileKey),
-           let profile = ProximityProfile(rawValue: savedProfile) {
+        if let profile = proximitySettings.profile(vin: vehicle.vin) {
             proximityProfile = profile
         }
-        proximityAutoOffEnabled = UserDefaults.standard.bool(forKey: proximityAutoOffEnabledKey)
-        if UserDefaults.standard.object(forKey: proximityAutoOffMinutesKey) != nil {
-            proximityAutoOffMinutes = UserDefaults.standard.integer(forKey: proximityAutoOffMinutesKey)
+        proximityAutoOffEnabled = proximitySettings.autoOffEnabled(vin: vehicle.vin)
+        if let minutes = proximitySettings.autoOffMinutes(vin: vehicle.vin) {
+            proximityAutoOffMinutes = minutes
         }
-        if let custom = UserDefaults.standard.object(forKey: proximityAutoOffCustomKey) as? Int {
+        if let custom = proximitySettings.autoOffCustomMinutes(vin: vehicle.vin) {
             proximityAutoOffCustomText = String(custom)
         }
-        proximityAutoOffDeadline = UserDefaults.standard.object(forKey: proximityAutoOffDeadlineKey) as? Date
+        proximityAutoOffDeadline = proximitySettings.autoOffDeadline(vin: vehicle.vin)
         if !proximityAutoOffEnabled {
             proximityAutoOffDeadline = nil
-            UserDefaults.standard.removeObject(forKey: proximityAutoOffDeadlineKey)
+            proximitySettings.setAutoOffDeadline(nil, vin: vehicle.vin)
         }
-        proximityNearSample = UserDefaults.standard.object(forKey: proximityNearKey) as? Int
-        proximityFarSample = UserDefaults.standard.object(forKey: proximityFarKey) as? Int
-        let requested = UserDefaults.standard.bool(forKey: proximityEnabledKey)
+        proximityNearSample = proximitySettings.nearSample(vin: vehicle.vin)
+        proximityFarSample = proximitySettings.farSample(vin: vehicle.vin)
+        let requested = preferences.proximityEnabled(for: vehicle.vin)
         if requested, proximityAutoOffEnabled,
            let deadline = proximityAutoOffDeadline,
            ProximityAutoOffPolicy.isExpired(deadline, now: Date()) {
-            UserDefaults.standard.set(false, forKey: proximityEnabledKey)
-            UserDefaults.standard.removeObject(forKey: proximityAutoOffDeadlineKey)
+            preferences.setProximityEnabled(false, for: vehicle.vin)
+            proximitySettings.setAutoOffDeadline(nil, vin: vehicle.vin)
             proximityAutoOffDeadline = nil
             proximityEnabled = false
             proximityAutoOffStatus = "Süre doldu; otomasyon kapatıldı, komut gönderilmedi."
@@ -1314,7 +1313,7 @@ struct DashboardView: View {
         guard requested, let calibration = proximityCalibration, calibration.isValid else {
             proximityEnabled = false
             ble.setProximityRSSIPollInterval(nil)
-            UserDefaults.standard.set(false, forKey: proximityEnabledKey)
+            preferences.setProximityEnabled(false, for: vehicle.vin)
             proximityStatus = "Ölçüm bekleniyor"
             return
         }
@@ -1355,8 +1354,7 @@ struct DashboardView: View {
         proximityNearSample = nil
         proximityFarSample = nil
         proximityGate = nil
-        UserDefaults.standard.removeObject(forKey: proximityNearKey)
-        UserDefaults.standard.removeObject(forKey: proximityFarKey)
+        proximitySettings.clearCalibration(vin: vehicle.vin)
         proximityStatus = "Ölçümler sıfırlandı. Yeniden yakın ve uzak ölçüm alın."
         if proximityEnabled { setProximityEnabled(false) }
     }
@@ -1371,11 +1369,11 @@ struct DashboardView: View {
         let sample = Int((Double(values.reduce(0, +)) / Double(values.count)).rounded())
         if isNear {
             proximityNearSample = sample
-            UserDefaults.standard.set(sample, forKey: proximityNearKey)
+            proximitySettings.setNearSample(sample, vin: vehicle.vin)
             proximityStatus = "Yakın ölçüm kaydedildi: \(sample) dBm"
         } else {
             proximityFarSample = sample
-            UserDefaults.standard.set(sample, forKey: proximityFarKey)
+            proximitySettings.setFarSample(sample, vin: vehicle.vin)
             proximityStatus = "Uzak ölçüm kaydedildi: \(sample) dBm"
         }
 
@@ -1407,8 +1405,8 @@ struct DashboardView: View {
             pendingAutoLockTask = nil
             awaitingProximityLockConfirmation = false
             proximityAutoOffDeadline = nil
-            UserDefaults.standard.removeObject(forKey: proximityAutoOffDeadlineKey)
-            UserDefaults.standard.set(false, forKey: proximityEnabledKey)
+            proximitySettings.setAutoOffDeadline(nil, vin: vehicle.vin)
+            preferences.setProximityEnabled(false, for: vehicle.vin)
             proximityStatus = "Kapalı"
             return
         }
@@ -1418,7 +1416,7 @@ struct DashboardView: View {
             return
         }
         proximityEnabled = true
-        UserDefaults.standard.set(true, forKey: proximityEnabledKey)
+        preferences.setProximityEnabled(true, for: vehicle.vin)
         proximityGate = ProximityGate(calibration: calibration, profile: proximityProfile)
         proximityGuard = ProximityCycleGuard()
         proximityLatencyMeter = ProximityLatencyMeter()
@@ -1426,7 +1424,7 @@ struct DashboardView: View {
         proximityRSSISamples.removeAll()
         ble.setProximityRSSIPollInterval(proximityProfile.pollInterval)
         proximityAutoOffDeadline = nil
-        UserDefaults.standard.removeObject(forKey: proximityAutoOffDeadlineKey)
+        proximitySettings.setAutoOffDeadline(nil, vin: vehicle.vin)
         proximityAutoOffTask?.cancel()
         proximityAutoOffTask = nil
         awaitingProximityLockConfirmation = false
@@ -1451,7 +1449,7 @@ struct DashboardView: View {
     @MainActor
     private func setProximityAutoOffEnabled(_ enabled: Bool) {
         proximityAutoOffEnabled = enabled
-        UserDefaults.standard.set(enabled, forKey: proximityAutoOffEnabledKey)
+        proximitySettings.setAutoOffEnabled(enabled, vin: vehicle.vin)
         proximityAutoOffTask?.cancel()
         proximityAutoOffTask = nil
         guard enabled else {
@@ -1459,7 +1457,7 @@ struct DashboardView: View {
             pendingAutoLockTask = nil
             awaitingProximityLockConfirmation = false
             proximityAutoOffDeadline = nil
-            UserDefaults.standard.removeObject(forKey: proximityAutoOffDeadlineKey)
+            proximitySettings.setAutoOffDeadline(nil, vin: vehicle.vin)
             proximityAutoOffStatus = ""
             return
         }
@@ -1467,7 +1465,7 @@ struct DashboardView: View {
             scheduleProximityAutoOff(deadline: deadline)
         } else {
             proximityAutoOffDeadline = nil
-            UserDefaults.standard.removeObject(forKey: proximityAutoOffDeadlineKey)
+            proximitySettings.setAutoOffDeadline(nil, vin: vehicle.vin)
             proximityAutoOffStatus = "Sayaç ilk doğrulanmış otomatik kilitlemeden sonra başlar."
         }
     }
@@ -1490,7 +1488,7 @@ struct DashboardView: View {
         let minutes = effectiveProximityAutoOffMinutes
         guard let deadline = ProximityAutoOffPolicy.deadline(startedAt: Date(), durationMinutes: minutes) else { return }
         proximityAutoOffDeadline = deadline
-        UserDefaults.standard.set(deadline, forKey: proximityAutoOffDeadlineKey)
+        proximitySettings.setAutoOffDeadline(deadline, vin: vehicle.vin)
         proximityAutoOffStatus = "Doğrulanmış otomatik kilitten sonra \(minutes) dakika sayılıyor."
         ble.recordDiagnostic("Otomatik kilit doğrulandı; \(minutes) dakika sonra yakınlık kapanacak")
         scheduleProximityAutoOff(deadline: deadline)
@@ -1516,7 +1514,7 @@ struct DashboardView: View {
 
         ble.recordDiagnostic("Yakınlık süresi doldu; otomasyon pasife alındı, komut gönderilmedi")
         proximityAutoOffDeadline = nil
-        UserDefaults.standard.removeObject(forKey: proximityAutoOffDeadlineKey)
+        proximitySettings.setAutoOffDeadline(nil, vin: vehicle.vin)
         proximityAutoOffTask?.cancel()
         proximityAutoOffTask = nil
         pendingAutoLockTask?.cancel()
@@ -1747,6 +1745,11 @@ struct DashboardView: View {
     /// 12 V geçmiş ve bildirim tekniği ortak altyapısı (Core; testli).
     private let auxiliaryHistoryStore = AuxiliaryBatteryHistoryStore(store: UserDefaults.standard)
     private let notificationDedupe = NotificationDedupe(store: UserDefaults.standard)
+    /// Yakınlık/klima kalıcılığı (Core; testli). `enabled` durumu
+    /// GaragePreferences'a aittir.
+    private let proximitySettings = ProximitySettings(store: UserDefaults.standard)
+    private let climateSettings = ClimateSettings(store: UserDefaults.standard)
+    private let preferences = GaragePreferences()
 
     private func checkAuxiliaryBattery(_ percent: Double?) {
         // Geçmiş kaydı uyarıdan bağımsızdır: sağlıklı değer (> %40) de günün
@@ -1962,7 +1965,7 @@ struct DashboardView: View {
             }
             proximityAutoOffMinutes = 0
             proximityAutoOffCustomText = String(minutes)
-            UserDefaults.standard.set(minutes, forKey: proximityAutoOffCustomKey)
+            proximitySettings.setAutoOffCustomMinutes(minutes, vin: vehicle.vin)
             let counterNote = proximityAutoOffEnabled
                 ? ""
                 : " Sayaç şu an kapalı; açmak için yakınlık kartındaki anahtarı kullan."
@@ -2387,10 +2390,9 @@ struct DashboardView: View {
 
     @MainActor
     private func loadClimateTarget() {
-        guard let stored = UserDefaults.standard.object(forKey: climateTargetKey) as? NSNumber else { return }
-        let value = stored.doubleValue
-        if (16...30).contains(value) {
-            targetTemperature = value
+        guard let stored = climateSettings.target(vin: vehicle.vin) else { return }
+        if (16...30).contains(stored) {
+            targetTemperature = stored
         }
     }
 
@@ -2407,7 +2409,7 @@ struct DashboardView: View {
             climateStatusAt = Date()
             let temperature = status.temperature.map { String($0) } ?? "unknown"
             print("[CLIMATE] status active=\(status.active) temperature=\(temperature)")
-            if UserDefaults.standard.object(forKey: climateTargetKey) == nil,
+            if !climateSettings.hasTarget(vin: vehicle.vin),
                let temperature = status.temperature,
                (16...30).contains(temperature) {
                 targetTemperature = temperature
@@ -2435,7 +2437,7 @@ struct DashboardView: View {
                 climateOn = status.active
                 climateKnown = true
                 climateStatusAt = Date()
-                if UserDefaults.standard.object(forKey: climateTargetKey) == nil,
+                if !climateSettings.hasTarget(vin: vehicle.vin),
                    let temperature = status.temperature,
                    (16...30).contains(temperature) {
                     targetTemperature = temperature
