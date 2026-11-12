@@ -222,7 +222,8 @@ final class BleLinkCoordinator: ObservableObject {
             radioAvailable: ble.isRadioAvailable,
             radioFailureStatus: ble.failureSummary,
             attempts: attempts,
-            pairingAttempts: pairingAttempts
+            pairingAttempts: pairingAttempts,
+            lastRSSI: ble.rssi
         )
 
         switch decision {

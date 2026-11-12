@@ -12,6 +12,13 @@ struct BleReconnectPolicy {
     static let stableInterval: TimeInterval = 60
     static let foregroundCooldown: TimeInterval = 3
     static let maxDelay: TimeInterval = 15
+    /// Sinyal zayıfken (son RSSI bu değerin altında) geri çekilme uzatılır:
+    /// araç kenarında kısa aralıklı deneme döngüsü radyo/pil yükünü artırır.
+    /// Android .57 tarafındaki "taze uygun reklam + backoff sonrası bağlantı"
+    /// kapısının iOS karşılığı; doğrudan yeniden bağlanma kısayolu korunur.
+    static let weakSignalThreshold = -85
+    static let weakSignalDelayFactor = 2.0
+    static let weakMaxDelay: TimeInterval = 30
 
     /// Kopma bildiriminde koordinatörün uygulayacağı tek eylem.
     enum Action: Equatable {
@@ -39,6 +46,14 @@ struct BleReconnectPolicy {
         return min(pow(2.0, Double(attempt - 1)) * 1.5, maxDelay)
     }
 
+    /// Son ölçülen RSSI zayıfsa temel geri çekilme uzatılır (×2, üst sınır 30 sn);
+    /// güçlü sinyal ya da bilinmeyen RSSI'da davranış birebir korunur.
+    static func reconnectDelay(attempt: Int, lastRSSI: Int?) -> TimeInterval {
+        let base = backoffDelay(attempt: attempt)
+        guard let lastRSSI, lastRSSI < weakSignalThreshold, attempt > 0 else { return base }
+        return min(base * weakSignalDelayFactor, weakMaxDelay)
+    }
+
     static func action(
         connectedBefore: Bool,
         awaitingConnection: Bool,
@@ -49,7 +64,8 @@ struct BleReconnectPolicy {
         radioAvailable: Bool,
         radioFailureStatus: String?,
         attempts: Int,
-        pairingAttempts: Int
+        pairingAttempts: Int,
+        lastRSSI: Int? = nil
     ) -> Action {
         // Combine aboneliği mevcut değeri hemen yayınlar; ilk kopma sayılmaz.
         guard connectedBefore || awaitingConnection else { return .ignore }
@@ -74,7 +90,7 @@ struct BleReconnectPolicy {
             )
         }
         let attempt = attempts + 1
-        return .reconnect(delay: backoffDelay(attempt: attempt), attempt: attempt)
+        return .reconnect(delay: reconnectDelay(attempt: attempt, lastRSSI: lastRSSI), attempt: attempt)
     }
 
     /// Uygulama öne geldiğinde bekleyen geri çekilme atlanmalı mı?

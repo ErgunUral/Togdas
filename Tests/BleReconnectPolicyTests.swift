@@ -10,7 +10,8 @@ final class BleReconnectPolicyTests: XCTestCase {
         autoConnect: Bool = true,
         radio: Bool = true,
         attempts: Int = 0,
-        pairingAttempts: Int = 0
+        pairingAttempts: Int = 0,
+        lastRSSI: Int? = nil
     ) -> BleReconnectPolicy.Action {
         BleReconnectPolicy.action(
             connectedBefore: connectedBefore,
@@ -22,13 +23,32 @@ final class BleReconnectPolicyTests: XCTestCase {
             radioAvailable: radio,
             radioFailureStatus: "Bluetooth kapalı",
             attempts: attempts,
-            pairingAttempts: pairingAttempts
+            pairingAttempts: pairingAttempts,
+            lastRSSI: lastRSSI
         )
     }
 
     func testFirstDisconnectedPublicationIsIgnored() {
         // Combine aboneliği mevcut değeri hemen yayınlar; bu kopma değildir.
         XCTAssertEqual(action(connectedBefore: false, awaiting: false), .ignore)
+    }
+
+    /// Zayıf sinyalde (son RSSI < −85) geri çekilme ×2 ve 30 sn üst sınıra
+    /// uzar; güçlü sinyal ya da bilinmeyen RSSI'da temel davranış birebir
+    /// korunur (Android .57 paritesi korunur).
+    func testWeakSignalExtendsBackoff() {
+        XCTAssertEqual(action(attempts: 0, lastRSSI: -90), .reconnect(delay: 3.0, attempt: 1))
+        XCTAssertEqual(action(attempts: 1, lastRSSI: -95), .reconnect(delay: 6.0, attempt: 2))
+        XCTAssertEqual(action(attempts: 3, lastRSSI: -92), .reconnect(delay: 24.0, attempt: 4))
+        XCTAssertEqual(action(attempts: 4, lastRSSI: -92), .reconnect(delay: 30.0, attempt: 5))
+        XCTAssertEqual(action(attempts: 7, lastRSSI: -92), .reconnect(delay: 30.0, attempt: 8))
+    }
+
+    func testStrongOrUnknownSignalKeepsBaseBackoff() {
+        XCTAssertEqual(action(attempts: 0, lastRSSI: -60), .reconnect(delay: 1.5, attempt: 1))
+        XCTAssertEqual(action(attempts: 0, lastRSSI: -85), .reconnect(delay: 1.5, attempt: 1))
+        XCTAssertEqual(action(attempts: 2, lastRSSI: nil), .reconnect(delay: 6.0, attempt: 3))
+        XCTAssertEqual(action(attempts: 7), .reconnect(delay: 15.0, attempt: 8))
     }
 
     func testAwaitingConnectionCountsAsDrop() {
