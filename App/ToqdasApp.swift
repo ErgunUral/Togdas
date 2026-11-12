@@ -468,6 +468,10 @@ final class GarageModel: ObservableObject {
         }
 
         let previous = VehicleWidgetSnapshotStore.load()
+        // Son 7 günün 12 V değeri (VIN'siz gösterim dizisi; eksik gün nil).
+        let auxiliaryHistory = AuxiliaryBatteryHistoryStore(store: UserDefaults.standard)
+            .load(key: StorageKeys.auxiliaryHistory(vin))
+            .numericValues(count: 7, today: Date())
         let snapshot = VehicleWidgetSnapshot(
             vehicleName: vehicle.title,
             locked: ble.telemetry?.isLocked,
@@ -481,7 +485,8 @@ final class GarageModel: ObservableObject {
             odometerKM: cloud.odometerKM,
             outsideTemperatureC: cloud.outsideTemperatureC,
             auxiliaryBatteryPercent: cloud.auxiliaryBatteryPercent,
-            vehicleCount: vehicles.count
+            vehicleCount: vehicles.count,
+            auxiliaryHistoryPercents: auxiliaryHistory
         )
         VehicleWidgetSnapshotStore.save(snapshot)
         requestWidgetReload(contentChanged: Self.widgetContentChanged(previous: previous, current: snapshot))
@@ -501,6 +506,7 @@ final class GarageModel: ObservableObject {
             || previous.odometerKM != current.odometerKM
             || previous.outsideTemperatureC != current.outsideTemperatureC
             || previous.vehicleCount != current.vehicleCount
+            || previous.auxiliaryHistoryPercents != current.auxiliaryHistoryPercents
     }
 
     /// Bulut telemetrisi özeti. GarageModel'den ayrılarak sorumluluk bölündü.

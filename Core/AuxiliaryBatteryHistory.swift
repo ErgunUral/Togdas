@@ -56,6 +56,22 @@ struct AuxiliaryBatteryHistory: Codable, Equatable {
         )
     }
 
+    /// Son `count` günün sayısal değerleri eskiden yeniye (bugün dahil);
+    /// kaydı olmayan gün `nil` döner (gösterimde "—", asla 0 değil).
+    /// Gerçek 0 değeri `0.0` olarak korunur.
+    func numericValues(count: Int, today: Date, calendar: Calendar = .current) -> [Double?] {
+        let days = (0..<max(1, count)).compactMap { calendar.date(byAdding: .day, value: -$0, to: today) }
+        let keys = days.map { Self.dayKey(for: $0, calendar: calendar) }
+        return Array(
+            keys
+                .map { key -> Double? in
+                    guard let sample = samples.last(where: { $0.day == key }) else { return nil }
+                    return Double(sample.percent)
+                }
+                .reversed()
+        )
+    }
+
     /// "2026-11-11" biçimli gün anahtarı; yerel takvim günü esas alınır.
     static func dayKey(for date: Date, calendar: Calendar = .current) -> String {
         let components = calendar.dateComponents([.year, .month, .day], from: date)

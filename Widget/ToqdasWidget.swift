@@ -126,6 +126,9 @@ private struct VehicleStatusView: View {
             VStack(alignment: .leading, spacing: 10) {
                 metric("Battery.100", snapshot.displayBattery)
                 metric("car.battery", snapshot.displayAuxiliaryBattery, tint: auxiliaryTint(snapshot))
+                if !snapshot.auxiliaryHistoryPercents.isEmpty {
+                    auxiliaryHistoryChart(snapshot)
+                }
                 metric("road.lanes", snapshot.displayRange)
                 metric("bolt.car.fill", "Bu ay \(snapshot.displayChargeSpend)")
                 metric("gauge", snapshot.displayOdometer)
@@ -187,6 +190,50 @@ private struct VehicleStatusView: View {
             return nil
         }
         return assessment.isCritical ? Color(red: 1.0, green: 0.32, blue: 0.24) : Color.orange
+    }
+
+    /// Son 7 günün 12 V mini grafiği (eskiden yeniye; sağdaki en son gün).
+    /// Kaydı olmayan gün çukur çizilir ve erişilebilirlikte "bilgi yok"
+    /// anlatılır — asla 0 gibi gösterilmez. Salt okunur: widget komut
+    /// göndermez, VIN içermez.
+    private func auxiliaryHistoryChart(_ snapshot: VehicleWidgetSnapshot) -> some View {
+        let values = Array(snapshot.auxiliaryHistoryPercents.suffix(7))
+        let labels = values.map { value -> String in
+            guard let value, value.isFinite else { return "bilgi yok" }
+            return AuxiliaryBatteryPolicy.percentText(value) ?? "bilgi yok"
+        }
+        return VStack(alignment: .leading, spacing: 2) {
+            Text("Son 7 gün (12 V)")
+                .font(.system(size: 8, weight: .medium))
+                .foregroundStyle(.white.opacity(0.55))
+            HStack(alignment: .bottom, spacing: 3) {
+                ForEach(Array(values.enumerated()), id: \.offset) { index, value in
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(barColor(value))
+                        .frame(width: 14, height: barHeight(value))
+                        .frame(height: 18, alignment: .bottom)
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Son 7 gün 12 V akü: \(labels.joined(separator: ", "))")
+    }
+
+    private func barHeight(_ value: Double?) -> CGFloat {
+        guard let value, value.isFinite, value >= 0, value <= 100 else { return 3 }
+        return max(4, CGFloat(value) / 100 * 18)
+    }
+
+    private func barColor(_ value: Double?) -> Color {
+        guard let value, value.isFinite, value >= 0, value <= 100 else {
+            return .white.opacity(0.18)
+        }
+        if let assessment = AuxiliaryBatteryPolicy.assess(value) {
+            return assessment.isCritical
+                ? Color(red: 1.0, green: 0.32, blue: 0.24)
+                : Color.orange.opacity(0.85)
+        }
+        return .cyan.opacity(0.85)
     }
 
     private func freshness(_ snapshot: VehicleWidgetSnapshot) -> some View {

@@ -23,6 +23,10 @@ struct VehicleWidgetSnapshot: Codable, Equatable {
     var auxiliaryBatteryPercent: Double?
     /// Garajdaki araç sayısı; tek araçsa gizlenir, gizlilik için VIN/iskelet yok.
     var vehicleCount: Int?
+    /// Son 7 günün 12 V akü değerleri eskiden yeniye; kaydı olmayan gün nil
+    /// ("—"). VIN'siz gösterim verisi: widget grafik bunu çizer, gerçek 0
+    /// değeri `0.0` korunur, eksik gün asla 0 sayılmaz.
+    var auxiliaryHistoryPercents: [Double?] = []
 
     static let appGroup = "group.com.toqdas.ios"
     static let storageKey = "toqdas.widget.snapshot.v1"
@@ -100,8 +104,7 @@ struct VehicleWidgetSnapshot: Codable, Equatable {
     /// Veri yaşı rozeti. Öncelik canlı/kaydedilmiş BLE kilit bilgisi; BLE yoksa
     /// bulut telemetri zamanı kullanılır. Hiç veri yoksa "—"/bilgi yok kuralı
     /// burada da geçerlidir: 0 veya sahte tazelik yazılmaz.
-    var freshnessText: String {
-        if let bleUpdatedAt {
+    var freshnessText: String {        if let bleUpdatedAt {
             if lockDataIsStale { return "Son BLE: \(time(bleUpdatedAt))" }
             return bleReady ? "Canlı BLE · \(time(bleUpdatedAt))" : "Son BLE · \(time(bleUpdatedAt))"
         }
@@ -120,8 +123,31 @@ struct VehicleWidgetSnapshot: Codable, Equatable {
     }
 }
 
-enum VehicleWidgetSnapshotStore {
-    static func save(_ snapshot: VehicleWidgetSnapshot) {
+/// Eski önbellek uyumluluğu: `auxiliaryHistoryPercents` eklenmeden önce
+/// yazılmış payload'lar bu alansız çözümlenir (boş grafik); aksi halde
+/// tek eksik anahtar tüm snapshot'ı düşürürdü. Extension'da: ana gövdedeki
+/// memberwise init korunur.
+extension VehicleWidgetSnapshot {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        vehicleName = try c.decode(String.self, forKey: .vehicleName)
+        locked = try c.decodeIfPresent(Bool.self, forKey: .locked)
+        batteryPercent = try c.decodeIfPresent(Double.self, forKey: .batteryPercent)
+        rangeKM = try c.decodeIfPresent(Double.self, forKey: .rangeKM)
+        monthlyChargeSpendTRY = try c.decodeIfPresent(Double.self, forKey: .monthlyChargeSpendTRY)
+        bleReady = try c.decodeIfPresent(Bool.self, forKey: .bleReady) ?? false
+        bleUpdatedAt = try c.decodeIfPresent(Date.self, forKey: .bleUpdatedAt)
+        cloudUpdatedAt = try c.decodeIfPresent(Date.self, forKey: .cloudUpdatedAt)
+        savedAt = try c.decodeIfPresent(Date.self, forKey: .savedAt) ?? Date()
+        odometerKM = try c.decodeIfPresent(Double.self, forKey: .odometerKM)
+        outsideTemperatureC = try c.decodeIfPresent(Double.self, forKey: .outsideTemperatureC)
+        auxiliaryBatteryPercent = try c.decodeIfPresent(Double.self, forKey: .auxiliaryBatteryPercent)
+        vehicleCount = try c.decodeIfPresent(Int.self, forKey: .vehicleCount)
+        auxiliaryHistoryPercents = try c.decodeIfPresent([Double?].self, forKey: .auxiliaryHistoryPercents) ?? []
+    }
+}
+
+enum VehicleWidgetSnapshotStore {    static func save(_ snapshot: VehicleWidgetSnapshot) {
         guard let defaults = UserDefaults(suiteName: VehicleWidgetSnapshot.appGroup),
               let data = try? JSONEncoder().encode(snapshot) else { return }
         defaults.set(data, forKey: VehicleWidgetSnapshot.storageKey)

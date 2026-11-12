@@ -66,6 +66,16 @@ final class AuxiliaryBatteryHistoryTests: XCTestCase {
         XCTAssertEqual(Self.dayString(date(2026, 3, 5), calendar: calendar), "2026-03-05")
     }
 
+    /// Sayısal pencere: eksik gün `nil` ("bilgi yok"), gerçek 0 değeri
+    /// `0.0` korunur; sıra eskiden yeniye.
+    func testNumericValuesWindowKeepsMissingDaysAndZero() {
+        var history = AuxiliaryBatteryHistory()
+        XCTAssertTrue(history.record(percent: 72, on: date(2026, 11, 9), calendar: calendar))
+        XCTAssertTrue(history.record(percent: 0, on: date(2026, 11, 11), calendar: calendar))
+        let values = history.numericValues(count: 5, today: date(2026, 11, 11), calendar: calendar)
+        XCTAssertEqual(values, [nil, nil, 72, nil, 0])
+    }
+
     private static func dayString(_ date: Date, calendar: Calendar) -> String {
         AuxiliaryBatteryHistory.dayKey(for: date, calendar: calendar)
     }
