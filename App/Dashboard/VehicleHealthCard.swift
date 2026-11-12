@@ -18,6 +18,8 @@ struct VehicleHealthCard: View {
     let updatedAt: Date?
 
     @State private var showTireSettings = false
+    /// Reduce Motion: lastik ayarı genişleme animasyonunu kapatır (U3).
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var tireLowThreshold = TirePressurePolicy.default.lowThresholdPSI
 
     private var tirePressureAvailable: Bool {
@@ -53,7 +55,7 @@ struct VehicleHealthCard: View {
                         .font(ToggTheme.text(.body, weight: .semibold)).foregroundStyle(ToggTheme.muted)
                     Spacer()
                     Button {
-                        withAnimation(.snappy) { showTireSettings.toggle() }
+                        withAnimation(reduceMotion ? nil : .snappy) { showTireSettings.toggle() }
                     } label: {
                         Label("Eşik", systemImage: "slider.horizontal.3")
                             .font(ToggTheme.text(.micro, weight: .semibold))

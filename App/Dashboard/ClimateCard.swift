@@ -54,8 +54,15 @@ struct ClimateCard: View {
                             .frame(width: 24, height: 24)
                             .padding(3)
                     }
+                    // Görsel kapsül 52×30; vurma hedefi en az 44pt (HIG).
+                    .frame(minWidth: 52, minHeight: 44)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Klima")
+                .accessibilityValue(isOn ? "Açık" : "Kapalı")
+                .accessibilityAddTraits(.isButton)
+                .accessibilityHint("Klimayı açar veya kapatır")
                 .disabled(busy)
                 .opacity(busy ? 0.6 : 1)
             }
@@ -117,5 +124,6 @@ struct ClimateCard: View {
                 .background(Circle().fill(ToggTheme.surfaceVariant))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(icon == "minus" ? "Sıcaklığı azalt" : "Sıcaklığı artır")
     }
 }

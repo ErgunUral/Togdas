@@ -66,6 +66,8 @@ struct DashboardView: View {
     @AppStorage(StorageKeys.dashboardLayout) private var layoutName = DashboardLayoutStyle.classic.rawValue
 
     @EnvironmentObject private var ble: BleConnection
+    /// Reduce Motion: kaydırma/büyüme animasyonlarını kapatır (U3).
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var tab: DashboardTab = .overview
     @State private var telemetry: VehicleTelemetry?
@@ -657,7 +659,7 @@ struct DashboardView: View {
                 Label("Kurulumu adım adım dinle", systemImage: "speaker.wave.2.fill")
                     .font(ToggTheme.text(.caption, weight: .semibold))
                     .foregroundStyle(ToggTheme.teal)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             }
             .buttonStyle(.plain)
 
@@ -708,6 +710,7 @@ struct DashboardView: View {
                 }
                 .padding(.horizontal, 10).padding(.vertical, 7)
                 .background(RoundedRectangle(cornerRadius: 10).fill(ToggTheme.surfaceVariant))
+                .accessibilityElement(children: .combine)
             }
 
             HStack(spacing: 10) {
@@ -717,7 +720,7 @@ struct DashboardView: View {
                             ? "antenna.radiowaves.left.and.right" : "xmark.circle")
                         .font(ToggTheme.text(.caption, weight: .bold))
                         .foregroundStyle(.black)
-                        .frame(maxWidth: .infinity, minHeight: 42)
+                        .frame(maxWidth: .infinity, minHeight: 44)
                         .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.teal))
                 }
                 .buttonStyle(.plain)
@@ -733,7 +736,7 @@ struct DashboardView: View {
                     }
                     .font(ToggTheme.text(.caption, weight: .bold))
                     .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, minHeight: 42)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                     .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.surfaceVariant))
                 }
                 .buttonStyle(.plain)
@@ -745,6 +748,7 @@ struct DashboardView: View {
                     Label("Dijital anahtarı yeniden eşleştir", systemImage: "arrow.triangle.2.circlepath")
                         .font(ToggTheme.text(.caption, weight: .semibold))
                         .foregroundStyle(ToggTheme.teal)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 }
                 .buttonStyle(.plain)
 
@@ -752,6 +756,7 @@ struct DashboardView: View {
                     Label("Cihaz ortamında aday seç", systemImage: "list.bullet.rectangle")
                         .font(ToggTheme.text(.caption, weight: .semibold))
                         .foregroundStyle(ToggTheme.teal)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 }
                 .buttonStyle(.plain)
                 .disabled(authBusy)
@@ -1256,6 +1261,9 @@ struct DashboardView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
         .background(RoundedRectangle(cornerRadius: 10).fill(ToggTheme.surfaceVariant))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Kapı \(index + 1)")
+        .accessibilityValue(open ? "Açık" : "Kapalı")
     }
 
     private func lockStatusColor(_ telemetry: BleTelemetry) -> Color {
@@ -1360,7 +1368,7 @@ struct DashboardView: View {
 
     private func scheduleScrollChargingCalculator(proxy: ScrollViewProxy) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            withAnimation { proxy.scrollTo("chargingCalculator", anchor: .top) }
+            withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("chargingCalculator", anchor: .top) }
         }
     }
 
@@ -2347,7 +2355,7 @@ struct DashboardView: View {
                             .font(ToggTheme.text(.micro, weight: tab == item ? .bold : .regular))
                             .lineLimit(1).minimumScaleFactor(0.7)
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                     .foregroundStyle(tab == item ? ToggTheme.teal : ToggTheme.muted)
                 }
                 .buttonStyle(.plain)

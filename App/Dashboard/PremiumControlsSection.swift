@@ -88,9 +88,10 @@ struct PremiumControlsSection: View {
                 Spacer(minLength: 0)
             }
             .padding(12)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, minHeight: 44)
             .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.surfaceVariant))
         }
         .buttonStyle(.plain)
+        .accessibilityHint("Komut onay sorulduktan sonra araca gönderilir")
     }
 }

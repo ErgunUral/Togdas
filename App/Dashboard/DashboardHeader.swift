@@ -70,10 +70,11 @@ struct DashboardHeader: View {
                     Image(systemName: "mic.fill")
                         .font(ToggTheme.text(.body, weight: .bold))
                         .foregroundStyle(ToggTheme.teal)
-                        .frame(width: 34, height: 30)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(ToggTheme.surfaceVariant))
+                        .frame(width: 44, height: 44)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(ToggTheme.surfaceVariant))
                 }
                 .accessibilityLabel("Sesli komut")
+                .accessibilityHint("Sesli asistan ekranını açar")
             }
 
             HStack(alignment: .center) {
