@@ -2551,6 +2551,10 @@ struct DashboardView: View {
             try Task.checkCancellation()
             telemetry = parsed
             updatedAt = parsed.vehicleUpdatedAt ?? Date()
+            // Ham sürüş modu değerini tanıya yaz: ekranda gösterilen metinle
+            // araç durumu uyuşmazsa ham `DRIVEMODE_*` değeriyle ayrım yapılır.
+            // VIN/anahtar içermez.
+            ble.recordDiagnostic("vehicleInfo · driveMode=\(parsed.driveMode ?? "yok")")
             facingError = nil
             if let odo = parsed.odometerKM {
                 drivingStats.record(odometer: odo, batteryPercent: parsed.batteryPercent)
