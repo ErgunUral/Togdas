@@ -138,19 +138,20 @@ struct DashboardView: View {
         }
         guard notifiedAny else { return }
 
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        NotificationPoster.requestAuthorization(using: notificationPoster)
         let critical = alerts.contains { $0.severity == .critical }
-        let content = UNMutableNotificationContent()
-        content.title = critical ? "Kritik lastik basıncı" : "Lastik basıncı uyarısı"
         let detail = alerts
             .sorted { $0.pressurePSI < $1.pressurePSI }
             .map { "\($0.position.title) \(TurkishFormat.decimal($0.pressurePSI, digits: 0)) PSI" }
             .joined(separator: ", ")
-        content.body = "\(detail). Eşik: \(Int(policy.lowThresholdPSI.rounded())) PSI."
-        content.sound = .default
-        let req = UNNotificationRequest(identifier: "tire-pressure-\(vin)", content: content, trigger: nil)
-        center.add(req)
+        NotificationPoster.post(
+            NotificationPoster.Draft(
+                identifier: "tire-pressure-\(vin)",
+                title: critical ? "Kritik lastik basıncı" : "Lastik basıncı uyarısı",
+                body: "\(detail). Eşik: \(Int(policy.lowThresholdPSI.rounded())) PSI."
+            ),
+            using: notificationPoster
+        )
     }
     @State private var proximityAutoOffEnabled = false
     @State private var proximityAutoOffMinutes = 30
@@ -1725,12 +1726,14 @@ struct DashboardView: View {
     }
 
     private func postCalibrationSuggestionNotification(_ suggestion: ProximityAutoCalibrationSuggester.Suggestion) {
-        let content = UNMutableNotificationContent()
-        content.title = "Uygun yakınlık aralığı algılandı"
-        content.body = "Yakın ölçüm \(suggestion.nearSample) dBm, uzak ölçüm \(suggestion.farSample) dBm (fark \(suggestion.separation) dBm). Aralık metreye çevrilmez; otomasyonu kendi kendine açmadım. Onay için yakınlık kartındaki ölçüm düğmelerini kullan."
-        content.sound = .default
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+        NotificationPoster.post(
+            NotificationPoster.Draft(
+                identifier: UUID().uuidString,
+                title: "Uygun yakınlık aralığı algılandı",
+                body: "Yakın ölçüm \(suggestion.nearSample) dBm, uzak ölçüm \(suggestion.farSample) dBm (fark \(suggestion.separation) dBm). Aralık metreye çevrilmez; otomasyonu kendi kendine açmadım. Onay için yakınlık kartındaki ölçüm düğmelerini kullan."
+            ),
+            using: notificationPoster
+        )
     }
 
     /// 12 V akü düşükse iPhone'a yerel bildirim. Lastik uyarısıyla aynı
@@ -1750,6 +1753,8 @@ struct DashboardView: View {
     private let proximitySettings = ProximitySettings(store: UserDefaults.standard)
     private let climateSettings = ClimateSettings(store: UserDefaults.standard)
     private let preferences = GaragePreferences()
+    /// Yerel bildirim gönderimi tek noktadan (Core `NotificationPoster`).
+    private let notificationPoster = SystemNotificationPoster()
 
     private func checkAuxiliaryBattery(_ percent: Double?) {
         // Geçmiş kaydı uyarıdan bağımsızdır: sağlıklı değer (> %40) de günün
@@ -1763,23 +1768,22 @@ struct DashboardView: View {
         guard notificationDedupe.shouldNotify(key: key) else { return }
         notificationDedupe.record(key: key)
 
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
-        let content = UNMutableNotificationContent()
-        content.title = assessment.isCritical ? "12 V akü kritik düşük" : "12 V akü zayıf"
-        content.body = "Akü yüzde \(assessment.percent). "
-            + (assessment.isCritical
-                ? "Uzun parklarda araç açılmayabilir; en kısa sürede şarj/bakım kontrolü önerilir."
-                : "Yakında şarj/bakım kontrolü önerilir.")
-        content.sound = .default
+        NotificationPoster.requestAuthorization(using: notificationPoster)
         // Kritik bandı time-sensitive taşınır: kilitli ekranda ve
         // eşlenmiş saatte yoğun olmayan haptikle görünür (Critical Alerts
         // yetkisi yok; kullanıcının bildirim ayarı geçerlidir).
-        if assessment.isCritical {
-            content.interruptionLevel = .timeSensitive
-        }
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-        center.add(request, withCompletionHandler: nil)
+        NotificationPoster.post(
+            NotificationPoster.Draft(
+                identifier: UUID().uuidString,
+                title: assessment.isCritical ? "12 V akü kritik düşük" : "12 V akü zayıf",
+                body: "Akü yüzde \(assessment.percent). "
+                    + (assessment.isCritical
+                        ? "Uzun parklarda araç açılmayabilir; en kısa sürede şarj/bakım kontrolü önerilir."
+                        : "Yakında şarj/bakım kontrolü önerilir."),
+                timeSensitive: assessment.isCritical
+            ),
+            using: notificationPoster
+        )
     }
 
     private var auxiliaryHistoryKey: String { StorageKeys.auxiliaryHistory(vehicle.vin) }

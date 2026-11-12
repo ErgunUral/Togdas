@@ -376,6 +376,14 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   DashboardView'daki tüm yakınlık/klima `UserDefaults` çağrıları yeni
   store'lara bağlandı. Açma/kapama (`enabled`) durumu `GaragePreferences`
   kaynağında kaldı. Test 387 → 396.
+- Faz B3 (gönderim birleşimi): `NotificationPoster` — yerel bildirim
+  gönderiminin tek noktası. `NotificationPosting` protokolü (testte sahte
+  merkez) + `SystemNotificationPoster` (UNUserNotificationCenter
+  sarmalayıcı) + `post(draft:using:onSuccess:)` (içerik kurulumu,
+  gönderim, yalnız başarıda geri çağrı). 4 gönderim noktası bağlandı:
+  DashboardView (tire/12 V/kalibrasyon önerisi), `MaintenanceNotifier`
+  (kayıt yalnız başarıda korunur), `ChargingBudgetNotifier` (izin akışı
+  korunur). Bildirim kararı çağırandadır; +5 test. Test 396 → 401.
 - Proje değerlendirme raporu: `Docs/Proje-Degerlendirme-2026-11.md`
   (mimari/kalite/test/arayüz; App katmanı test ve DashboardView bölünmesi
   sonraki işler).

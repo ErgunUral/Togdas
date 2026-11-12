@@ -18,12 +18,12 @@ enum ChargingBudgetNotifier {
             switch settings.authorizationStatus {
             case .authorized, .provisional, .ephemeral:
                 schedule(budget: budget, threshold: threshold, month: month,
-                         vin: vin, store: store, center: center)
+                         vin: vin, store: store)
             case .notDetermined:
                 center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
                     guard granted else { return }
                     schedule(budget: budget, threshold: threshold, month: month,
-                             vin: vin, store: store, center: center)
+                             vin: vin, store: store)
                 }
             default:
                 return
@@ -32,23 +32,22 @@ enum ChargingBudgetNotifier {
     }
 
     private static func schedule(budget: ChargingBudget, threshold: Int, month: String,
-                                 vin: String, store: ChargingSpendStore,
-                                 center: UNUserNotificationCenter) {
-        let content = UNMutableNotificationContent()
-        content.sound = .default
+                                 vin: String, store: ChargingSpendStore) {
+        let title: String
+        let body: String
         if threshold >= 100 {
-            content.title = "Aylık şarj bütçesi aşıldı"
-            content.body = "\(ChargingBudget.money(budget.spentTRY)) harcandı; limit \(ChargingBudget.money(budget.limitTRY))."
+            title = "Aylık şarj bütçesi aşıldı"
+            body = "\(ChargingBudget.money(budget.spentTRY)) harcandı; limit \(ChargingBudget.money(budget.limitTRY))."
         } else {
-            content.title = "Şarj bütçesinin %80'i kullanıldı"
-            content.body = "\(ChargingBudget.money(budget.spentTRY)) / \(ChargingBudget.money(budget.limitTRY)) · \(ChargingBudget.money(budget.remainingTRY)) kaldı."
+            title = "Şarj bütçesinin %80'i kullanıldı"
+            body = "\(ChargingBudget.money(budget.spentTRY)) / \(ChargingBudget.money(budget.limitTRY)) · \(ChargingBudget.money(budget.remainingTRY)) kaldı."
         }
 
         let identifier = "toqdas.budget.\(vin).\(month).\(threshold)"
-        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
-        center.add(request) { error in
-            guard error == nil else { return }
-            store.markNotified(threshold: threshold, month: month)
-        }
+        NotificationPoster.post(
+            NotificationPoster.Draft(identifier: identifier, title: title, body: body),
+            using: SystemNotificationPoster(),
+            onSuccess: { store.markNotified(threshold: threshold, month: month) }
+        )
     }
 }

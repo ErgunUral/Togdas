@@ -9,14 +9,14 @@ import UserNotifications
 enum MaintenanceNotifier {
 
     static func requestAuthorization() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        NotificationPoster.requestAuthorization(using: SystemNotificationPoster())
     }
 
     /// Yaklaşan ve gecikmiş bakımlar için bildirim gönderir.
     /// Aynı bakım aynı gün içinde ikinci kez bildirilmez
     /// (`NotificationDedupe`; kayıt yalnız başarılı gönderimde yapılır).
     static func notify(items: [MaintenanceItem], odometer: Double, vin: String) {
-        let center = UNUserNotificationCenter.current()
+        let center = SystemNotificationPoster()
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let dedupe = NotificationDedupe(store: UserDefaults.standard)
@@ -28,23 +28,17 @@ enum MaintenanceNotifier {
             let overdue = item.dueKm <= odometer
             let remaining = item.remainingKm(currentOdometer: odometer)
 
-            let content = UNMutableNotificationContent()
-            content.title = "Bakım hatırlatıcı"
-            content.body = overdue
-                ? "\(item.title) zamanı geldi (\(Int(item.dueKm)) km)."
-                : "\(item.title) yaklaşıyor: \(Int(remaining.rounded())) km kaldı."
-            content.sound = .default
-
-            let request = UNNotificationRequest(
-                identifier: "\(item.id.uuidString)-\(Int(today.timeIntervalSince1970))",
-                content: content,
-                trigger: nil
+            NotificationPoster.post(
+                NotificationPoster.Draft(
+                    identifier: "\(item.id.uuidString)-\(Int(today.timeIntervalSince1970))",
+                    title: "Bakım hatırlatıcı",
+                    body: overdue
+                        ? "\(item.title) zamanı geldi (\(Int(item.dueKm)) km)."
+                        : "\(item.title) yaklaşıyor: \(Int(remaining.rounded())) km kaldı."
+                ),
+                using: center,
+                onSuccess: { dedupe.record(key: notifyKey, now: today) }
             )
-            center.add(request) { error in
-                if error == nil {
-                    dedupe.record(key: notifyKey, now: today)
-                }
-            }
         }
     }
 
