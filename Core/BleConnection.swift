@@ -1443,6 +1443,13 @@ extension BleConnection.State {
     var isChallenge: Bool { if case .challenge = self { return true }; return false }
     var isReady: Bool { if case .ready = self { return true }; return false }
     var isFailed: Bool { if case .failed = self { return true }; return false }
+    /// Araç doğrulama anahtarı eksik: eşleştirme bekleniyor. Kalıcı hata değil,
+    /// beklenen bekleme durumudur (araç ekranından eşleştirme başlatılır);
+    /// UI'da turuncu gösterilir, seyrek yeniden deneme sürer.
+    var isPairingWait: Bool {
+        if case .failed(let issue) = self { return issue == .vehicleKeyMissing }
+        return false
+    }
 
     var description: String {
         switch self {

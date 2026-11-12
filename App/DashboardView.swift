@@ -1212,12 +1212,18 @@ struct DashboardView: View {
 
     private var bleStatusColor: Color {
         if ble.state.isReady { return ToggTheme.green }
+        if ble.pairingRequired || ble.state.isPairingWait { return ToggTheme.orange }
         if ble.state.isFailed { return ToggTheme.pink }
         if ble.state.isDisconnected { return ToggTheme.muted }
         return ToggTheme.orange
     }
 
     private var bleStateTitle: String {
+        // Eşleştirme bekleme "Yeniden bağlanıyor…" maskesinin altında kalmasın:
+        // kullanıcının araç ekranında yapması gereken işlem açıkça görünsün.
+        if ble.pairingRequired || ble.state.isPairingWait {
+            return "Araç eşleştirmesi bekleniyor · araç ekranından eşleştirmeyi başlat"
+        }
         if model.silentRecovery { return "Yeniden bağlanıyor…" }
         if ble.state.isReady { return "Bağlı · Komut hazır" }
         return ble.state.description

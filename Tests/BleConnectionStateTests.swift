@@ -31,8 +31,18 @@ final class BleConnectionStateTests: XCTestCase {
         XCTAssertEqual(BleConnection.State.failed(.vehicleKeyMissing).description, "Hata: Araç eşleştirmesi gerekiyor")
     }
 
-    func testTypedIssueMessagesRemainUserFacing() {
-        XCTAssertEqual(BLEIssue.radioUnavailable.message, "Bluetooth kapalı veya izin yok.")
+    /// `isPairingWait` yalnızca araç anahtarı eksikken doğrudur; diğer
+    /// kalıcı hatalar (radyo kapalı, zaman aşımı vb.) bekleme değildir.
+    func testPairingWaitOnlyForVehicleKeyMissing() {
+        XCTAssertTrue(BleConnection.State.failed(.vehicleKeyMissing).isPairingWait)
+        XCTAssertFalse(BleConnection.State.failed(.unknown("hata")).isPairingWait)
+        XCTAssertFalse(BleConnection.State.failed(.connectionTimeout).isPairingWait)
+        for state in allStates where !state.isFailed {
+            XCTAssertFalse(state.isPairingWait, "Başarısız olmayan durum bekleme sayılmamalı: \(state)")
+        }
+    }
+
+    func testTypedIssueMessagesRemainUserFacing() {        XCTAssertEqual(BLEIssue.radioUnavailable.message, "Bluetooth kapalı veya izin yok.")
         XCTAssertEqual(BLEIssue.pairingLost.message, "Eşleşme hatası")
         XCTAssertEqual(BLEIssue.connectionFailed("zaman aşımı").message, "Bağlantı hatası: zaman aşımı")
         XCTAssertEqual(BLEIssue.handshakeTimeout("Araç sertifikayı yanıtlamadı.").message, "Araç sertifikayı yanıtlamadı.")
