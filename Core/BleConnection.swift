@@ -1464,3 +1464,19 @@ extension BleConnection.State {
         }
     }
 }
+
+/// BLE durum tonu — `BleConnection` ile aynı dosyada olmalı: Widget/
+/// Watch hedefleri VisualTone.swift'i BleConnection'sız derler.
+extension BleConnection.State {
+    /// `.ready` canlı, `vehicleKeyMissing` bekleme (fatal hata değil),
+    /// diğer kalıcı hatalar hata, kopukluk bilgi yok, ara aşamalar işlem
+    /// sürüyor.
+    var visualTone: VisualTone {
+        if isReady { return .positive }
+        if case .failed(let issue) = self {
+            return issue == .vehicleKeyMissing ? .warning : .negative
+        }
+        if isDisconnected { return .neutral }
+        return .warning
+    }
+}

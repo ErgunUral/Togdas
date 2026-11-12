@@ -55,11 +55,13 @@ struct WatchGarageView: View {
     }
 
     private func lockColor(at now: Date) -> Color {
-        guard telemetryFresh(at: now) else { return .secondary }
-        switch snapshot?.locked {
-        case true: return .green
-        case false: return .orange
-        default: return .secondary
+        // U2 ton sözlüğü: karar Core'da (LockVisual), renk saat paletinden.
+        let tone = LockVisual.tone(locked: snapshot?.locked, isStale: !telemetryFresh(at: now))
+        switch tone {
+        case .positive: return .green
+        case .warning: return .orange
+        case .negative: return .red
+        case .neutral: return .secondary
         }
     }
 

@@ -1211,11 +1211,8 @@ struct DashboardView: View {
     }
 
     private var bleStatusColor: Color {
-        if ble.state.isReady { return ToggTheme.green }
-        if ble.pairingRequired || ble.state.isPairingWait { return ToggTheme.orange }
-        if ble.state.isFailed { return ToggTheme.pink }
-        if ble.state.isDisconnected { return ToggTheme.muted }
-        return ToggTheme.orange
+        if ble.state.isReady && model.silentRecovery { return ToggTheme.orange }
+        return ToggTheme.color(for: ble.state.visualTone)
     }
 
     private var bleStateTitle: String {

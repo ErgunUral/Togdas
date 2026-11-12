@@ -160,6 +160,18 @@ extension ToggTheme {
     static func text(_ style: ToggText, weight: Font.Weight = .regular) -> Font {
         Font.system(style.textStyle).weight(weight)
     }
+
+    /// Durum tonu → renk (U2 sözlüğü): yeşil=canlı · turuncu=bekleme/eski ·
+    /// pembe=hata · gri=bilgi yok. Widget ve saat aynı tonları kendi
+    /// çözücüsüyle kullanır; karar Core'da (VisualTone) tanımlıdır.
+    static func color(for tone: VisualTone) -> Color {
+        switch tone {
+        case .positive: return green
+        case .warning: return orange
+        case .negative: return pink
+        case .neutral: return muted
+        }
+    }
 }
 
 extension Color {

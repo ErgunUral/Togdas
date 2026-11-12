@@ -10,6 +10,10 @@
 		C0A1B2C3D4E5061728394A16 /* WatchComplicationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A1B2C3D4E5061728394A11 /* WatchComplicationStore.swift */; };
 		940D0BCBB340B016F1FFC382 /* WatchSnapshotThrottle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCE54B172EFC4782ADC217C1 /* WatchSnapshotThrottle.swift */; };
 		B9F50718B5D0B377D8C5E301 /* WatchSnapshotThrottle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCE54B172EFC4782ADC217C1 /* WatchSnapshotThrottle.swift */; };
+		EC6E5B55A7F7268C579915A6 /* VisualTone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93132EE0BE79231520AA581A /* VisualTone.swift */; };
+		218779AE463755A88DD8DD23 /* VisualTone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93132EE0BE79231520AA581A /* VisualTone.swift */; };
+		300EDDFA89D61B8FC38A74B8 /* VisualTone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93132EE0BE79231520AA581A /* VisualTone.swift */; };
+		091D4C4330EAF0B4686D85AB /* VisualTone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93132EE0BE79231520AA581A /* VisualTone.swift */; };
 		C0A1B2C3D4E5061728394A15 /* WatchSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */; };
 		C0A1B2C3D4E5061728394A14 /* AuxiliaryBatteryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */; };
 		C0A1B2C3D4E5061728394A02 /* ToqdasWatchWidget.appex in Embed Watch Widgets */ = {isa = PBXBuildFile; fileRef = C0A1B2C3D4E5061728394A01 /* ToqdasWatchWidget.appex */; };
@@ -379,6 +383,7 @@
 		C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchSnapshot.swift; path = Shared/WatchSnapshot.swift; sourceTree = "<group>"; };
 		C0A1B2C3D4E5061728394A11 /* WatchComplicationStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchComplicationStore.swift; path = Core/WatchComplicationStore.swift; sourceTree = "<group>"; };
 		DCE54B172EFC4782ADC217C1 /* WatchSnapshotThrottle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchSnapshotThrottle.swift; path = Core/WatchSnapshotThrottle.swift; sourceTree = "<group>"; };
+		93132EE0BE79231520AA581A /* VisualTone.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VisualTone.swift; path = Core/VisualTone.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -810,6 +815,7 @@
 				D996C237D897011FC95738CF /* VehicleWidgetSnapshot.swift in Sources */,
 				B1C2D3E4F5061728394A5B0C /* VehicleCommandStatus.swift in Sources */,
 				3C4D5E6F0A1B2738495A6B7C /* AuxiliaryBatteryPolicy.swift in Sources */,
+				300EDDFA89D61B8FC38A74B8 /* VisualTone.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -839,8 +845,10 @@
 				C0A1B2C3D4E5061728394A10 /* WatchSnapshot.swift in Sources */,
 				C0A1B2C3D4E5061728394A12 /* WatchComplicationStore.swift in Sources */,
 				940D0BCBB340B016F1FFC382 /* WatchSnapshotThrottle.swift in Sources */,
+				EC6E5B55A7F7268C579915A6 /* VisualTone.swift in Sources */,
 				0458E095B333ACDFBC5ED61F /* ToqdasWatchApp.swift in Sources */,
 				9C0D1E2F3A4B5C6D7E8F9A0B /* AuxiliaryBatteryPolicy.swift in Sources */,
+				091D4C4330EAF0B4686D85AB /* VisualTone.swift in Sources */,
 				4317E884109146BF8BB94813 /* VoiceCommand.swift in Sources */,
 				2BC29DA791506A09A071A7BB /* VoiceCommandParser.swift in Sources */,
 				576615B3E04219C9B996F314 /* VoiceCommandPolicy.swift in Sources */,
@@ -916,6 +924,7 @@
 				C0A1B2C3D4E5061728394A15 /* WatchSnapshot.swift in Sources */,
 				C0A1B2C3D4E5061728394A16 /* WatchComplicationStore.swift in Sources */,
 				B9F50718B5D0B377D8C5E301 /* WatchSnapshotThrottle.swift in Sources */,
+				218779AE463755A88DD8DD23 /* VisualTone.swift in Sources */,
 				E2C77100638F03D023917A1A /* VoiceCommand.swift in Sources */,
 				BD0BBD5CD2C6D7F467B88621 /* VoiceCommandParser.swift in Sources */,
 				F5D5C31BD023B399FEE9614C /* VoiceCommandPolicy.swift in Sources */,
@@ -989,6 +998,7 @@
 				C0A1B2C3D4E5061728394A10 /* WatchSnapshot.swift in Sources */,
 				C0A1B2C3D4E5061728394A12 /* WatchComplicationStore.swift in Sources */,
 				940D0BCBB340B016F1FFC382 /* WatchSnapshotThrottle.swift in Sources */,
+				EC6E5B55A7F7268C579915A6 /* VisualTone.swift in Sources */,
 				C0A1B2C3D4E5061728394A14 /* AuxiliaryBatteryPolicy.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

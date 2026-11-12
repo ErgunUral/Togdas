@@ -59,14 +59,40 @@ struct ToqdasWidgetBundle: WidgetBundle {
     var body: some Widget { ToqdasVehicleStatusWidget() }
 }
 
+/// Widget hedefinde App paletiyle aynı hex değerleri (karar Core'daki
+/// VisualTone'da; hexler App hedefindeki `Color(hex:)` ile aynı sabitler).
+private extension Color {
+    init(hex: UInt32) {
+        self.init(
+            .sRGB,
+            red: Double((hex >> 16) & 0xff) / 255,
+            green: Double((hex >> 8) & 0xff) / 255,
+            blue: Double(hex & 0xff) / 255,
+            opacity: 1
+        )
+    }
+}
+
 private struct VehicleStatusView: View {
     let snapshot: VehicleWidgetSnapshot?
     /// Son komut sonucu; 24 saatten eski/bilgi yok ise satır çıkarılmaz.
     let command: VehicleCommandStatus?
 
+    /// Durum tonu → widget paleti (U2 sözlüğü; Dashboard ile aynı karar,
+    /// Core'daki VisualTone'dan çözülür: yeşil=canlı · turuncu=eski/açık ·
+    /// gri=bilgi yok).
+    private func toneColor(_ tone: VisualTone) -> Color {
+        switch tone {
+        case .positive: return Color(hex: 0x00E676)
+        case .warning: return Color(hex: 0xFF9100)
+        case .negative: return Color(hex: 0xFF5252)
+        case .neutral: return Color(hex: 0x9AA7BD)
+        }
+    }
+
     private var lockTint: Color {
-        guard let snapshot, !snapshot.lockDataIsStale else { return .orange }
-        return snapshot.locked == true ? .green : (snapshot.locked == false ? .orange : .secondary)
+        let stale = snapshot?.lockDataIsStale ?? true
+        return toneColor(LockVisual.tone(locked: snapshot?.locked, isStale: stale))
     }
 
     var body: some View {
@@ -242,7 +268,7 @@ private struct VehicleStatusView: View {
             Text(snapshot.freshnessText)
         }
         .font(.system(size: 8, weight: .medium))
-        .foregroundStyle(snapshot.freshnessIsLive ? .white.opacity(0.55) : .orange)
+        .foregroundStyle(snapshot.freshnessIsLive ? toneColor(.positive) : toneColor(.warning))
         .lineLimit(1)
     }
 }
