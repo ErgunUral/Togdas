@@ -97,7 +97,7 @@ struct WatchGarageView: View {
                         .lineLimit(1)
 
                     Image(systemName: lockSymbol(at: now))
-                        .font(.system(size: 34, weight: .semibold))
+                        .font(.largeTitle.weight(.semibold))
                         .foregroundStyle(lockColor(at: now))
                         .padding(.top, 2)
 

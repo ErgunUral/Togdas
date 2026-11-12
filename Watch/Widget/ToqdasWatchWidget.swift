@@ -58,12 +58,15 @@ struct WatchSnapshotProvider: TimelineProvider {
 
 // MARK: - Görünümler
 
+/// Kilit rengi U2 ton sözlüğünden: `ready == false` "eski/hazır değil"
+/// bekleme tonu değil, bilgi yok tonudur; karar Core'da (LockVisual).
 private func lockColor(locked: Bool?, ready: Bool) -> Color {
-    guard ready else { return .secondary }
-    switch locked {
-    case true: return .green
-    case false: return .orange
-    default: return .secondary
+    let tone = LockVisual.tone(locked: locked, isStale: !ready)
+    switch tone {
+    case .positive: return .green
+    case .warning: return .orange
+    case .negative: return .red
+    case .neutral: return .secondary
     }
 }
 
@@ -158,6 +161,8 @@ struct ComplicationCornerView: View {
             Gauge(value: min(max(entry.batteryPercent ?? 0, 0), 100), in: 0...100) {
             } currentValueLabel: {
                 Text(entry.batteryPercent.map { "%\(Int($0.rounded()))" } ?? "—")
+                    // Complication gauge etiketi: kasıtlı sabit 8pt (köşe
+                    // gauge alanı çok küçük; ölçek tablosuna girmez).
                     .font(.system(size: 8, weight: .bold))
                     .minimumScaleFactor(0.5)
             }
