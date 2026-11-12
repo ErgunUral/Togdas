@@ -217,6 +217,25 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 
 ## 8. İlerleme
 
+- **İyileştirme turu (2026-11-12, 435 test):**
+  - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
+    (yalnız `vehicleKeyMissing`), Dashboard başlığı
+    "Araç eşleştirmesi bekleniyor · araç ekranından eşleştirmeyi başlat",
+    durum rengi turuncu (`ea81893`).
+  - Zayıf sinyalde BLE geri çekilme: son RSSI < −85 dBm → temel gecikme
+    ×2, üst sınır 30 sn; güçlü/bilinmeyen sinyalde davranış birebir.
+    Android .57'nin "taze uygun reklam + backoff" kapısı felsefesinin
+    iOS karşılığı; doğrudan yeniden bağlanma kısayolu değişmedi (`68994b0`).
+  - Saat snapshot darboğazı: `Core/WatchSnapshotThrottle` — gösterim
+    değişimi 30 sn minimum aralığa sıkıştırılır; önemli alan (ready/
+    bleState/komut sonucu/yeniden bağlanma) anında geçer; zaman damgaları
+    parmak izine girmez (`e1d344a`).
+  - Tanı günlüğü paylaşımı: `BLEDiagnosticLogExporter.text` (zaman
+    damgalı olaylar; boş günlükte "kayıt yok") + CommandView ShareLink (`85e69e4`).
+  - Widget 12 V son 7 gün mini-grafik: `AuxiliaryBatteryHistory.numericValues`
+    + `VehicleWidgetSnapshot.auxiliaryHistoryPercents` (VIN'siz, eski
+    önbellek uyumlu) + medium boyutta 7 çubuk; eksik gün çukur/"bilgi yok",
+    gerçek 0 korunur (`cbacb1b`).
 - `BLEDiagnosticStore` … `BLECommandRejection` ve `BLECommandReceipt` aşamaları eklendi.
 - `VehicleTelemetry` için tip veri kümesi eklendi; görev hatası/TODO kalıntısı
   temizlendi.
