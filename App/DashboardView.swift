@@ -84,6 +84,7 @@ struct DashboardView: View {
     @State private var showBLESetupGuide = false
     @State private var authBusy = false
     @State private var showRepairConfirm = false
+    @State private var showKeyDiscovery = false
     @State private var alert: DashboardAlert?
     @State private var autoKeyStarted = false
     @State private var hasAuthenticatedBLE = false
@@ -480,6 +481,9 @@ struct DashboardView: View {
         .sheet(isPresented: $showBLESetupGuide) {
             BLESetupGuideSheet(ble: ble)
         }
+        .sheet(isPresented: $showKeyDiscovery) {
+            KeyDiscoveryView(ble: ble, vin: vehicle.vin)
+        }
         .sheet(isPresented: $showProximityGuide) {
             ProximityCalibrationSheet(
                 vin: vehicle.vin,
@@ -739,6 +743,13 @@ struct DashboardView: View {
             if !ble.state.isReady {
                 Button { showRepairConfirm = true } label: {
                     Label("Dijital anahtarı yeniden eşleştir", systemImage: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(ToggTheme.teal)
+                }
+                .buttonStyle(.plain)
+
+                Button { showKeyDiscovery = true } label: {
+                    Label("Cihaz ortamında aday seç", systemImage: "list.bullet.rectangle")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(ToggTheme.teal)
                 }

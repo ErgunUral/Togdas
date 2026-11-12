@@ -394,6 +394,17 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   ≤12 sn, seçim penceresi 120 sn, 128 ham/32 geçerli aday limiti) ve
   K00–K07 durum kodları. Aday seçimi **araç komutu göndermez**
   (Android invariant'ı). +10 test. Test 401 → 411.
+- keyDiscovery Faz D2 (aday seçim akışı): `KeyDiscoverySession` (saf
+  oturum durumu: katalog, 12 sn tarama penceresi, 120 sn seçim
+  tazeliği, 128 ham/32 geçerli limit, K-kodları; tazelik tarama
+  bitişini izler) + `KeyDiscoveryView` (SwiftUI sheet: Tara → geçerli
+  aday listesi → Seç → Bağlan). `KeyDiscoveryScanner` ayrı
+  `CBCentralManager` örneğiyle gözlem toplar, `BleConnection`'ın
+  otomatik bağlantı akışına dokunmaz; "Bağlan" mevcut el sıkışma/
+  anahtar öğrenme akışını başlatır (`connect(to:)`). DashboardView'a
+  "Cihaz ortamında aday seç" girişi eklendi (bağlantı yokken görünür);
+  `BleConnection.lastConnectedPeripheralIdentifier` salt-okunur açıldı
+  (kayıtlı adres kanıtı). +9 test. Test 411 → 420.
 - Proje değerlendirme raporu: `Docs/Proje-Degerlendirme-2026-11.md`
   (mimari/kalite/test/arayüz; App katmanı test ve DashboardView bölünmesi
   sonraki işler).

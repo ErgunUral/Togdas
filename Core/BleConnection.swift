@@ -225,6 +225,13 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     func disconnect() { stop() }
 
+    /// Son bağlanılan çevrebirimin tanımlayıcısı; tanıtma aday seçiminde
+    /// "kayıtlı adres" kanıtı olarak kullanılır. Salt-okunur; oturum
+    /// durumu bozulmaz.
+    var lastConnectedPeripheralIdentifier: UUID? {
+        lastPeripheral?.identifier
+    }
+
     /// Son komutları ve ekrandaki son komut kartını temizler.
     func clearCommandHistory() {
         commandHistory = []
