@@ -306,6 +306,9 @@ struct CommandView: View {
                 ShareLink(item: diagnosticReport.shareText) {
                     Label("Tanı özetini paylaş", systemImage: "square.and.arrow.up")
                 }
+                ShareLink(item: BLEDiagnosticLogExporter.text(ble.diagnosticEvents)) {
+                    Label("Tanı günlüğünü paylaş (\(ble.diagnosticEvents.count) olay)", systemImage: "doc.text")
+                }
             } header: {
                 Text("BLE tanı özeti · son 60 dk")
             } footer: {

@@ -6,6 +6,25 @@ final class BLEDiagnosticReportTests: XCTestCase {
         BLEDiagnosticEvent(id: UUID(), timestamp: now.addingTimeInterval(-secondsAgo), message: message)
     }
 
+    /// Günlük dışa aktarıcı: başlık + olay sayısı + satır sırası korunur;
+    /// boş günlükte "kayıt yok" döner (asla uydurma içerik üretmez).
+    func testLogExporterFormatsEventsAndEmptyLog() {
+        let now = Date(timeIntervalSince1970: 20_000)
+        let events = [
+            event("Bağlantı durumu: Komut hazır", secondsAgo: 8, now: now),
+            event("BLEDisconnected · araç bağlantıyı kapattı", secondsAgo: 5, now: now)
+        ]
+        let text = BLEDiagnosticLogExporter.text(events)
+        XCTAssertTrue(text.hasPrefix("Toqdas BLE tanı günlüğü · 2 olay"))
+        XCTAssertTrue(text.contains(" · Bağlantı durumu: Komut hazır"))
+        XCTAssertTrue(text.contains(" · BLEDisconnected · araç bağlantıyı kapattı"))
+        // Sıra korunur: en eski önce.
+        let readyLine = text.range(of: "Komut hazır")!
+        let dropLine = text.range(of: "araç bağlantıyı kapattı")!
+        XCTAssertLessThan(readyLine.lowerBound, dropLine.lowerBound)
+        XCTAssertEqual(BLEDiagnosticLogExporter.text([]), "Toqdas BLE tanı günlüğü · kayıt yok")
+    }
+
     func testSummarizesRecentScanConnectionAndFailureEvents() {
         let now = Date(timeIntervalSince1970: 20_000)
         let events = [

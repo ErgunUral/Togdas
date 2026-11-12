@@ -18,6 +18,21 @@ enum BLEDiagnosticStore {
     }
 }
 
+/// Tanı olay günlüğünü paylaşılabilir metne çevirir. Olaylar kayıt anında
+/// VIN redaksiyonundan geçer (`recordDiagnostic`); bu katman ayrıca
+/// boş günlükte uydurma içerik üretmez ("kayıt yok" döner).
+enum BLEDiagnosticLogExporter {
+    static func text(_ events: [BLEDiagnosticEvent]) -> String {
+        guard !events.isEmpty else { return "Toqdas BLE tanı günlüğü · kayıt yok" }
+        let lines = events.map { event -> String in
+            let stamp = TurkishFormat.date(event.timestamp, format: "dd.MM HH:mm:ss")
+            return "\(stamp) · \(event.message)"
+        }
+        return ([ "Toqdas BLE tanı günlüğü · \(events.count) olay" ] + lines)
+            .joined(separator: "\n")
+    }
+}
+
 /// Son bir saatlik BLE sayaç özeti. Kaynak, VIN'i redakte edilmiş yerel olay
 /// günlüğüdür; tanı özeti kimlik bilgisi veya ham paket içermez.
 struct BLEDiagnosticReport: Equatable {
