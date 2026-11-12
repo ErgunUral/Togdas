@@ -168,7 +168,10 @@ struct KeyDiscoveryCandidate: Equatable {
     }
 
     /// Ham gözlemden aday kurar (reklam adı/UUID kanıtlarıyla).
+    /// `id` boşsa rastgele atanır; oturum çevrebirim tanımlayıcısını
+    /// geçer (aday anahtarı stabil kalır).
     static func fromSighting(
+        id: String = UUID().uuidString,
         name: String?,
         rssi: Int?,
         vin: String,
@@ -177,7 +180,7 @@ struct KeyDiscoveryCandidate: Equatable {
         at date: Date = Date()
     ) -> KeyDiscoveryCandidate {
         var candidate = KeyDiscoveryCandidate(
-            id: UUID().uuidString,
+            id: id,
             name: name,
             rssi: rssi,
             firstSeen: date,

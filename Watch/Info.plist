@@ -9,6 +9,6 @@
     <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
     <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
     <key>WKApplication</key><true/>
-    <key>WKCompanionAppBundleIdentifier</key><string>com.toqdas.ios</string>
+    <key>WKCompanionAppBundleIdentifier</key><string>com.toqdas.ios.dev</string>
     <key>NSBluetoothAlwaysUsageDescription</key><string>Yakındaki Togg araç servislerini saatinizden bulmak için Bluetooth kullanılır.</string>
 </dict></plist>
