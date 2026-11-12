@@ -384,6 +384,16 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   DashboardView (tire/12 V/kalibrasyon önerisi), `MaintenanceNotifier`
   (kayıt yalnız başarıda korunur), `ChargingBudgetNotifier` (izin akışı
   korunur). Bildirim kararı çağırandadır; +5 test. Test 396 → 401.
+- Tanı: ham sürüş modu değeri (`vehicleInfo · driveMode=...`) tanıya
+  yazıldı; sürüş modu uyuşmazlığı tanı ekranından doğrulanabilir.
+- keyDiscovery Faz D1 (Core politikası): `KeyDiscoveryPolicy` +
+  `KeyDiscoveryCandidate` — Android `.57.18` `Q4.java` kuralları saf
+  mantık olarak taşındı: VIN-ad eşleşmesi ("MY T-SAS <son 8/son 6/tam
+  VIN>", [A-HJ-NPR-Z0-9]{17}), aday geçerliliği ve öncelik metinleri
+  (VIN-ad > kayıtlı adres > servis > genel ad), seçim tazeliği (tarama
+  ≤12 sn, seçim penceresi 120 sn, 128 ham/32 geçerli aday limiti) ve
+  K00–K07 durum kodları. Aday seçimi **araç komutu göndermez**
+  (Android invariant'ı). +10 test. Test 401 → 411.
 - Proje değerlendirme raporu: `Docs/Proje-Degerlendirme-2026-11.md`
   (mimari/kalite/test/arayüz; App katmanı test ve DashboardView bölünmesi
   sonraki işler).
