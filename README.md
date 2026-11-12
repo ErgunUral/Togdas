@@ -169,7 +169,7 @@ v2 çekirdeği:
   `Tests/VoiceSessionTests.swift`, `Tests/VoiceChatTests.swift`,
   `Tests/BleFailureTests.swift`, `Tests/EPDKCatalogTests.swift`,
   `Tests/BLEDiagnosticReportTests.swift`, `Tests/KeySharingTests.swift`,
-  `Tests/BLECommandPolicyTests.swift`: toplam 435 test.
+  `Tests/BLECommandPolicyTests.swift`: toplam 437 test.
 
 Sesli asistanı genişletme rehberi: `Docs/SesliKomut-Ekleme.md` (sohbet sorusu, salt
 okunur komut ve eylem ekleme adımları, değişmez kurallar).

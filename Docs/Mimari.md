@@ -217,6 +217,18 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 
 ## 8. İlerleme
 
+- **UI/UX planı Faz U1–U3 (2026-11-12, 437 test):**
+  - U1 tip ölçeği: `ToggText` (7 semantik stil, `ToggTheme.text`) — 158
+    sabit `.system(size:)` taşıma; monospace meta sabit kalır; ClimateCard
+    hero sayısı `@ScaledMetric`; Dynamic Type xxxLarge ile sınır (`eca1d69`).
+  - U2 durum renk sözlüğü: `Core/VisualTone` (positive/warning/negative/
+    neutral) + `LockVisual.tone` + `BleConnection.State.visualTone`
+    (BleConnection.swift'te — Widget/Watch hedefleri BleConnection'sız
+    derler); `ToggTheme.color(for:)`; Widget lockTint/canlılık ve saat
+    lockColor aynı tonlardan (`c1bd83a`).
+  - U3 erişilebilirlik: kapı kutucukları VoiceOver, ≥44pt vurma hedefleri
+    (sekmeler, BLE düğmeleri, klima toggle/cam komutları), Reduce Motion
+    desteği (`8ad220b`).
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı
