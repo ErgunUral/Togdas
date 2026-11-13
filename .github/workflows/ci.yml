@@ -62,6 +62,13 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+          # Özet ve loglar anonim erişime kapalı; ilk hataları annotation
+          # olarak yayınla (check-run API üzerinden okunabilir).
+          grep -m 5 -E "error:|failed|Fatal" "$RUNNER_TEMP/swift-test.log" \
+            | while IFS= read -r line; do
+                echo "::error title=swift test::${line//$'\n'/ }"
+              done || true
+
   ui:
     name: UI testleri
     runs-on: macos-26
@@ -181,6 +188,11 @@ jobs:
             tail -n 120 "$RUNNER_TEMP/xcodebuild.log"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+          grep -m 5 -E "error:|failed|Testing failed" "$RUNNER_TEMP/xcodebuild.log" \
+            | while IFS= read -r line; do
+                echo "::error title=xcodebuild::${line//$'\n'/ }"
+              done || true
 
       - name: Sonuçları yükle
         if: failure()
