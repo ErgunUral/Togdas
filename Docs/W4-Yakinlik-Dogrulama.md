@@ -42,7 +42,10 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
 
 ## 5. Saat + widget veri kanalı — **bekliyor**
 - [x] Saat uygulaması Watch Ultra 2'ye yeniden kuruldu ve launch OK (13.11)
-- [ ] Complication/widget verileri doluyor mu? (app group kayıtlı ✓)
+- [x] Veri kanalı kod + cihaz kanıtıyla doğrulandı: `toqdas.watch.updatedAt.v1`
+  19:57:33, snapshot dolu, complication app group kaydı ✓
+- [x] **Complication VIN'siz** (13.11 akşam, `0b1a446`): `complicationCopy` +
+  `WatchLink` süzgeci; cihazda `vin = ""`, gösterim alanları korunuyor ✓
 - [ ] `WatchSnapshotThrottle` 30 sn davranışı
 - [ ] Tazelik rozeti: bilgi yok → gri, eski → turuncu (doğru ton)
 - [ ] Kanıt: saat + widget ekran görüntüleri
@@ -68,3 +71,33 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   imzalı "Kapı kilidinden önce camları kapat" → ack → "Kilitle" → ack (3 kez).
 - Arka plan sınırı ve fresh-cycle guard'ları beklenen davrandı.
 - Açık konular: kilit teyidi (kapalı kapıyla), aralıklı pairing_lost (17+14).
+
+## Loglardan çıkan iş planı (13.11 akşam ayrıştırması — onaylı sıra)
+
+### A. `pairing_lost` kök nedeni (17 + 14) — öncelik 1
+- Kanıt: 17'de 19:42:29 + 19:49:13 `pairing_lost · eşleşme bilgisi geçersiz`;
+  19:44'te kendiliğinden `Komut hazır`. Uzun oturum + sık reconnect sonrası.
+- Adımlar:
+  1. Tekrarladığı anda **tam olay dizisi** kaydı: tanı plist (flush için
+     uygulamayı arka plana al) + aynı saatteki `araç oturumu kapattı` satırları.
+  2. Aday kök nedenler: session/nonce ömrü; ardışık reconnect'te eşleşme
+     anahtarı geçersizleşmesi; araç tarafı oturum kapatma korelasyonu.
+  3. Karar: yalnız yeniden eşleştirme mi, yoksa kodda dayanıklılık düzeltmesi mi.
+  4. 14 sürekli aynı hatada → 14 için yeniden eşleştirme kararı ayrıca verilir.
+
+### B. Kilit teyidi (4. adımın kalanı) — öncelik 2 (araç başı)
+- Kanıt: `automatic_command_failed · kilit durumu doğrulanamadı` ×4, hepsi kapı
+  açıkken (`doors=[1,0,0,0]`); kapılar kapanınca 19:37:30 `Kilitli
+  doors=[0,0,0,0]` ✓. Kod değişikliği gerekmiyor — doğrulama işi.
+- Adımlar: kapılar kapalı + araç Bekleme → uzaklaş → çift bip + imzalı
+  telemetri teyidi + oto-kapatma sayacı; teyitsiz 30 sn senaryosu.
+
+### C. Yaklaşma → açma (3. adım) — öncelik 3 (araç başı)
+- Kanıt: açmalar "araç bekleme durumunda değil" ile atlandı (doğru davranış);
+  tek bilet/gecikme guard'ları akşamdan ✓.
+- Adımlar: araç Bekleme'deyken yaklaş → aç; 2. yaklaşmada komut yok; yeni
+  döngüde tekrar aç; kanıt satırı `Yakınlık otomasyonu kilit açma biletiyle…`.
+
+### D. Saat/widget ekran kanıtı (5. adım) — öncelik 4 (kullanıcı)
+- Saat + widget ekran görüntüsü; tazelik rozeti tonu; yeni metin
+  "Yakınlık otomasyonu telefonda açık — saat yalnızca görüntüler".
