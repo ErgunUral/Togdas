@@ -22,7 +22,7 @@ xcodebuild test \
   -only-testing:ToqdasUITests
 ```
 
-27 test, 6 dosya (2026-11-13: 283 sn, 27/27 yeşil):
+31 test, 7 dosya (2026-11-13: 325 sn, 31/31 yeşil):
 
 - `UITests/ToqdasSmokeTests.swift` (4): Giriş ekranı ve Togg ID düğmesi
   erişilebilir; cihaz dili İngilizce olsa da Türkçe arayüz metni korunur;
@@ -45,6 +45,11 @@ xcodebuild test \
   rehberi, Aday Seç, Bluetooth taraması sheet'leri açılır ve kapanır;
   Araç detayı, Servis kartı, Seyahatname ve Bildirimler & Destek
   ekranları açılır ve panoya dönülür.
+- `UITests/ToqdasAccessibilityAuditTests.swift` (4, iOS 17+): Genel Bakış,
+  üç sekme, Senaryolar rehberi ve komut sheet'inde
+  `performAccessibilityAudit` — dokunma hedefi, okunabilir etiket, metin
+  kırpılması ve trait. Dynamic Type ve kontrast bilinçli kapsam dışı
+  (bkz. `Docs/Erisilebilirlik.md`).
 
 `UITests/ToqdasUITestSupport.swift` ortak altyapıdır: `-uiTestSignedOut`
 ile oturum kapatılır, `-uiTestFixture` panoyu açar; sabit `sleep` yok,

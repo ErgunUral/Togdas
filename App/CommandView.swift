@@ -362,6 +362,7 @@ struct CommandView: View {
             }
         }
         .navigationTitle("Araç komutları")
+        .navigationBarTitleDisplayMode(.inline)
         .onReceive(ble.$lastEvent) { message = $0 }
         .onReceive(ble.$diagnosticEvents) { events in
             diagnosticReport = BLEDiagnosticReport(events: events)

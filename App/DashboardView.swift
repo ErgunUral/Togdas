@@ -682,9 +682,11 @@ struct DashboardView: View {
                 Label("Kurulumu adım adım dinle", systemImage: "speaker.wave.2.fill")
                     .font(ToggTheme.text(.caption, weight: .semibold))
                     .foregroundStyle(ToggTheme.teal)
-                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             }
             .buttonStyle(.plain)
+            // 44 pt dokunma hedefi düğmenin kendisinde (erişilebilirlik denetimi).
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .contentShape(Rectangle())
 
             if let rssi = ble.rssi {
                 Text("Bağlantı sinyali: \(rssi) dBm")
@@ -796,17 +798,19 @@ struct DashboardView: View {
                     Label("Dijital anahtarı yeniden eşleştir", systemImage: "arrow.triangle.2.circlepath")
                         .font(ToggTheme.text(.caption, weight: .semibold))
                         .foregroundStyle(ToggTheme.teal)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 }
                 .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
 
                 Button { showKeyDiscovery = true } label: {
                     Label("Cihaz ortamında aday seç", systemImage: "list.bullet.rectangle")
                         .font(ToggTheme.text(.caption, weight: .semibold))
                         .foregroundStyle(ToggTheme.teal)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 }
                 .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
                 .disabled(authBusy)
                 .confirmationDialog("Dijital anahtarı yeniden eşleştir?",
                                     isPresented: $showRepairConfirm,
@@ -2329,6 +2333,7 @@ struct DashboardView: View {
                 ZStack {
                     Circle().fill(ToggTheme.green.opacity(0.2)).frame(width: 38, height: 38)
                     Image(systemName: "bolt.car.fill").foregroundStyle(ToggTheme.green)
+                        .accessibilityHidden(true)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Trugo Akıllı Şarj Yönetimi")
@@ -2352,6 +2357,7 @@ struct DashboardView: View {
                 Image(systemName: "bolt.car.fill")
                     .font(ToggTheme.text(.headline))
                     .foregroundStyle(ToggTheme.green)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Şarj ve istasyonlar")
                         .font(ToggTheme.text(.body, weight: .bold))
@@ -2460,7 +2466,9 @@ struct DashboardView: View {
     private var trugoStations: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
-                Image(systemName: "bolt.car.fill").foregroundStyle(ToggTheme.teal)
+                Image(systemName: "bolt.car.fill")
+                    .foregroundStyle(ToggTheme.teal)
+                    .accessibilityHidden(true)
                 Text("En Yakın Trugo Şarj İstasyonları")
                     .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
             }

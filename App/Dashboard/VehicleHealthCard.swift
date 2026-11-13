@@ -62,6 +62,9 @@ struct VehicleHealthCard: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(ToggTheme.teal)
+                    // Denetim bulgusu: "Eşik" hedefi 44 pt'den küçüktü.
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
                 }
                 HStack(spacing: 10) {
                     tireBox(.frontLeft)

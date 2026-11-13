@@ -94,10 +94,12 @@ struct DashboardHeader: View {
                     HStack(spacing: 4) {
                         Image(systemName: "car.side.fill")
                             .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.teal)
+                            .accessibilityHidden(true)
                         Text("\(vehicle.title) • \(vehicle.plate.isEmpty ? vehicle.vin : vehicle.plate)")
                             .font(ToggTheme.text(.caption, weight: .semibold))
                             .foregroundStyle(ToggTheme.muted)
-                            .lineLimit(1)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.75)
                     }
                     if vehicle.isShared {
                         Label("Paylaşılan araç · sahip devri yok", systemImage: "person.2.fill")
@@ -161,6 +163,7 @@ struct DashboardHeader: View {
                             .foregroundStyle(ToggTheme.teal)
                             .frame(width: 32, height: 32)
                     }
+                    .accessibilityLabel("Menü")
                     .accessibilityIdentifier("header.menu")
                 }
             }

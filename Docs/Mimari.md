@@ -561,6 +561,14 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   ekranlar dürüst boş/hata durumunda açılıyor. Yüzey kapsamı 8/17 → 16/17
   (%94); tek eksik `ChargingStationsView`. Koşu: 27/27 yeşil.
 
+- **Erişilebilirlik denetimi (2026-11-13, 31 UI testi):** `ToqdasAccessibilityAuditTests`
+  (4 test) — Genel Bakış, üç sekme, rehber ve komut sheet'inde
+  `performAccessibilityAudit` (dokunma hedefi, etiket, kırpılma, trait).
+  Keşif koşusu 165 bulgu verdi; 17'si düzeltildi (4 düğme 44 pt, 5
+  dekoratif ikon gizlendi, menüye "Menü" etiketi, araç başlığı 2 satır,
+  komut sheet'i satır içi başlık). Dynamic Type (xxxLarge sınırı) ve
+  kontrast (tokenlar elle AA üstü) bilinçli kapsam dışı. Koşu: 31/31.
+
 ## 9. İlkeler
 
 - Sıfırdan rewrite yok; strangler pattern benzeri kademeli geçiş.
