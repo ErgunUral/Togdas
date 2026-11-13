@@ -29,6 +29,8 @@ enum StorageKeys {
     static func tireNotified(_ vin: String, position: String, severity: String) -> String { "toqdas.tire.notified.\(vin).\(position).\(severity)" }
     /// Bakım bildirim tekniği: bakım maddesi başına günde bir kez.
     static func maintenanceNotified(_ vin: String, itemID: UUID) -> String { "toqdas.maintenance.notify.\(vin).\(itemID.uuidString)" }
+    /// Eşleşme kurtarma bildirimi: araç başına günde bir kez.
+    static func pairingRecoveryNotified(_ vin: String) -> String { "toqdas.pairing.recovery.notified.\(vin)" }
 
     // MARK: Global anahtarlar
 

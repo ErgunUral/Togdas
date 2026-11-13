@@ -52,6 +52,7 @@
 		3CFC99DA36C6C806BF54ED03 /* App/ProximityCalibrationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1AF44C17D3FE981C19A1A8C /* App/ProximityCalibrationSheet.swift */; };
 		6D4E7F8091A2B3C4D5E6F7A8 /* Core/ScenarioContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C3D6E7F8091A2B3C4D5E6F7 /* Core/ScenarioContent.swift */; };
 		D1E2F3A4B5C6D7E8F9012345 /* ProximityCommandNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7D8E9F0A1B2C3D4E5F60718 /* ProximityCommandNotice.swift */; };
+		A9B8C7D6E5F40312A9B8C7D6 /* PairingRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C7D6E5F40312A9B8C7D6E5 /* PairingRecovery.swift */; };
 		8F6091A2B3C4D5E6F7A8B9C0 /* App/ScenarioGuideSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F8091A2B3C4D5E6F7A8B9 /* App/ScenarioGuideSheet.swift */; };
 		3E573134388F2997403C7038 /* Core/ShortcutLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E6553C89E34442D30915FB /* Core/ShortcutLink.swift */; };
 		404ABC4D3DD42DABB1BE60AC /* LockConfirmationSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CA21BA085F722911635017 /* LockConfirmationSound.swift */; };
@@ -393,6 +394,7 @@
 		FBE1205A21B8B73285145929 /* CertificateLifecycle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CertificateLifecycle.swift; path = Core/CertificateLifecycle.swift; sourceTree = "<group>"; };
 		5C3D6E7F8091A2B3C4D5E6F7 /* Core/ScenarioContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/ScenarioContent.swift; sourceTree = "<group>"; };
 		C7D8E9F0A1B2C3D4E5F60718 /* ProximityCommandNotice.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityCommandNotice.swift; path = Core/ProximityCommandNotice.swift; sourceTree = "<group>"; };
+		B8C7D6E5F40312A9B8C7D6E5 /* PairingRecovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PairingRecovery.swift; path = Core/PairingRecovery.swift; sourceTree = "<group>"; };
 		7E5F8091A2B3C4D5E6F7A8B9 /* App/ScenarioGuideSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App/ScenarioGuideSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -623,6 +625,7 @@
 				C01B02C03D04E05F06A70809 /* ClimateSettings.swift */,
 				5C3D6E7F8091A2B3C4D5E6F7 /* Core/ScenarioContent.swift */,
 				C7D8E9F0A1B2C3D4E5F60718 /* ProximityCommandNotice.swift */,
+				B8C7D6E5F40312A9B8C7D6E5 /* PairingRecovery.swift */,
 				C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */,
 			);
 			name = Core;
@@ -984,6 +987,7 @@
 				3CFC99DA36C6C806BF54ED03 /* App/ProximityCalibrationSheet.swift in Sources */,
 				6D4E7F8091A2B3C4D5E6F7A8 /* Core/ScenarioContent.swift in Sources */,
 				D1E2F3A4B5C6D7E8F9012345 /* ProximityCommandNotice.swift in Sources */,
+				A9B8C7D6E5F40312A9B8C7D6 /* PairingRecovery.swift in Sources */,
 				8F6091A2B3C4D5E6F7A8B9C0 /* App/ScenarioGuideSheet.swift in Sources */,
 				84C01423028B7B78968A0D58 /* Core/UserFacingError.swift in Sources */,
 				A109CC28F6CAA2BDEC125112 /* App/UserFacingError+App.swift in Sources */,

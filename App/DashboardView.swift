@@ -692,15 +692,21 @@ struct DashboardView: View {
 
             if ble.needsRepair {
                 VStack(alignment: .leading, spacing: 6) {
-                    Label("Eşleşme sıfırlanmalı", systemImage: "exclamationmark.triangle.fill")
+                    Label(PairingRecovery.title, systemImage: "exclamationmark.triangle.fill")
                         .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(ToggTheme.orange)
-                    Text("Araç, iPhone'un eşleşme bilgisini sildi. iPhone'da Ayarlar > Bluetooth'tan aracı unut; araç ekranından telefonu kaldır. İki cihazı yeniden başlatıp buradan tekrar bağlan.")
+                    Text(PairingRecovery.summary)
                         .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)
+                    ForEach(Array(PairingRecovery.steps.enumerated()), id: \.offset) { index, step in
+                        Text("\(index + 1). \(step)")
+                            .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
                 .background(RoundedRectangle(cornerRadius: 12).fill(ToggTheme.orange.opacity(0.12)))
+                .accessibilityElement(children: .combine)
             }
 
             if let telemetry = ble.telemetry {
@@ -1721,8 +1727,24 @@ struct DashboardView: View {
                              + " · bildirim gönderildi")
     }
 
+    /// Eşleşme geçersiz bildirimi: araç başına günde bir kez. Banner ile
+    /// aynı `PairingRecovery` metnini kullanır; bildirim komut tetiklemez.
+    @MainActor
+    private func notifyPairingRecoveryIfNeeded() {
+        let key = StorageKeys.pairingRecoveryNotified(vehicle.vin)
+        guard notificationDedupe.shouldNotify(key: key) else { return }
+        notificationDedupe.record(key: key)
+        NotificationPoster.requestAuthorization(using: notificationPoster)
+        NotificationPoster.post(PairingRecovery.notificationDraft(vin: vehicle.vin),
+                                using: notificationPoster)
+        ble.recordDiagnostic("pairing_lost · kurtarma bildirimi gönderildi (günde bir)")
+    }
+
     @MainActor
     private func handleBLEState(_ state: BleConnection.State) {
+        if ble.needsRepair {
+            notifyPairingRecoveryIfNeeded()
+        }
         if state.isConnecting || state.isDisconnected || state.isFailed {
             requireFreshProximityCycle(reason: "BLE oturumu değişti: \(state.description)", resetGuard: true)
         }
