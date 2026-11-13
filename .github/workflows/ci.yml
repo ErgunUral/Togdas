@@ -48,7 +48,19 @@ jobs:
             spm-${{ runner.os }}-
 
       - name: Testler
-        run: swift test
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee "$RUNNER_TEMP/swift-test.log"
+
+      - name: Hata çıktısı
+        if: failure()
+        run: |
+          {
+            echo "### swift test hata çıktısı"
+            echo '```'
+            tail -n 80 "$RUNNER_TEMP/swift-test.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   ui:
     name: UI testleri
@@ -158,7 +170,17 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO \
-            $ONLY_TESTING
+            $ONLY_TESTING 2>&1 | tee "$RUNNER_TEMP/xcodebuild.log"
+
+      - name: Hata çıktısı
+        if: failure()
+        run: |
+          {
+            echo "### xcodebuild hata çıktısı"
+            echo '```'
+            tail -n 120 "$RUNNER_TEMP/xcodebuild.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Sonuçları yükle
         if: failure()
