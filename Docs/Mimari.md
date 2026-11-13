@@ -554,6 +554,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   34,7 pt'ti — 44 pt `minHeight` içerik VStack'inde kalıyordu, düğmeye
   taşındı. Koşu: 19/19 yeşil, 190 sn. Birim test sayısı değişmedi.
 
+- **Navigasyon dumanı (2026-11-13, 27 UI testi):** `ToqdasNavigationTests`
+  (8 test) — Sesli Asistan, BLE kurulum rehberi, Aday Seç, Bluetooth
+  taraması sheet'leri; Araç detayı, Servis kartı, Seyahatname ve
+  Bildirimler & Destek ekranları açılıp panoya dönülüyor. Ağ/oturum yok;
+  ekranlar dürüst boş/hata durumunda açılıyor. Yüzey kapsamı 8/17 → 16/17
+  (%94); tek eksik `ChargingStationsView`. Koşu: 27/27 yeşil.
+
 ## 9. İlkeler
 
 - Sıfırdan rewrite yok; strangler pattern benzeri kademeli geçiş.

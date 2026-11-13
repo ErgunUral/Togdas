@@ -22,7 +22,7 @@ xcodebuild test \
   -only-testing:ToqdasUITests
 ```
 
-19 test, 5 dosya (2026-11-13: 190 sn, 19/19 yeşil):
+27 test, 6 dosya (2026-11-13: 283 sn, 27/27 yeşil):
 
 - `UITests/ToqdasSmokeTests.swift` (4): Giriş ekranı ve Togg ID düğmesi
   erişilebilir; cihaz dili İngilizce olsa da Türkçe arayüz metni korunur;
@@ -41,6 +41,10 @@ xcodebuild test \
 - `UITests/ToqdasAccessibilityTests.swift` (3): Sekme dokunma hedefleri
   ≥44 pt; VoiceOver etiketleri ve seçili durum; XXXL Dynamic Type ile
   pano kullanılabilirliği.
+- `UITests/ToqdasNavigationTests.swift` (8): Sesli Asistan, BLE kurulum
+  rehberi, Aday Seç, Bluetooth taraması sheet'leri açılır ve kapanır;
+  Araç detayı, Servis kartı, Seyahatname ve Bildirimler & Destek
+  ekranları açılır ve panoya dönülür.
 
 `UITests/ToqdasUITestSupport.swift` ortak altyapıdır: `-uiTestSignedOut`
 ile oturum kapatılır, `-uiTestFixture` panoyu açar; sabit `sleep` yok,
@@ -48,6 +52,20 @@ yalnız koşula bağlı bekleme ve kaydırma kullanılır.
 
 UI testleri ağa çıkmaz. `-uiTestSignedOut` yalnız DEBUG derlemesinde oturumu
 temizler; giriş düğmesine basmaz.
+
+## Kapsam ölçümü (2026-11-13)
+
+| Mercek | Kapsanan | Toplam | Oran |
+|---|---|---|---|
+| UI yüzeyi (ekran/sheet) | 16 | 17 | %94 |
+| Ürün senaryosu — tam davranış | 2 | 32 | %6 |
+| Ürün senaryosu — yüzeysel | 6 | 32 | %19 |
+| Simülatörde test edilebilir senaryo tavanı | 6 | ~11 | %55 |
+
+Kapsanmayan tek yüzey `ChargingStationsView` (harita/EPDK listesi; ağ
+gerektirir). Senaryo rehberindeki 32 maddenin ~21'i BLE, araç veya
+donanım gerektirdiği için simülatörde uçtan uca doğrulanamaz; bu maddeler
+fiziksel test listesine aittir.
 
 ## Fiziksel testler
 
