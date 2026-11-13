@@ -155,3 +155,7 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
 - VIN/token yazılmaz; UI'da gösterilmez, komut/ağ kullanımı yok.
 - Okuma: saatten plist çekimi (`com.toqdas.ios.dev.watchkitapp`),
   `toqdas.watch.diagnostics.v1` anahtarı. +6 test (483/483).
+- **Cihaz kanıtı (13.11):** saat build + kurulum + launch ✓;
+  `watch-tani.plist` olayları: `oturum etkin · erişilebilir=hayır`,
+  `snapshot alındı` ×3, `telefon erişilebilir`, `telefon erişilemiyor`.
+  Yani saat veriyi gerçekten alıyor; sorun veri gelmemesi değil.
