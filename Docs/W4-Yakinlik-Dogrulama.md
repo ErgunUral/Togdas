@@ -176,3 +176,23 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   ön plana gelince sayaç sıfırlanır.
 - +3 test (486/486). Araç 60 sn’de oturumu kapatmayı sürdürür (tasarım);
   her bağlantıda sertifika yenilenir, bu normaldir.
+
+### M. Tutarlı yapı — tek yaşam döngüsü + dijital imza kimliği (`c987c60`)
+- **A. Tek sahip:** `DashboardView` içindeki `reconnectTask`,
+  `reconnectAttempts`, `stableConnectionTask`, `autoKeyStarted` kaldırıldı.
+  Bağlantı yaşam döngüsünün tek sahibi `BleLinkCoordinator`.
+- **B. Faz modeli:** `Core/BlePhase` + `BlePhaseMachine` (saf, testli).
+  Öncelik: onarım > radyo kapalı > eşleştirme > bağlantı fazı. UI başlığı
+  artık `model.link.phase.label`dan türer; “bağlı görünüp onarım isteyen”
+  çelişkili gösterim imkânsız.
+- **C. Dijital imza kimliği:** `Core/KeyIdentity` — açık anahtarın SHA-256
+  ilk 4 baytı (8 hex) her auth’ta karşılaştırılır. Anahtar değişmişse
+  **sessiz devam yok**: `repair_required` + açıklama, otomatik deneme durur.
+  Sertifika parmak izi değişimi yalnız tanıya yazılır (`certificate_rotated`).
+- **D. Kalıcılık:** `Core/PairingRepairState` + `PairingRepairStore`
+  (`toqdas.pairing.repair.<vin>`): onarım gereksinimi uygulama kapanıp
+  açılınca korunur; yalnız kullanıcı “yeniden dene” temizler.
+  `Core/ReconnectBudget`: deneme/zayıf sinyal/eşleştirme sayaçları tek tip.
+- **E. Faz günlüğü:** `Core/BlePhaseLog` (`toqdas.ble.phase.v1`, son 20
+  geçiş + neden). Cihaz kanıtı: `22:28:57 connecting · Araç aranıyor…`.
+- +25 test (511/511).

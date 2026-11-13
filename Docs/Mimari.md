@@ -305,6 +305,19 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     kopmasından sonra yeniden bağlanma 60 sn’ye seyreltilir (`weak_drop`
     tanısı); 60 sn kararlı bağlantıda veya uygulama öne gelince sıfırlanır.
     Log kanıtı: RSSI −89…−98, oturum 59/44 sn, 8/8 doğrulama başarılı.
+- **Tutarlı bağlantı yapısı (2026-11-13, 511 test, `c987c60`):**
+  - Tek yaşam döngüsü sahibi: pano içindeki yeniden bağlanma/sayaç durumu
+    kaldırıldı; `BleLinkCoordinator` tek kaynak.
+  - `Core/BlePhase` + `BlePhaseMachine`: tek faz modeli (idle, searching,
+    connecting, authenticating, ready, degraded, repairRequired,
+    pairingWait, radioOff, stopped); öncelik sırası sabit ve testli.
+  - `Core/KeyIdentity`: dijital imza anahtarının kısa parmak izi (SHA-256/4
+    bayt). Anahtar değişimi sessizce kabul edilmez → onarım akışı.
+    Sertifika rotasyonu yalnız tanı (`certificate_rotated`).
+  - `Core/PairingRepairState` + `PairingRepairStore`: onarım durumu oturumlar
+    arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
+    deneme/zayıf/eşleştirme sayaçları tek değer tipi.
+  - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı
