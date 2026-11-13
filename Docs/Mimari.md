@@ -241,6 +241,15 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     yaptı, 4 profil app group'lu doğrulandı. App group'lu build'ler kuruldu
     (17, 14, Watch Ultra 2). Kısıt: Personal Team profilleri ~7 gün ömürlü.
   - W4 araç başı doğrulaması: `Docs/W4-Yakinlik-Dogrulama.md` (bekliyor).
+- **Senaryolar Rehberi (2026-11-13, 447 test, `8a7aec6`):**
+  - `Core/ScenarioContent` (saf, testli): 7 bölüm — Bağlantı & Anahtar,
+    Yakınlık Otomasyonu, Komutlar, Saat & Widget, Enerji & Şarj,
+    Bildirimler, Sık Karşılaşılan Durumlar; her senaryo
+    tetik→ne olur→şart→aksarsa kalıbında; `ScenarioLiveStatus`
+    rozetleri (BLE/otomasyon/kalibrasyon/telemetri, bilgi yok → nötr).
+  - `App/ScenarioGuideSheet` (U1/U2/U3 uyumlu) + girişler: header
+    menüsü ve yakınlık kartı `book` düğmesi (odaklı açılış); `?`
+    kalibrasyon sheet'i değişmedi.
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı
