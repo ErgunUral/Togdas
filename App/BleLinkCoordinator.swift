@@ -30,11 +30,8 @@ final class BleLinkCoordinator: ObservableObject {
     private var pairingTask: Task<Void, Never>?
     private var authTask: Task<Void, Never>?
     private var stableTask: Task<Void, Never>?
-    private var attempts = 0
-    private var pairingAttempts = 0
-    /// Üst üste zayıf sinyalle kopma sayısı; `weakDropLimit` aşılınca
-    /// yeniden bağlanma 60 sn'ye seyreltilir (radyo/pil yükü).
-    private var weakDrops = 0
+    /// Tek bütçe: deneme / zayıf sinyal / eşleştirme sayaçları.
+    private var budget = ReconnectBudget()
     private var authenticatedThisConnection = false
     private var connectedAt: Date?
     private var awaitingConnection = false
@@ -48,11 +45,45 @@ final class BleLinkCoordinator: ObservableObject {
     private var watchdogSession = 0
     private var watchdogTask: Task<Void, Never>?
     private var lastWatchdogLabel = ""
+    /// Faz geçişi gözlemi: aynı fazı tekrar yazmamak için son kaydedilen.
+    private var lastPhase: BlePhase?
+    private let repairStore = PairingRepairStore()
+    private let defaults: UserDefaults
 
-    init(ble: BleConnection, api: ToggAPI, preferences: GaragePreferences = GaragePreferences()) {
+    init(ble: BleConnection, api: ToggAPI,
+         preferences: GaragePreferences = GaragePreferences(),
+         defaults: UserDefaults = .standard) {
         self.ble = ble
         self.api = api
         self.preferences = preferences
+        self.defaults = defaults
+    }
+
+    /// Tek doğru faz: `BlePhaseMachine` saf eşlemesinden türetilir.
+    var phase: BlePhase {
+        BlePhaseMachine.phase(
+            state: ble.state,
+            needsRepair: ble.needsRepair,
+            pairingRequired: ble.pairingRequired,
+            radioAvailable: ble.isRadioAvailable,
+            reconnecting: reconnecting
+        )
+    }
+
+    /// Faz değişimini halka tampona yazar (VIN yok, neden kodu var).
+    private func notePhase(_ reason: String = "") {
+        let current = phase
+        guard current != lastPhase else { return }
+        lastPhase = current
+        let detail = reason.isEmpty ? ble.lastEvent : reason
+        BlePhaseLog.record(current, detail: detail, defaults: defaults)
+        if current == .repairRequired, !vin.isEmpty {
+            // Onarım gereksinimi oturumlar arası korunur: uygulama kapanıp
+            // açılınca aynı iOS hatasına sessizce düşülmez.
+            repairStore.save(PairingRepairState(detectedAt: Date().timeIntervalSince1970,
+                                                reason: detail), vin: vin)
+        }
+        ble.recordDiagnostic("phase · \(current.rawValue)")
     }
 
     /// Otomatik bağlanma izni: kullanıcı "bağlı tut" dediyse veya yakınlık açıksa.
@@ -64,9 +95,12 @@ final class BleLinkCoordinator: ObservableObject {
         guard !vin.isEmpty else { return }
         if vin != self.vin {
             self.vin = vin
-            attempts = 0
-            weakDrops = 0
+            budget.resetAttempts()
             status = ""
+        }
+        // Önceki oturumda onarım gerekiyorsa açılışta onarım modunda başla.
+        if !ble.needsRepair, let saved = repairStore.load(vin: vin) {
+            ble.restoreRepair(saved.reason)
         }
         // Araç listesi (ownedVins/friendVins) authoritative source'dur.
         // SharedKeyRequestStore yalnızca API verisi henüz yüklenmediğinde fallback'tir.
@@ -79,7 +113,7 @@ final class BleLinkCoordinator: ObservableObject {
         guard !vin.isEmpty else { return }
         reconnectTask?.cancel()
         reconnectTask = nil
-        attempts = 0
+        budget.resetAttempts()
         reconnecting = false
         awaitingConnection = true
         lastStartAt = Date()
@@ -91,8 +125,8 @@ final class BleLinkCoordinator: ObservableObject {
     /// Eşleşme kurtarma kullanıcı adımları tamamlandıktan sonraki tek deneme.
     /// Onarım kilidini açan **tek** yol budur.
     func retryAfterRepair() {
-        weakDrops = 0
-        attempts = 0
+        budget.resetAttempts()
+        repairStore.clear(vin: vin)
         ble.recordDiagnostic("repair_retry · kullanıcı onarımı yeniden denedi")
         start(clearRepair: true)
     }
@@ -118,9 +152,8 @@ final class BleLinkCoordinator: ObservableObject {
         reconnectTask = nil
         pairingTask?.cancel()
         pairingTask = nil
-        attempts = 0
-        // Kullanıcı ekranı açtı: zayıf sinyal seyreltmesi sıfırlanır.
-        weakDrops = 0
+        // Kullanıcı ekranı açtı: deneme ve zayıf sinyal seyreltmesi sıfırlanır.
+        budget.noteForeground()
         ble.recordDiagnostic("foreground_retry · uygulama öne geldi; bekleme atlandı")
         start()
     }
@@ -146,9 +179,7 @@ final class BleLinkCoordinator: ObservableObject {
         watchdogTask?.cancel()
         watchdogTask = nil
         lastWatchdogLabel = ""
-        attempts = 0
-        pairingAttempts = 0
-        weakDrops = 0
+        budget.resetAll()
         reconnecting = false
         silentRecovery = false
         authenticatedThisConnection = false
@@ -168,25 +199,26 @@ final class BleLinkCoordinator: ObservableObject {
     }
 
     func handle(state: BleConnection.State) {
+        notePhase()
         switch state {
         case .ready:
+            repairStore.clear(vin: vin)
             if connectedAt == nil { connectedAt = Date() }
             awaitingConnection = false
             hasConnectedOnce = true
-            attempts = 0
+            budget.resetAttempts()
             reconnecting = false
             silentRecovery = false
             pairingTask?.cancel()
             pairingTask = nil
-            pairingAttempts = 0
+            budget.resetPairing()
             status = "Bağlı"
             beginWatchdog()
             stableTask?.cancel()
             stableTask = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 60_000_000_000)
                 guard !Task.isCancelled else { return }
-                self?.attempts = 0
-                self?.weakDrops = 0
+                self?.budget.resetAttempts()
             }
 
         case .certificate:
@@ -240,8 +272,8 @@ final class BleLinkCoordinator: ObservableObject {
         // (ilk "bağlı değil" yayını sayılmaz).
         if hasConnectedOnce, let rssi = ble.rssi,
            rssi < BleReconnectPolicy.weakSignalThreshold {
-            weakDrops += 1
-            ble.recordDiagnostic("weak_drop · \(rssi) dBm; üst üste \(weakDrops)")
+            let count = budget.noteWeakDrop()
+            ble.recordDiagnostic("weak_drop · \(rssi) dBm; üst üste \(count)")
         }
         let decision = BleReconnectPolicy.action(
             connectedBefore: hasConnectedOnce,
@@ -252,10 +284,10 @@ final class BleLinkCoordinator: ObservableObject {
             autoConnectEnabled: autoConnectEnabled,
             radioAvailable: ble.isRadioAvailable,
             radioFailureStatus: ble.failureSummary,
-            attempts: attempts,
-            pairingAttempts: pairingAttempts,
+            attempts: budget.attempts,
+            pairingAttempts: budget.pairingAttempts,
             lastRSSI: ble.rssi,
-            consecutiveWeakDrops: weakDrops
+            consecutiveWeakDrops: budget.weakDrops
         )
 
         switch decision {
@@ -284,7 +316,7 @@ final class BleLinkCoordinator: ObservableObject {
 
     private func scheduleReconnect(delay: TimeInterval, attempt: Int) {
         guard reconnectTask == nil else { return }
-        attempts = attempt
+        budget.startAttempt(attempt)
         reconnecting = true
         status = hasConnectedOnce ? "Bağlantı yeniden kuruluyor…" : "Araç aranıyor…"
         ble.recordDiagnostic(
@@ -321,14 +353,14 @@ final class BleLinkCoordinator: ObservableObject {
             status = message
             ble.recordDiagnostic("pairing_wait · araç anahtarı yok; 20 sn'de bir yeniden denenecek")
         }
-        pairingAttempts += 1
+        budget.notePairingWait()
         pairingTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 20_000_000_000)
             guard !Task.isCancelled, let self else { return }
             self.pairingTask = nil
             guard self.autoConnectEnabled else { return }
             guard self.ble.pairingRequired || self.ble.state.isDisconnected || self.ble.state.isFailed else { return }
-            self.attempts = 0
+            self.budget.resetAttempts()
             self.ble.start(vin: self.vin)
         }
     }
@@ -351,6 +383,7 @@ final class BleLinkCoordinator: ObservableObject {
 
     private func authenticate(overwriteOwner: Bool) async throws {
         guard !vin.isEmpty else { throw AppError.message("Araç seçili değil.") }
+        try checkKeyIdentity()
         let pair = try PhoneKeyStore.keyPair(for: vin)
         let hex = pair.publicKey.hexString
         let record = try await api.ensureCertificate(
@@ -360,6 +393,7 @@ final class BleLinkCoordinator: ObservableObject {
             isShared: isSharedVehicle
         )
         try Task.checkCancellation()
+        noteCertificateFingerprint(record.certificateBase64)
         authenticatedThisConnection = true
         ble.recordDiagnostic("Kimlik doğrulama başlatılıyor (sertifika \(record.certificateBase64.count) bayt)")
         try ble.beginAuthentication(
@@ -367,5 +401,37 @@ final class BleLinkCoordinator: ObservableObject {
             certificateBase64: record.certificateBase64,
             carKey: record.carPublicKey
         )
+    }
+
+    /// Dijital imza kimliğinin değişmediğini doğrular.
+    /// Anahtar değişmişse sessizce yeni anahtarla devam etmek yanlış olur:
+    /// sunucu sertifikası eski anahtara aittir, araç imzayı reddeder.
+    private func checkKeyIdentity() throws {
+        let fingerprint = PhoneKeyStore.publicKeyFingerprint(for: vin)
+        let stored = defaults.string(forKey: KeyIdentity.fingerprintKey(vin))
+        switch KeyIdentity.check(current: fingerprint, stored: stored) {
+        case .changed(let previous):
+            ble.recordDiagnostic("key_fingerprint_changed · önceki \(previous) · yeni \(fingerprint ?? "—")")
+            let reason = "Telefonun dijital anahtarı değişmiş; sunucu sertifikası eski anahtara ait. Yeniden eşleştir."
+            ble.requireRepair(reason)
+            notePhase("anahtar değişti")
+            throw AppError.message(reason)
+        case .firstUse, .match:
+            if let fingerprint {
+                defaults.set(fingerprint, forKey: KeyIdentity.fingerprintKey(vin))
+            }
+            ble.recordDiagnostic("key_fingerprint · \(fingerprint ?? "—")")
+        }
+    }
+
+    /// Sertifika yenilendi mi? (Sunucu her istekte yeni sertifika verebilir;
+    /// yalnız tanı amaçlı kaydedilir, bağlantı davranışını değiştirmez.)
+    private func noteCertificateFingerprint(_ certificateBase64: String) {
+        let fingerprint = KeyIdentity.fingerprint(Data(certificateBase64.utf8))
+        let key = KeyIdentity.certificateFingerprintKey(vin)
+        if let previous = defaults.string(forKey: key), previous != fingerprint {
+            ble.recordDiagnostic("certificate_rotated · \(previous) → \(fingerprint)")
+        }
+        defaults.set(fingerprint, forKey: key)
     }
 }

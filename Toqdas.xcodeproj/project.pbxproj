@@ -90,6 +90,12 @@
 		E4D3C2B1A098877665544332 /* WatchDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E3D2C1B0A9988776655443 /* WatchDiagnostics.swift */; };
 		D4C3B2A19088776655443322 /* WatchDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E3D2C1B0A9988776655443 /* WatchDiagnostics.swift */; };
 		A7B8C9D0E1F2031425364758 /* BleReconnectPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25AE24F767FA57184C0C3002 /* BleReconnectPolicy.swift */; };
+		B1C2D3E4F5A60718293A4B5C /* BlePhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F708192A3B4C5 /* BlePhase.swift */; };
+		C2D3E4F5A60718293A4B5C6D /* BlePhaseLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F708192A3B4C5D6 /* BlePhaseLog.swift */; };
+		D3E4F5A60718293A4B5C6D7E /* PairingRepairState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4D5E6F708192A3B4C5D6E7 /* PairingRepairState.swift */; };
+		E4F5A60718293A4B5C6D7E8F /* KeyIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5E6F708192A3B4C5D6E7F8 /* KeyIdentity.swift */; };
+		F5A60718293A4B5C6D7E8F90 /* KeyIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5E6F708192A3B4C5D6E7F8 /* KeyIdentity.swift */; };
+		5E6F708192A3B4C5D6E7F809 /* ReconnectBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F708192A3B4C5D6E7F8091A /* ReconnectBudget.swift */; };
 		78635F3C036060F244481CA3 /* App/MaintenanceNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962EAB5F4FCFF9ABEB3F0D6E /* App/MaintenanceNotifier.swift */; };
 		78B95720E4FE860F8E25C1EC /* Core/GaragePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A90646A8F064CC74B8E1653 /* Core/GaragePreferences.swift */; };
 		7C8D9E0F1A2B3C4D5E6F0A1B /* ProximityLatencyMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6B7C8D9E0F1A2B3C4D5E6F /* ProximityLatencyMeter.swift */; };
@@ -402,6 +408,11 @@
 		B8C7D6E5F40312A9B8C7D6E5 /* PairingRecovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PairingRecovery.swift; path = Core/PairingRecovery.swift; sourceTree = "<group>"; };
 		E8F9A0B1C2D3E4F5A6B7C8D /* AutomaticCommandLedger.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AutomaticCommandLedger.swift; path = Core/AutomaticCommandLedger.swift; sourceTree = "<group>"; };
 		F4E3D2C1B0A9988776655443 /* WatchDiagnostics.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchDiagnostics.swift; path = Core/WatchDiagnostics.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F708192A3B4C5 /* BlePhase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BlePhase.swift; path = Core/BlePhase.swift; sourceTree = "<group>"; };
+		2B3C4D5E6F708192A3B4C5D6 /* BlePhaseLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BlePhaseLog.swift; path = Core/BlePhaseLog.swift; sourceTree = "<group>"; };
+		3C4D5E6F708192A3B4C5D6E7 /* PairingRepairState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PairingRepairState.swift; path = Core/PairingRepairState.swift; sourceTree = "<group>"; };
+		4D5E6F708192A3B4C5D6E7F8 /* KeyIdentity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeyIdentity.swift; path = Core/KeyIdentity.swift; sourceTree = "<group>"; };
+		6F708192A3B4C5D6E7F8091A /* ReconnectBudget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ReconnectBudget.swift; path = Core/ReconnectBudget.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5A6B7C8D9E0F1 /* ProximityCalibrationAge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityCalibrationAge.swift; path = Core/ProximityCalibrationAge.swift; sourceTree = "<group>"; };
 		7E5F8091A2B3C4D5E6F7A8B9 /* App/ScenarioGuideSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App/ScenarioGuideSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -636,6 +647,11 @@
 				B8C7D6E5F40312A9B8C7D6E5 /* PairingRecovery.swift */,
 				E8F9A0B1C2D3E4F5A6B7C8D /* AutomaticCommandLedger.swift */,
 				F4E3D2C1B0A9988776655443 /* WatchDiagnostics.swift */,
+				1A2B3C4D5E6F708192A3B4C5 /* BlePhase.swift */,
+				2B3C4D5E6F708192A3B4C5D6 /* BlePhaseLog.swift */,
+				3C4D5E6F708192A3B4C5D6E7 /* PairingRepairState.swift */,
+				4D5E6F708192A3B4C5D6E7F8 /* KeyIdentity.swift */,
+				6F708192A3B4C5D6E7F8091A /* ReconnectBudget.swift */,
 				A0B1C2D3E4F5A6B7C8D9E0F1 /* ProximityCalibrationAge.swift */,
 				C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */,
 			);
@@ -894,6 +910,7 @@
 				C614A7D049EC7F0F9A9AB2D7 /* BluetoothDiscovery.swift in Sources */,
 				9CBC366849E488FE1A0AC93C /* WatchLink.swift in Sources */,
 				D4C3B2A19088776655443322 /* WatchDiagnostics.swift in Sources */,
+				F5A60718293A4B5C6D7E8F90 /* KeyIdentity.swift in Sources */,
 				A7B8C9D0E1F2031425364758 /* BleReconnectPolicy.swift in Sources */,
 				8395345930A6507700C9AE4B /* WatchSnapshot.swift in Sources */,
 				8395345A30A6507700C9AE4B /* WatchComplicationStore.swift in Sources */,
@@ -1003,6 +1020,11 @@
 				D1E2F3A4B5C6D7E8F9012345 /* ProximityCommandNotice.swift in Sources */,
 				A9B8C7D6E5F40312A9B8C7D6 /* PairingRecovery.swift in Sources */,
 				C3D4E5F60718293A4B5C6D7E /* AutomaticCommandLedger.swift in Sources */,
+				B1C2D3E4F5A60718293A4B5C /* BlePhase.swift in Sources */,
+				C2D3E4F5A60718293A4B5C6D /* BlePhaseLog.swift in Sources */,
+				D3E4F5A60718293A4B5C6D7E /* PairingRepairState.swift in Sources */,
+				E4F5A60718293A4B5C6D7E8F /* KeyIdentity.swift in Sources */,
+				5E6F708192A3B4C5D6E7F809 /* ReconnectBudget.swift in Sources */,
 				F0E1D2C3B4A5968778695A4B /* ProximityCalibrationAge.swift in Sources */,
 				8F6091A2B3C4D5E6F7A8B9C0 /* App/ScenarioGuideSheet.swift in Sources */,
 				84C01423028B7B78968A0D58 /* Core/UserFacingError.swift in Sources */,

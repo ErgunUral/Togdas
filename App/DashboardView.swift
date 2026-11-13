@@ -88,12 +88,8 @@ struct DashboardView: View {
     @State private var showRepairConfirm = false
     @State private var showKeyDiscovery = false
     @State private var alert: DashboardAlert?
-    @State private var autoKeyStarted = false
     @State private var hasAuthenticatedBLE = false
     @AppStorage(GaragePreferences.keepConnectedKey) private var keepBLEConnected = false
-    @State private var reconnectAttempts = 0
-    @State private var reconnectTask: Task<Void, Never>?
-    @State private var stableConnectionTask: Task<Void, Never>?
     @State private var proximityEnabled = false
     @StateObject private var voice = VoiceAssistant()
     @State private var showVoice = false
@@ -1287,8 +1283,10 @@ struct DashboardView: View {
             return "Araç eşleştirmesi bekleniyor · araç ekranından eşleştirmeyi başlat"
         }
         if model.silentRecovery { return "Yeniden bağlanıyor…" }
-        if ble.state.isReady { return "Bağlı · Komut hazır" }
-        return ble.state.description
+        // Tek kaynak: koordinatörün faz modeli (string/boolean karışımı yok).
+        let phase = model.link.phase
+        if phase == .ready { return "Bağlı · Komut hazır" }
+        return phase.label
     }
 
     private var connectTitle: String {
@@ -1345,19 +1343,12 @@ struct DashboardView: View {
 
     private func toggleConnection() {
         if ble.state.isDisconnected || ble.state.isFailed {
-            reconnectTask?.cancel()
-            reconnectTask = nil
-            reconnectAttempts = 0
-            autoKeyStarted = false
             keepBLEConnected = true
             model.link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
-            model.link.start()
+            // Kullanıcı açıkça bağlanmak istedi: onarım kilidi açılabilir.
+            model.link.start(clearRepair: true)
         } else {
             keepBLEConnected = false
-            reconnectTask?.cancel()
-            reconnectTask = nil
-            stableConnectionTask?.cancel()
-            stableConnectionTask = nil
             model.link.stop()
         }
     }
@@ -1526,11 +1517,8 @@ struct DashboardView: View {
         keepBLEConnected = true
         model.link.configure(vin: vehicle.vin, isShared: vehicle.isShared)
         if ble.state.isDisconnected || ble.state.isFailed {
-            reconnectAttempts = 0
-            autoKeyStarted = false
             model.link.start()
         } else if ble.state.isCertificate, !authBusy {
-            autoKeyStarted = false
             Task { await authenticateBLE() }
         }
     }
@@ -1611,8 +1599,6 @@ struct DashboardView: View {
         awaitingProximityLockConfirmation = false
         setProximityEnabled(false)
         keepBLEConnected = false
-        reconnectTask?.cancel()
-        reconnectTask = nil
         model.link.stop()
         proximityAutoOffStatus = "Süre doldu; otomasyon kapatıldı. Araca komut gönderilmedi."
         proximityStatus = proximityAutoOffStatus
@@ -1795,11 +1781,8 @@ struct DashboardView: View {
             return
         }
 
-        if state.isDisconnected || state.isFailed {
-            autoKeyStarted = false
-            stableConnectionTask?.cancel()
-            stableConnectionTask = nil
-        }
+        // Kopma yaşam döngüsü tek sahipte (BleLinkCoordinator); görünüm
+        // yalnız gösterim durumunu günceller.
     }
 
     @MainActor

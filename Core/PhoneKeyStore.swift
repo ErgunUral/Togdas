@@ -14,6 +14,13 @@ enum PhoneKeyStore {
         return data.hexString
     }
 
+    /// Dijital imza kimliğinin kısa parmak izi; anahtar yoksa `nil`.
+    /// Tanı karşılaştırması içindir (tam anahtar loglanmaz).
+    static func publicKeyFingerprint(for vin: String) -> String? {
+        guard let key = load(tag: keyTag(for: vin)), let data = publicKeyData(key) else { return nil }
+        return KeyIdentity.fingerprint(data)
+    }
+
     static func keyPair(for vin: String, generate: Bool = true) throws -> (key: SecKey, publicKey: Data) {
         guard vin.range(of: "^[A-HJ-NPR-Z0-9]{17}$", options: .regularExpression) != nil else {
             throw AppError.message("Geçersiz VIN.")

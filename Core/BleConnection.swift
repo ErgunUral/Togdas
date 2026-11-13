@@ -170,6 +170,23 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     /// Otomatik yollar (yeniden bağlanma, ön plan, yakınlık) onarım kilidini
     /// **açamaz**: araç eşleşmeyi sildiyse tekrar denemek aynı iOS hatasına
     /// çarpar (sonsuz `pairing_lost` döngüsü).
+    /// Araç eşleşme kaydını sildi ya da telefon anahtarı değişti: otomatik
+    /// bağlanma durur, kullanıcı adımları tamamlayana kadar sürmez.
+    func requireRepair(_ reason: String) {
+        needsRepair = true
+        lastEvent = reason
+        state = .failed(.pairingLost)
+        recordDiagnostic("repair_required · \(reason)")
+    }
+
+    /// Önceki oturumdan kalan onarım durumu (uygulama açılışında geri yüklenir).
+    func restoreRepair(_ reason: String) {
+        needsRepair = true
+        lastEvent = reason
+        state = .failed(.pairingLost)
+        recordDiagnostic("repair_restored · önceki oturumdan onarım bekliyor")
+    }
+
     func start(vin: String? = nil, clearRepair: Bool = false) {
         if let vin, !vin.isEmpty {
             let target = vin.uppercased()
