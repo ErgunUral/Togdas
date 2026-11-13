@@ -5,43 +5,47 @@ import XCTest
 final class ToqdasFlowTests: ToqdasUITestCase {
     func testAllFourTabsArePresentAndSelectable() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        for title in ["Genel Bakış", "İklimlendirme", "Trugo Şarj", "Araç Durumu"] {
-            XCTAssertTrue(app.buttons["\(title) sekmesi"].waitForExistence(timeout: 5),
+        for title in DashboardScreen.tabs {
+            XCTAssertTrue(dashboard.tab(title).waitForExistence(timeout: 5),
                           "\(title) sekmesi yok")
         }
 
-        app.buttons["Araç Durumu sekmesi"].tap()
-        XCTAssertTrue(app.staticTexts["Araç Sağlığı & Lastik Basınçları"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.buttons["Araç Durumu sekmesi"].textValue, "Seçili")
-        XCTAssertEqual(app.buttons["Genel Bakış sekmesi"].textValue, "")
+        dashboard.selectTab("Araç Durumu")
+        XCTAssertTrue(dashboard.healthHeading.waitForExistence(timeout: 5))
+        XCTAssertEqual(dashboard.tab("Araç Durumu").textValue, "Seçili")
+        XCTAssertEqual(dashboard.tab("Genel Bakış").textValue, "")
     }
 
     func testOverviewShowsFixtureVehicleAndTelemetry() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        XCTAssertTrue(app.staticTexts["UI Test Aracı • UI 0001"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["%79"].exists, "Akü yüzdesi gösterilmiyor")
-        XCTAssertTrue(app.staticTexts["365"].exists, "Menzil gösterilmiyor")
+        XCTAssertTrue(dashboard.vehicleName.waitForExistence(timeout: 5))
+        XCTAssertTrue(dashboard.batteryPercent.exists, "Akü yüzdesi gösterilmiyor")
+        XCTAssertTrue(dashboard.range.exists, "Menzil gösterilmiyor")
     }
 
     func testClimateTabShowsTargetTemperatureControls() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        app.buttons["İklimlendirme sekmesi"].tap()
+        dashboard.selectTab("İklimlendirme")
         XCTAssertTrue(app.staticTexts["Klima & İklimlendirme"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Hedef Sıcaklık"].exists)
     }
 
     func testHealthTabShowsAuxBatteryAndKeepsMissingDataAsDash() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        app.buttons["Araç Durumu sekmesi"].tap()
-        XCTAssertTrue(app.staticTexts["Araç Sağlığı & Lastik Basınçları"].waitForExistence(timeout: 5))
+        dashboard.selectTab("Araç Durumu")
+        XCTAssertTrue(dashboard.healthHeading.waitForExistence(timeout: 5))
 
         let auxiliary = app.element(labelled: "12 V Akü")
         XCTAssertTrue(auxiliary.waitForExistence(timeout: 5))
@@ -61,7 +65,8 @@ final class ToqdasFlowTests: ToqdasUITestCase {
 
     func testChargingTabOffersTrugoStationsEntry() {
         let app = launchFixture(["-openChargingTab"])
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
         let stations = app.staticTexts["En Yakın Trugo Şarj İstasyonları"]
         XCTAssertTrue(stations.scrollIntoView(app), "Trugo istasyon kartı bulunamadı")

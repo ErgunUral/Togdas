@@ -4,14 +4,13 @@
 import XCTest
 
 final class ToqdasAccessibilityTests: ToqdasUITestCase {
-    private let tabTitles = ["Genel Bakış", "İklimlendirme", "Trugo Şarj", "Araç Durumu"]
-
     func testTabBarTargetsAreAtLeastFortyFourPoints() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        for title in tabTitles {
-            let tab = app.buttons["\(title) sekmesi"]
+        for title in DashboardScreen.tabs {
+            let tab = dashboard.tab(title)
             XCTAssertTrue(tab.waitForExistence(timeout: 5))
             XCTAssertGreaterThanOrEqual(tab.frame.height, 43.5,
                                         "\(title) dokunma hedefi 44pt'den küçük")
@@ -21,33 +20,35 @@ final class ToqdasAccessibilityTests: ToqdasUITestCase {
 
     func testTabBarExposesVoiceOverLabelsAndSelectedState() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        for title in tabTitles {
-            let tab = app.buttons["\(title) sekmesi"]
+        for title in DashboardScreen.tabs {
+            let tab = dashboard.tab(title)
             XCTAssertTrue(tab.waitForExistence(timeout: 5))
             XCTAssertEqual(tab.label, "\(title) sekmesi")
         }
-        XCTAssertEqual(app.buttons["Genel Bakış sekmesi"].textValue, "Seçili",
+        XCTAssertEqual(dashboard.tab("Genel Bakış").textValue, "Seçili",
                        "Açılışta Genel Bakış seçili olmalı")
 
-        app.buttons["İklimlendirme sekmesi"].tap()
-        XCTAssertEqual(app.buttons["İklimlendirme sekmesi"].textValue, "Seçili")
-        XCTAssertEqual(app.buttons["Genel Bakış sekmesi"].textValue, "")
+        dashboard.selectTab("İklimlendirme")
+        XCTAssertEqual(dashboard.tab("İklimlendirme").textValue, "Seçili")
+        XCTAssertEqual(dashboard.tab("Genel Bakış").textValue, "")
     }
 
     func testDashboardSurvivesAccessibilityExtraExtraExtraLargeType() {
         let app = launchFixture([
             "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"
         ])
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        for title in tabTitles {
-            let tab = app.buttons["\(title) sekmesi"]
+        for title in DashboardScreen.tabs {
+            let tab = dashboard.tab(title)
             XCTAssertTrue(tab.waitForExistence(timeout: 5),
                           "\(title) büyük yazıda kayboldu")
             XCTAssertTrue(tab.isHittable)
         }
-        XCTAssertTrue(app.staticTexts["%79"].exists)
+        XCTAssertTrue(dashboard.batteryPercent.exists)
     }
 }

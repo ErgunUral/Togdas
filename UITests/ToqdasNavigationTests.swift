@@ -5,29 +5,20 @@
 import XCTest
 
 final class ToqdasNavigationTests: ToqdasUITestCase {
-    private func openMenuItem(_ app: XCUIApplication, _ title: String) {
-        app.descendants(matching: .any)["header.menu"].tap()
-        let item = app.buttons[title]
-        if !item.waitForExistence(timeout: 3) {
-            app.swipeUp()
-        }
-        XCTAssertTrue(item.waitForExistence(timeout: 5), "Menüde \(title) yok")
-        item.tap()
-    }
-
     private func goBack(_ app: XCUIApplication) {
         let back = app.navigationBars.buttons.element(boundBy: 0)
         XCTAssertTrue(back.waitForExistence(timeout: 5), "Geri düğmesi yok")
         back.tap()
-        XCTAssertTrue(app.buttons["Araç Durumu sekmesi"].waitForExistence(timeout: 5),
+        XCTAssertTrue(DashboardScreen(app: app).tab("Araç Durumu").waitForExistence(timeout: 5),
                       "Panoya dönülmedi")
     }
 
     func testVoiceAssistantSheetOpensAndCloses() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        app.buttons["Sesli komut"].tap()
+        dashboard.voiceAssistant.tap()
         XCTAssertTrue(app.staticTexts["Sesli Asistan"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Cihaz üstü Türkçe · internete gönderilmez"].exists)
 
@@ -37,11 +28,12 @@ final class ToqdasNavigationTests: ToqdasUITestCase {
 
     func testBLESetupGuideSheetOpensAndCloses() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        let setup = app.buttons["Kurulumu adım adım dinle"]
-        XCTAssertTrue(setup.waitForExistence(timeout: 5), "Kurulum girişi yok")
-        setup.tap()
+        XCTAssertTrue(dashboard.bleSetupGuide.waitForExistence(timeout: 5),
+                      "Kurulum girişi yok")
+        dashboard.bleSetupGuide.tap()
 
         XCTAssertTrue(app.navigationBars["Dijital anahtar kurulumu"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["ADIM 1 / 5"].exists)
@@ -51,11 +43,11 @@ final class ToqdasNavigationTests: ToqdasUITestCase {
 
     func testKeyDiscoverySheetOpensAndCloses() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        let entry = app.buttons["Cihaz ortamında aday seç"]
-        XCTAssertTrue(entry.scrollIntoView(app), "Aday seç girişi yok")
-        entry.tap()
+        XCTAssertTrue(dashboard.keyDiscovery.scrollIntoView(app), "Aday seç girişi yok")
+        dashboard.keyDiscovery.tap()
 
         XCTAssertTrue(app.navigationBars["Aday Seç"].waitForExistence(timeout: 5))
         app.buttons["Kapat"].tap()
@@ -64,9 +56,10 @@ final class ToqdasNavigationTests: ToqdasUITestCase {
 
     func testBluetoothDiscoverySheetOpensAndCloses() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        openMenuItem(app, "Bluetooth taraması")
+        dashboard.openMenu().tap(.bluetoothScan)
         XCTAssertTrue(app.navigationBars["Bluetooth"].waitForExistence(timeout: 10))
         app.buttons["Kapat"].tap()
         XCTAssertTrue(app.navigationBars["Bluetooth"].waitForNonExistence(timeout: 3))
@@ -74,36 +67,40 @@ final class ToqdasNavigationTests: ToqdasUITestCase {
 
     func testVehicleDetailOpensAndReturns() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        openMenuItem(app, "Araç detayı")
+        dashboard.openMenu().tap(.vehicleDetail)
         XCTAssertTrue(app.navigationBars["Araç bilgileri"].waitForExistence(timeout: 10))
         goBack(app)
     }
 
     func testServiceCardOpensAndReturns() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        openMenuItem(app, "Servis kartı")
+        dashboard.openMenu().tap(.serviceCard)
         XCTAssertTrue(app.navigationBars["Servis kartı"].waitForExistence(timeout: 10))
         goBack(app)
     }
 
     func testDriveExperienceOpensAndReturns() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        openMenuItem(app, "Seyahatname")
+        dashboard.openMenu().tap(.driveExperience)
         XCTAssertTrue(app.navigationBars["Sürüş & Şarj"].waitForExistence(timeout: 10))
         goBack(app)
     }
 
     func testAccountCenterOpensAndReturns() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        openMenuItem(app, "Bildirimler & destek")
+        dashboard.openMenu().tap(.accountCenter)
         XCTAssertTrue(app.navigationBars["Bildirimler & Destek"].waitForExistence(timeout: 10))
         goBack(app)
     }

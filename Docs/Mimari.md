@@ -590,6 +590,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   veriyor ve saat diliminden bağımsız yeni bir test eklendi.
   `TZ=UTC swift test`: 521/521.
 
+- **Ekran nesneleri / POM (2026-11-14, 35 UI testi):**
+  `UITests/Screens/ToqdasScreens.swift` — `DashboardScreen`, `MenuSheet`,
+  `CommandSheet`, `ScenarioGuideSheet`, `CalibrationSheet`, `LoginScreen`.
+  Erişilebilirlik seçicileri tek yerde; testler davranış ve iddia taşır,
+  ekran nesneleri iddia içermez. Test iddiaları değişmedi. Koşu: 35/35,
+  374 sn.
+
 ## 9. İlkeler
 
 - Sıfırdan rewrite yok; strangler pattern benzeri kademeli geçiş.

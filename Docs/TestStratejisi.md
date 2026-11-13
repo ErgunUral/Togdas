@@ -63,6 +63,12 @@ garantiler ve sonunda varsayılana döner.
 ile oturum kapatılır, `-uiTestFixture` panoyu açar; sabit `sleep` yok,
 yalnız koşula bağlı bekleme ve kaydırma kullanılır.
 
+`UITests/Screens/ToqdasScreens.swift` ekran nesnelerini (Page Object Model)
+tutar: `DashboardScreen`, `MenuSheet`, `CommandSheet`, `ScenarioGuideSheet`,
+`CalibrationSheet`, `LoginScreen`. Erişilebilirlik seçicileri yalnız burada
+tanımlıdır; testler davranışı ve iddiaları taşır, ekran nesneleri iddia
+içermez.
+
 UI testleri ağa çıkmaz. `-uiTestSignedOut` yalnız DEBUG derlemesinde oturumu
 temizler; giriş düğmesine basmaz.
 

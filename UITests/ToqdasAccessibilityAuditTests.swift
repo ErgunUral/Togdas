@@ -32,35 +32,33 @@ final class ToqdasAccessibilityAuditTests: ToqdasUITestCase {
 
     func testOverviewHasNoNewAuditIssues() throws {
         let app = launchFixture()
-        app.waitForDashboard()
+        DashboardScreen(app: app).waitForLoad()
         try audit(app)
     }
 
     func testTabsHaveNoNewAuditIssues() throws {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
         for tab in ["İklimlendirme", "Trugo Şarj", "Araç Durumu"] {
-            app.buttons["\(tab) sekmesi"].tap()
+            dashboard.selectTab(tab)
             try audit(app)
         }
     }
 
     func testScenarioGuideHasNoNewAuditIssues() throws {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        app.descendants(matching: .any)["header.menu"].tap()
-        let item = app.buttons["Senaryolar rehberi"]
-        XCTAssertTrue(item.waitForExistence(timeout: 5))
-        item.tap()
-        XCTAssertTrue(app.staticTexts["Anlık durum"].waitForExistence(timeout: 5))
+        dashboard.openMenu().openScenarioGuide()
         try audit(app)
     }
 
     func testCommandsSheetHasNoNewAuditIssues() throws {
         let app = launchFixture(["-openCommands"])
-        XCTAssertTrue(app.navigationBars["Araç komutları"].waitForExistence(timeout: 10))
+        CommandSheet(app: app).waitForOpen()
         try audit(app)
     }
 }

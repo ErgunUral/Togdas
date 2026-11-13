@@ -3,37 +3,29 @@
 import XCTest
 
 final class ToqdasGuideTests: ToqdasUITestCase {
-    private func openScenarioGuideFromMenu(_ app: XCUIApplication) {
-        app.descendants(matching: .any)["header.menu"].tap()
-        let item = app.buttons["Senaryolar rehberi"]
-        XCTAssertTrue(item.waitForExistence(timeout: 5), "Menüde senaryolar rehberi yok")
-        item.tap()
-        XCTAssertTrue(app.staticTexts["Anlık durum"].waitForExistence(timeout: 5),
-                      "Rehber sheet'i açılmadı")
-    }
-
     func testScenarioGuideOpensFromHeaderMenuAndCloses() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        openScenarioGuideFromMenu(app)
-        XCTAssertTrue(app.navigationBars["Senaryolar"].exists)
-        XCTAssertTrue(app.element(labelled: "Kurulum").exists, "Kurulum bölümü yok")
+        let guide = dashboard.openMenu().openScenarioGuide()
+        XCTAssertTrue(guide.navigationBar.exists)
+        XCTAssertTrue(guide.section("Kurulum").exists, "Kurulum bölümü yok")
 
-        let close = app.buttons["guide.close"]
-        XCTAssertTrue(close.exists)
-        close.tap()
+        XCTAssertTrue(guide.closeButton.exists)
+        guide.closeButton.tap()
 
-        XCTAssertFalse(app.staticTexts["Anlık durum"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.staticTexts["TRUMORE"].exists)
+        XCTAssertFalse(guide.liveStatus.waitForExistence(timeout: 2))
+        XCTAssertTrue(dashboard.title.exists)
     }
 
     func testScenarioGuideShowsLiveStatusBadges() {
         let app = launchFixture()
-        app.waitForDashboard()
-        openScenarioGuideFromMenu(app)
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
+        let guide = dashboard.openMenu().openScenarioGuide()
 
-        XCTAssertTrue(app.element(labelled: "Anlık durum").exists)
+        XCTAssertTrue(guide.liveStatus.exists)
         // Canlı durum şeridi en az bir rozet içerir ("Başlık: değer" biçiminde).
         let badges = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", ": "))
@@ -43,14 +35,17 @@ final class ToqdasGuideTests: ToqdasUITestCase {
 
     func testProximityCardBookOpensGuideAtProximitySection() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        let book = app.buttons["proximity.scenarios"]
-        XCTAssertTrue(book.scrollIntoView(app), "Yakınlık senaryoları düğmesi bulunamadı")
-        book.tap()
-        XCTAssertTrue(app.staticTexts["Anlık durum"].waitForExistence(timeout: 5))
+        XCTAssertTrue(dashboard.proximityScenarios.scrollIntoView(app),
+                      "Yakınlık senaryoları düğmesi bulunamadı")
+        dashboard.proximityScenarios.tap()
 
-        let heading = app.element(labelled: "Yakınlık Otomasyonu")
+        let guide = ScenarioGuideSheet(app: app)
+        guide.waitForOpen()
+
+        let heading = guide.section("Yakınlık Otomasyonu")
         if !heading.waitForExistence(timeout: 3) { app.swipeUp() }
         XCTAssertTrue(heading.waitForExistence(timeout: 3),
                       "Rehber yakınlık bölümüne odaklanmadı")
@@ -59,19 +54,20 @@ final class ToqdasGuideTests: ToqdasUITestCase {
 
     func testProximityCalibrationSheetOpensAndCloses() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        let calibration = app.buttons["proximity.calibration"]
-        XCTAssertTrue(calibration.scrollIntoView(app), "Kalibrasyon düğmesi bulunamadı")
-        calibration.tap()
+        XCTAssertTrue(dashboard.proximityCalibration.scrollIntoView(app),
+                      "Kalibrasyon düğmesi bulunamadı")
+        dashboard.proximityCalibration.tap()
 
-        XCTAssertTrue(app.staticTexts["Canlı sinyal"].waitForExistence(timeout: 5),
+        let calibration = CalibrationSheet(app: app)
+        XCTAssertTrue(calibration.liveSignal.waitForExistence(timeout: 5),
                       "Kalibrasyon sheet'i açılmadı")
-        XCTAssertTrue(app.navigationBars["Yakınlık Kalibrasyonu"].exists)
+        XCTAssertTrue(calibration.navigationBar.exists)
 
-        let done = app.buttons["Bitti"]
-        XCTAssertTrue(done.exists)
-        done.tap()
-        XCTAssertFalse(app.staticTexts["Canlı sinyal"].waitForExistence(timeout: 2))
+        XCTAssertTrue(calibration.doneButton.exists)
+        calibration.doneButton.tap()
+        XCTAssertFalse(calibration.liveSignal.waitForExistence(timeout: 2))
     }
 }

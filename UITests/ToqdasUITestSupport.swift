@@ -25,6 +25,11 @@ class ToqdasUITestCase: XCTestCase {
 }
 
 extension XCUIApplication {
+    /// Erişilebilirlik kimliğiyle ilk öğe (türden bağımsız).
+    func element(identifiedBy identifier: String) -> XCUIElement {
+        descendants(matching: .any)[identifier]
+    }
+
     /// Verilen erişilebilirlik etiketine sahip ilk öğe (türden bağımsız).
     func element(labelled label: String) -> XCUIElement {
         descendants(matching: .any)

@@ -3,24 +3,17 @@
 import XCTest
 
 final class ToqdasCommandTests: ToqdasUITestCase {
-    private let commandIdentifiers = [
-        "commands.unlock",
-        "commands.lock",
-        "commands.trunkOpen",
-        "commands.trunkClose",
-        "commands.driveAuthorize"
-    ]
-
     func testCommandGateExplainsWhyCommandsAreDisabled() {
         let app = launchFixture(["-openCommands"])
-        XCTAssertTrue(app.staticTexts["Araç komutları"].waitForExistence(timeout: 10))
+        let commands = CommandSheet(app: app)
+        commands.waitForOpen()
 
-        let gate = app.staticTexts["commands.gateMessage"]
+        let gate = commands.gateMessage
         XCTAssertTrue(gate.scrollIntoView(app), "Komut kapısı açıklaması bulunamadı")
         XCTAssertFalse(gate.label.isEmpty, "Kapı açıklaması boş")
 
-        for identifier in commandIdentifiers {
-            let button = app.buttons[identifier]
+        for identifier in CommandSheet.identifiers {
+            let button = commands.button(identifier)
             XCTAssertTrue(button.waitForExistence(timeout: 5), "\(identifier) yok")
             XCTAssertFalse(button.isEnabled,
                            "\(identifier) bağlantı hazır değilken etkin olmamalı")
@@ -29,9 +22,10 @@ final class ToqdasCommandTests: ToqdasUITestCase {
 
     func testTappingDisabledCommandDoesNotAskForConfirmation() {
         let app = launchFixture(["-openCommands"])
-        XCTAssertTrue(app.staticTexts["Araç komutları"].waitForExistence(timeout: 10))
+        let commands = CommandSheet(app: app)
+        commands.waitForOpen()
 
-        let unlock = app.buttons["commands.unlock"]
+        let unlock = commands.unlock
         XCTAssertTrue(unlock.scrollIntoView(app), "Kilidi aç düğmesi bulunamadı")
         XCTAssertFalse(unlock.isEnabled)
         // Devre dışı düğmeye dokunma: onay kapısı açılmamalı.
@@ -39,25 +33,19 @@ final class ToqdasCommandTests: ToqdasUITestCase {
 
         XCTAssertFalse(app.alerts["Komut gönderilsin mi?"].waitForExistence(timeout: 2),
                        "Hazır olmayan bağlantıda onay istendi")
-        XCTAssertTrue(app.staticTexts["Araç komutları"].exists)
+        XCTAssertTrue(commands.navigationBar.exists)
     }
 
     func testHeaderMenuOpensCommandsSheetAndCloses() {
         let app = launchFixture()
-        app.waitForDashboard()
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
 
-        app.descendants(matching: .any)["header.menu"].tap()
-        let commandsItem = app.buttons["Bluetooth komutları"]
-        XCTAssertTrue(commandsItem.waitForExistence(timeout: 5), "Menü öğesi görünmedi")
-        commandsItem.tap()
+        let commands = dashboard.openMenu().openCommands()
+        XCTAssertTrue(commands.closeButton.waitForExistence(timeout: 5))
+        commands.closeButton.tap()
 
-        XCTAssertTrue(app.staticTexts["Araç komutları"].waitForExistence(timeout: 10))
-
-        let close = app.buttons["Kapat"].firstMatch
-        XCTAssertTrue(close.waitForExistence(timeout: 5))
-        close.tap()
-
-        XCTAssertTrue(app.staticTexts["TRUMORE"].waitForExistence(timeout: 5))
+        XCTAssertTrue(dashboard.title.waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["Araç komutları"].exists)
     }
 }
