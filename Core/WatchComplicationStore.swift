@@ -5,7 +5,8 @@ import Foundation
 ///
 /// Kasıtlı sınırlar (invariant korunur):
 /// - Complication **yalnız gösterim verisi** taşır: anahtar, token,
-///   komut kuyruğu ve konum yoktur; complication komut göndermez.
+///   komut kuyruğu, konum ve VIN yoktur; complication komut göndermez.
+///   (Yazım WatchLink'te `WatchSnapshot.complicationCopy` ile VIN'siz yapılır.)
 /// - App group sağlanamıyorsa (entitlement bekliyorsa) yazım/okuma
 ///   sessizce no-op olur; watch uygulamasının kendi cache'i
 ///   (`WatchLink`, standart UserDefaults) etkilenmez.

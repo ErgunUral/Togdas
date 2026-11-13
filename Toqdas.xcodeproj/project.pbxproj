@@ -354,7 +354,7 @@
 		C061F6A300F0531443087282 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = Widget/Info.plist; sourceTree = "<group>"; };
 		C0A1B2C3D4E5061728394A01 /* ToqdasWatchWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ToqdasWatchWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0A1B2C3D4E5061728394A0D /* ToqdasWatchWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasWatchWidget.swift; path = Watch/Widget/ToqdasWatchWidget.swift; sourceTree = "<group>"; };
-		C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchSnapshot.swift; path = Shared/WatchSnapshot.swift; sourceTree = "<group>"; };
+		C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchSnapshot.swift; path = Core/WatchSnapshot.swift; sourceTree = "<group>"; };
 		C0A1B2C3D4E5061728394A11 /* WatchComplicationStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchComplicationStore.swift; path = Core/WatchComplicationStore.swift; sourceTree = "<group>"; };
 		C11A721D89663BA3DDF6D624 /* ExperienceFormat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExperienceFormat.swift; path = Core/ExperienceFormat.swift; sourceTree = "<group>"; };
 		C1A42FB182A4519BD0CEAC78 /* ChargingBudgetNotifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingBudgetNotifier.swift; path = App/ChargingBudgetNotifier.swift; sourceTree = "<group>"; };
@@ -531,7 +531,6 @@
 				E5026366159A018B56620748 /* WatchLink.swift */,
 				2E78CC5BA15E8412DB097101 /* ToqdasWatchApp.swift */,
 				C0A1B2C3D4E5061728394A0D /* ToqdasWatchWidget.swift */,
-				C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */,
 				C0A1B2C3D4E5061728394A11 /* WatchComplicationStore.swift */,
 				7E3943ADA53E9864A4A558C3 /* VoiceCommand.swift */,
 				F9EB3AE99CA2F29A0F4ED1B7 /* VoiceCommandParser.swift */,
@@ -621,6 +620,7 @@
 				A01B02C03D04E05F06A70809 /* ProximitySettings.swift */,
 				C01B02C03D04E05F06A70809 /* ClimateSettings.swift */,
 				5C3D6E7F8091A2B3C4D5E6F7 /* Core/ScenarioContent.swift */,
+				C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";

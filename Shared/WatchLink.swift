@@ -88,12 +88,16 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
         guard isWatch else { return }
         let defaults = UserDefaults.standard
         if let data = context["snapshot"] as? Data,
-           (try? JSONDecoder().decode(WatchSnapshot.self, from: data)) != nil {
+           let decoded = try? JSONDecoder().decode(WatchSnapshot.self, from: data) {
             defaults.set(data, forKey: CacheKey.snapshot)
-            // Complication köprüsü: aynı gösterim verisi app group'a yazılır
+            // Complication köprüsü: VIN'siz kopya app group'a yazılır
             // (entitlement yoksa sessiz no-op). Sonra zaman çizelgesi
-            // tazelenir; complication yalnız gösterim verisi taşır.
-            WatchComplicationStore.saveSnapshotData(data)
+            // tazelenir; complication yalnız gösterim verisi taşır ve
+            // VIN'i hiçbir görünüm kullanmaz (iPhone widget kuralıyla
+            // aynı ilke). Saat cache'i gerçek VIN'i korur (komut isteği).
+            if let complicationData = try? JSONEncoder().encode(decoded.complicationCopy) {
+                WatchComplicationStore.saveSnapshotData(complicationData)
+            }
             WidgetCenter.shared.reloadAllTimelines()
         }
         if let names = context["vehicles"] as? [String] {
