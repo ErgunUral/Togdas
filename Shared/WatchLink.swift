@@ -99,6 +99,8 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
                 WatchComplicationStore.saveSnapshotData(complicationData)
             }
             WidgetCenter.shared.reloadAllTimelines()
+            // Saat tanısı: veri gerçekten geldi mi? (VIN yazılmaz)
+            WatchDiagnostics.log("snapshot alındı")
         }
         if let names = context["vehicles"] as? [String] {
             defaults.set(names, forKey: CacheKey.names)
@@ -200,15 +202,19 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
         let session = WCSession.default
         guard session.activationState == .activated else {
             status = "Saat bağlantısı henüz hazır değil."
+            WatchDiagnostics.log("yenileme reddedildi · oturum etkin değil")
             return
         }
         guard session.isReachable else {
             status = "iPhone uykuda ya da ulaşılamıyor; veri yenilenemiyor."
+            WatchDiagnostics.log("yenileme reddedildi · telefon erişilemiyor")
             return
         }
         status = "Güncel veri isteniyor…"
+        WatchDiagnostics.log("yenileme istendi")
         session.sendMessage(["type": "refresh"], replyHandler: { _ in }, errorHandler: { [weak self] error in
             DispatchQueue.main.async {
+                WatchDiagnostics.log("yenileme iletilemedi")
                 self?.status = "Veri isteği iletilemedi: \(error.localizedDescription)"
             }
         })
@@ -217,6 +223,8 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
     private func report(_ result: WatchCommandResult) {
         lastResult = result
         status = result.message
+        // Yalnız durum kodu; mesaj metni uzun olduğu için günlüğe yazılmaz.
+        WatchDiagnostics.log("komut sonucu: \(result.status)")
     }
 
     // MARK: - Gelen veri
@@ -262,6 +270,9 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.reachable = session.isReachable
+            if self.isWatch {
+                WatchDiagnostics.log("oturum \(error == nil ? "etkin" : "hatalı") · erişilebilir=\(session.isReachable ? "evet" : "hayır")")
+            }
             #if os(iOS)
             self.installed = session.isWatchAppInstalled
             #endif
@@ -303,6 +314,9 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
     }
 
     func sessionReachabilityDidChange(_ session: WCSession) {
+        if isWatch {
+            WatchDiagnostics.log(session.isReachable ? "telefon erişilebilir" : "telefon erişilemiyor")
+        }
         DispatchQueue.main.async { [weak self] in self?.reachable = session.isReachable }
     }
 

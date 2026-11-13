@@ -87,6 +87,8 @@
 		75D7F622F4CCA6F3E070A9E5 /* BLEIssue.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B401D4137AF270012CEBA2 /* BLEIssue.swift */; };
 		76475D2E0285CC3A1895A043 /* BleAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DB38BAF3BBC341BD7A379E7 /* BleAuth.swift */; };
 		768BE458489998C0C6392676 /* WatchLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8E453F271AC262C7B58756 /* WatchLink.swift */; };
+		E4D3C2B1A098877665544332 /* WatchDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E3D2C1B0A9988776655443 /* WatchDiagnostics.swift */; };
+		D4C3B2A19088776655443322 /* WatchDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E3D2C1B0A9988776655443 /* WatchDiagnostics.swift */; };
 		78635F3C036060F244481CA3 /* App/MaintenanceNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962EAB5F4FCFF9ABEB3F0D6E /* App/MaintenanceNotifier.swift */; };
 		78B95720E4FE860F8E25C1EC /* Core/GaragePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A90646A8F064CC74B8E1653 /* Core/GaragePreferences.swift */; };
 		7C8D9E0F1A2B3C4D5E6F0A1B /* ProximityLatencyMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6B7C8D9E0F1A2B3C4D5E6F /* ProximityLatencyMeter.swift */; };
@@ -398,6 +400,7 @@
 		C7D8E9F0A1B2C3D4E5F60718 /* ProximityCommandNotice.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityCommandNotice.swift; path = Core/ProximityCommandNotice.swift; sourceTree = "<group>"; };
 		B8C7D6E5F40312A9B8C7D6E5 /* PairingRecovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PairingRecovery.swift; path = Core/PairingRecovery.swift; sourceTree = "<group>"; };
 		E8F9A0B1C2D3E4F5A6B7C8D /* AutomaticCommandLedger.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AutomaticCommandLedger.swift; path = Core/AutomaticCommandLedger.swift; sourceTree = "<group>"; };
+		F4E3D2C1B0A9988776655443 /* WatchDiagnostics.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchDiagnostics.swift; path = Core/WatchDiagnostics.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5A6B7C8D9E0F1 /* ProximityCalibrationAge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityCalibrationAge.swift; path = Core/ProximityCalibrationAge.swift; sourceTree = "<group>"; };
 		7E5F8091A2B3C4D5E6F7A8B9 /* App/ScenarioGuideSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App/ScenarioGuideSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -631,6 +634,7 @@
 				C7D8E9F0A1B2C3D4E5F60718 /* ProximityCommandNotice.swift */,
 				B8C7D6E5F40312A9B8C7D6E5 /* PairingRecovery.swift */,
 				E8F9A0B1C2D3E4F5A6B7C8D /* AutomaticCommandLedger.swift */,
+				F4E3D2C1B0A9988776655443 /* WatchDiagnostics.swift */,
 				A0B1C2D3E4F5A6B7C8D9E0F1 /* ProximityCalibrationAge.swift */,
 				C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */,
 			);
@@ -888,6 +892,7 @@
 				F0370C47E8BC908E55A8CD79 /* VoiceIntent.swift in Sources */,
 				C614A7D049EC7F0F9A9AB2D7 /* BluetoothDiscovery.swift in Sources */,
 				9CBC366849E488FE1A0AC93C /* WatchLink.swift in Sources */,
+				D4C3B2A19088776655443322 /* WatchDiagnostics.swift in Sources */,
 				8395345930A6507700C9AE4B /* WatchSnapshot.swift in Sources */,
 				8395345A30A6507700C9AE4B /* WatchComplicationStore.swift in Sources */,
 				8395345B30A6507700C9AE4B /* WatchSnapshotThrottle.swift in Sources */,
@@ -967,6 +972,7 @@
 				D2DE9EA95690B36CD04395B3 /* VoiceIntent.swift in Sources */,
 				AB34A63EA6D2DD32ACDFE977 /* BluetoothDiscovery.swift in Sources */,
 				768BE458489998C0C6392676 /* WatchLink.swift in Sources */,
+				E4D3C2B1A098877665544332 /* WatchDiagnostics.swift in Sources */,
 				C0A1B2C3D4E5061728394A15 /* WatchSnapshot.swift in Sources */,
 				C0A1B2C3D4E5061728394A16 /* WatchComplicationStore.swift in Sources */,
 				B9F50718B5D0B377D8C5E301 /* WatchSnapshotThrottle.swift in Sources */,
