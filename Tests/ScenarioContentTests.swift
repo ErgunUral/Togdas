@@ -9,8 +9,9 @@ final class ScenarioContentTests: XCTestCase {
     // MARK: - Katalog bütünlüğü
 
     func testEverySectionHasAGroup() {
-        XCTAssertEqual(ScenarioSection.allCases.count, 7)
+        XCTAssertEqual(ScenarioSection.allCases.count, 8)
         XCTAssertEqual(ScenarioCatalog.groups.count, ScenarioSection.allCases.count)
+        XCTAssertEqual(ScenarioCatalog.groups.first?.section, .setup, "Kurulum bölümü ilk sırada olmalı")
         for section in ScenarioSection.allCases {
             XCTAssertNotNil(ScenarioCatalog.group(for: section), "\(section) bölümü eksik")
         }
@@ -34,6 +35,35 @@ final class ScenarioContentTests: XCTestCase {
 
     func testUnknownSectionHasNoItem() {
         XCTAssertNil(ScenarioCatalog.item(section: .link, id: "yok-öyle-bir-senaryo"))
+    }
+
+    // MARK: - Kurulum bölümü
+
+    func testSetupCoversLoginPermissionsAndChannels() {
+        let ids = Set((ScenarioCatalog.group(for: .setup)?.items ?? []).map(\.id))
+        XCTAssertEqual(
+            ids,
+            [
+                "setup-login", "setup-permissions", "setup-bluetooth",
+                "setup-widget", "setup-watch", "setup-geofence",
+            ]
+        )
+    }
+
+    func testBluetoothSetupReferencesTheFiveStepGuide() {
+        let item = ScenarioCatalog.item(section: .setup, id: "setup-bluetooth")
+        XCTAssertNotNil(item)
+        // Tetik metni BLESetupGuideSheet'i açan gerçek düğme adıyla uyumlu olmalı.
+        XCTAssertTrue(item?.trigger.contains("Kurulumu adım adım dinle") == true)
+        // 5 adım özeti son adımı (yeşil 'Komut hazır') içermeli.
+        XCTAssertTrue(item?.effect.contains("Komut hazır") == true)
+    }
+
+    func testGeofenceSetupMatchesReadinessWording() {
+        let item = ScenarioCatalog.item(section: .setup, id: "setup-geofence")
+        XCTAssertNotNil(item)
+        // `GeofenceReadiness.message` ile uyumlu: "Her zaman" izni şart.
+        XCTAssertTrue(item?.requirement.contains("Her zaman") == true)
     }
 
     // MARK: - Kritik senaryolar

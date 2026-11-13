@@ -18,6 +18,7 @@ import Foundation
 
 /// Rehber bölümleri; `ScenarioGuideSheet` odaklı açılışta bu id'ye kaydırır.
 enum ScenarioSection: String, CaseIterable, Identifiable {
+    case setup
     case link
     case proximity
     case commands
@@ -30,6 +31,7 @@ enum ScenarioSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .setup: return "Kurulum"
         case .link: return "Bağlantı & Anahtar"
         case .proximity: return "Yakınlık Otomasyonu"
         case .commands: return "Komutlar"
@@ -42,6 +44,7 @@ enum ScenarioSection: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
+        case .setup: return "checklist"
         case .link: return "point.3.connected.trianglepath.dotted"
         case .proximity: return "dot.radiowaves.left.and.right"
         case .commands: return "waveform"
@@ -54,7 +57,8 @@ enum ScenarioSection: String, CaseIterable, Identifiable {
 
     var summary: String {
         switch self {
-        case .link: return "Telefon ile araç arasında güvenli eşleşme nasıl kurulur."
+        case .setup: return "Giriş, izinler, Bluetooth, widget/saat ekleme ve geofence kurulumu."
+        case .link: return "Telefon ile araç arasında güvenli eşleşme nasıl kurulur. Kurulum bölümündeki izinler ön şarttır."
         case .proximity: return "Yaklaşınca aç, uzaklaşınca kilitle — koşulları ile birlikte."
         case .commands: return "Komutlar yalnız hazır bağlantı ve taze telemetri ile gönderilir."
         case .watchWidget: return "Saat ve widget yalnız görüntüler; komut göndermez."
@@ -94,8 +98,58 @@ struct ScenarioGroup: Identifiable, Equatable {
 // MARK: - Katalog
 
 enum ScenarioCatalog {
-    /// 7 bölüm; sıra UI'da göründüğü sıradır.
+    /// 8 bölüm; sıra UI'da göründüğü sıradır.
     static let groups: [ScenarioGroup] = [
+        ScenarioGroup(section: .setup, items: [
+            ScenarioItem(
+                id: "setup-login",
+                title: "Togg ID girişi",
+                trigger: "Uygulama ilk kez açıldığında.",
+                effect: "Togg ID ile giriş yapılır; araçlar çekilir, başlık menüsünden araç seçilir.",
+                requirement: "Geçerli bir Togg ID hesabı.",
+                onBreak: "Giriş başarısız olursa hata gerekçesi ekranda gösterilir."
+            ),
+            ScenarioItem(
+                id: "setup-permissions",
+                title: "İzinler",
+                trigger: "İlgili özellik ilk kez kullanıldığında.",
+                effect: "Bluetooth (araç servislerini bulmak), bildirim, mikrofon (sesli komut) ve konum (EPDK istasyonları + geofence) izinleri istenir.",
+                requirement: "Her izni ilk soruda verin; daha sonra Ayarlar > Toqdas'tan da açabilirsiniz.",
+                onBreak: "İzin kapalıysa ilgili özellik çalışmaz: Bluetooth araç bulamaz, mikrofon sesli komutu duymaz, bildirim gösterilmez."
+            ),
+            ScenarioItem(
+                id: "setup-bluetooth",
+                title: "Bluetooth kurulumu (5 adım)",
+                trigger: "Bluetooth Dijital Anahtar kartında 'Kurulumu adım adım dinle' seçildiğinde.",
+                effect: "Sesli anlatımlı rehber açılır: araca yaklaş, bağlantıyı başlat, eşleştirmeyi araçtan başlat, kimlik doğrulamayı bekle, yeşil 'Komut hazır' durumunu doğrula.",
+                requirement: "iPhone Bluetooth'u açık ve uygulama ekranda kalsın.",
+                onBreak: "Araç anahtarı eksik uyarısı görünürse eşleştirme araç ekranından başlatılır."
+            ),
+            ScenarioItem(
+                id: "setup-widget",
+                title: "Ana ekran widget'ı",
+                trigger: "Ana ekranda widget galerisinden Toqdas widget'ı eklendiğinde.",
+                effect: "Kilit durumu, 12 V akü ve telemetri tazeliği gösterilir; veri telefon uygulamasından gelir.",
+                requirement: "Telefon uygulamasının app group'a veri yazması için arada bir ön plana gelmesi gerekir.",
+                onBreak: "Veri yoksa 'bilgi yok' gösterilir; widget komut göndermez."
+            ),
+            ScenarioItem(
+                id: "setup-watch",
+                title: "Saat kurulumu",
+                trigger: "Apple Watch'a kurulum yapıldığında.",
+                effect: "Saat uygulaması ve kadran complication'ı kilit/akü durumunu gösterir.",
+                requirement: "Watch uygulamasını telefona kurun; complication'ı kadran düzenleme ekranından ekleyin.",
+                onBreak: "Complication eklenmemişse kadran boş görünür."
+            ),
+            ScenarioItem(
+                id: "setup-geofence",
+                title: "Geofence (ev otomasyonu)",
+                trigger: "Geofence kartında ev konumu ayarlandığında.",
+                effect: "Bölgeye girince açma, çıkınca kilitleme denenir; konum cihazda değerlendirilir.",
+                requirement: "'Ev konumunu ayarla' düğmesini kullanın, yarıçapı seçin; konum izni 'Her zaman' olmalı.",
+                onBreak: "Ev konumu veya 'Her zaman' izni eksikse etkinleştirilmez; kartta readiness uyarısı gösterilir."
+            ),
+        ]),
         ScenarioGroup(section: .link, items: [
             ScenarioItem(
                 id: "link-pairing",
