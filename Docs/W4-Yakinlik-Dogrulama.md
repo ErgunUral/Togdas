@@ -131,3 +131,17 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   + eylem başına son komut zamanı; ikinci kaynak 30 sn içinde komut
   göndermez (`geofence_unlock_skipped` / `proximity_lock_skipped`).
 - +7 test (471/471).
+
+### I. Kalibrasyon eskimesi — **TAMAM ✓** (`9543964`)
+- `Core/ProximityCalibrationAge`: 30 gün eşiği, takvim günü hesabı; hiç
+  kalibre edilmemiş durum uyarı üretmez. Ölçüm anı `ProximitySettings`
+  içinde VIN bazlı saklanır; sıfırlamada temizlenir.
+- Yakınlık kartında bilgilendirme notu (turuncu, komut/otomasyon etkisi
+  yok). +6 test (477/477).
+
+### J. İki telefon aynı VIN — **bilinen sınır, kod yok**
+- İki iPhone da eşleşirse ikisi bağımsız otomatik komut üretebilir
+  (çift bip / çakışma). Cihazlar arası koordinasyon yok (sunucu/ortak
+  oturum gerekir).
+- Karar: **tek aktif anahtar telefon** önerilir; ikincisi gözlemci
+  kalmalı. Doküman notu; ileride sunucu tarafı kilit gerekirse ayrı iş.

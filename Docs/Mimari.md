@@ -283,6 +283,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     otomatik komut zamanı. Geofence giriş/çıkışı artık yakınlık guard'larını
     atlamıyor; iki kaynak 30 sn içinde aynı eylemi tekrarlamıyor
     (`geofence_*_skipped`, `proximity_*_skipped` tanı satırları).
+- **Kalibrasyon eskimesi (2026-11-13, 477 test, `9543964`):**
+  - `Core/ProximityCalibrationAge` (saf, testli): 30 gün eşiği; hiç kalibre
+    edilmemiş durum uyarı üretmez. `ProximitySettings` ölçüm anını VIN
+    bazlı saklar (`toqdas.proximity.calibrationAt.<vin>`, sıfırlamada
+    temizlenir). Yakınlık kartında turuncu bilgilendirme notu; otomasyonu
+    kapatmaz, komut göndermez.
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı
