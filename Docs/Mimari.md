@@ -229,6 +229,18 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   - U3 erişilebilirlik: kapı kutucukları VoiceOver, ≥44pt vurma hedefleri
     (sekmeler, BLE düğmeleri, klima toggle/cam komutları), Reduce Motion
     desteği (`8ad220b`).
+- **Watch planı Faz W1–W3 (2026-11-12):**
+  - W1 cihaz kurulumu: Watch Ultra 2 Mac'e eşleşti, Geliştirici Modu; watch
+    build `buildWatch/` ile kurulu (UDID takıma kayıtlı).
+  - W2 saat UI denetimi (`2b6558e`): kilit ikonu `.largeTitle.weight(.semibold)`,
+    complication `lockColor` `LockVisual`'dan (eski veri → turuncu, bilgi yok
+    → gri); köşe gauge 8pt kasıtlı sabit.
+  - W3 app group provizyonu (`1c151ee` + `e594746`): `group.com.toqdas.ios`
+    4 entitlements dosyasına yazıldı; Xcode 27.2 GUI'de 4 hedefe
+    DEVELOPMENT_TEAM=2QAL5894CY seçildi → otomatik imzalama portal kaydını
+    yaptı, 4 profil app group'lu doğrulandı. App group'lu build'ler kuruldu
+    (17, 14, Watch Ultra 2). Kısıt: Personal Team profilleri ~7 gün ömürlü.
+  - W4 araç başı doğrulaması: `Docs/W4-Yakinlik-Dogrulama.md` (bekliyor).
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı
