@@ -166,6 +166,10 @@ struct DashboardView: View {
     @State private var proximityAutoOffTask: Task<Void, Never>?
     @State private var pendingAutoLockTask: Task<Void, Never>?
     @State private var awaitingProximityLockConfirmation = false
+    /// Otomatik yakınlık komutunun sonucu beklenirken türü ve zamanı;
+    /// yalnız 60 sn içindeki sonuç bildirime dönüşür (manuel komutlar hariç).
+    @State private var pendingAutomaticCommandKind: ProximityCommandNotice.Kind?
+    @State private var pendingAutomaticCommandAt: Date?
     @State private var lastLockSoundCount: Int?
 
     // Önizleme durumları (henüz araca bağlı değil)
@@ -342,8 +346,9 @@ struct DashboardView: View {
         }
         .onReceive(ble.$lastEvent) { event in
             guard proximityEnabled,
-                  event.contains("araç durumuyla doğrulandı") || event.contains("kilit değişikliği doğrulanamadı") else { return }
+                  let outcome = ProximityCommandNotice.outcome(forEvent: event) else { return }
             proximityStatus = event
+            handleAutomaticCommandOutcome(outcome)
         }
         .onReceive(ble.$lockConfirmationCount) { count in
             guard let previous = lastLockSoundCount else {
@@ -1625,11 +1630,14 @@ struct DashboardView: View {
                 case .sendUnlock:
                     if ble.unlock() {
                         proximityGuard.noteUnlockIssued()
+                        pendingAutomaticCommandKind = .unlock
+                        pendingAutomaticCommandAt = Date()
                         recordWidgetCommand("Otomatik kilit açma (yakınlık)")
                         proximityStatus = "Yakınlık algılandı; imzalı kilit açma isteği başlatıldı."
                         ble.recordDiagnostic("Yakınlık otomasyonu kilit açma biletiyle istek başlattı")
                     } else {
                         proximityGuard.noteAmbiguity(now: Date())
+                        postProximityCommandNotice(kind: .unlock, failure: .notStarted)
                         proximityStatus = "Yakınlık algılandı; kilit açma gönderilmedi: \(ble.lastEvent)"
                         ble.recordDiagnostic("Yakınlık otomasyonu kilit açmayı başlatamadı; bilet iptal, guard devrede")
                     }
@@ -1663,6 +1671,8 @@ struct DashboardView: View {
                     }
                 }
                 if ble.lock() {
+                    pendingAutomaticCommandKind = .lock
+                    pendingAutomaticCommandAt = Date()
                     recordWidgetCommand("Kilitleme (yakınlık)")
                     proximityStatus = "Uzaklaşma algılandı; cam kapatma ve ardından kapı kilitleme akışı başlatıldı."
                     ble.recordDiagnostic("Yakınlık otomasyonu cam kapatma/kilitleme akışını başlattı")
@@ -1670,6 +1680,7 @@ struct DashboardView: View {
                     pendingAutoLockTask?.cancel()
                     pendingAutoLockTask = nil
                     awaitingProximityLockConfirmation = false
+                    postProximityCommandNotice(kind: .lock, failure: .notStarted)
                     proximityStatus = "Uzaklaşma algılandı; kilitleme başlatılamadı: \(ble.lastEvent)"
                     ble.recordDiagnostic("Yakınlık otomasyonu kilitleme akışını başlatamadı")
                 }
@@ -1677,6 +1688,37 @@ struct DashboardView: View {
                 proximityStatus = "Uzaklaşma algılandı; kapılar zaten kilitli."
             }
         }
+    }
+
+    // MARK: - Otomatik komut bildirimi
+
+    /// Otomatik (yakınlık) komutun doğrulama sonucu. Yalnız 60 sn içindeki
+    /// sonuç bildirime dönüşür; manuel komutlar bu yolu kullanmaz.
+    @MainActor
+    private func handleAutomaticCommandOutcome(_ outcome: ProximityCommandNotice.Outcome) {
+        guard let kind = pendingAutomaticCommandKind,
+              let at = pendingAutomaticCommandAt,
+              Date().timeIntervalSince(at) <= 60 else { return }
+        pendingAutomaticCommandKind = nil
+        pendingAutomaticCommandAt = nil
+        guard outcome == .failed else { return }
+        postProximityCommandNotice(kind: kind, failure: .notVerified)
+    }
+
+    /// Başarısız otomatik komut bildirimi. Metin "yeniden gönderilmedi"
+    /// der — bildirim komutu tekrar tetiklemez (davranışa sadık).
+    @MainActor
+    private func postProximityCommandNotice(kind: ProximityCommandNotice.Kind,
+                                            failure: ProximityCommandNotice.Failure) {
+        pendingAutomaticCommandKind = nil
+        pendingAutomaticCommandAt = nil
+        NotificationPoster.post(
+            ProximityCommandNotice.failureDraft(kind: kind, failure: failure, vin: vehicle.vin),
+            using: notificationPoster
+        )
+        ble.recordDiagnostic("proximity_command_notice · \(kind.actionText) · "
+                             + (failure == .notVerified ? "doğrulanamadı" : "başlatılamadı")
+                             + " · bildirim gönderildi")
     }
 
     @MainActor
