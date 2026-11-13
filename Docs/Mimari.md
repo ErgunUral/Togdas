@@ -318,6 +318,11 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Sahiplik çakışması tanısı (2026-11-13, 516 test, `c1f27d8`):**
+  - `Core/ClaimResponseShape` (saf, testli): `ClaimCarToUser` yanıtının
+    yalnız alan adları/tip/uzunlukları kaydedilir (`toqdas.claim.shape.v1`);
+    değer yazılmaz. Sunucu başka telefonun kimliğini paylaşmadığı için uyarı
+    metni de bunu açıkça söyler (taşı / davet iste).
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı

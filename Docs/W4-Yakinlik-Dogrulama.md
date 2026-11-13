@@ -196,3 +196,15 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
 - **E. Faz günlüğü:** `Core/BlePhaseLog` (`toqdas.ble.phase.v1`, son 20
   geçiş + neden). Cihaz kanıtı: `22:28:57 connecting · Araç aranıyor…`.
 - +25 test (511/511).
+
+### N. “Araç başka bir telefon anahtarına bağlı” (`c1f27d8`)
+- Sunucu yanıtı yalnız `resultEnum` taşıyor (`OverwriteDetection`,
+  `OwnerChange`, `NotOwner`); başka telefonun kimliği gelmiyor. Bu yüzden
+  uyarıda “hangi telefon” gösterilemiyor.
+- `Core/ClaimResponseShape`: çakışma yanıtının **anahtar adları + tip +
+  uzunluk** kaydı (`toqdas.claim.shape.v1`). Değer yazılmaz (e-posta,
+  telefon, cihaz adı sızmaz). Bir sonraki saha olayında plist'ten alan
+  listesi okunur; maskeli kimlik alanı varsa sonraki adımda gösterilir.
+- Uyarı metni dürüstleştirildi: “hangi telefon olduğu sunucu tarafından
+  paylaşılmıyor” + iki eylem (sahip anahtarını taşı / paylaşım daveti iste).
+- +5 test (516/516).
