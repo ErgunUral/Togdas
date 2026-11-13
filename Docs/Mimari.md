@@ -289,6 +289,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     bazlı saklar (`toqdas.proximity.calibrationAt.<vin>`, sıfırlamada
     temizlenir). Yakınlık kartında turuncu bilgilendirme notu; otomasyonu
     kapatmaz, komut göndermez.
+- **Saat tanısı (2026-11-13, 483 test, `26486ea`):**
+  - `Core/WatchDiagnostics` (saf, testli): saat UserDefaults'unda halka
+    tampon (40 olay, `toqdas.watch.diagnostics.v1`). `WatchLink` kayıt
+    noktaları: snapshot alındı, yenileme isteği/reddi, komut sonucu
+    (`status`), oturum ve erişilebilirlik değişimi. VIN/token yazılmaz;
+    UI etkisi yok, komut/ağ kullanımı yok (saha tanısı plist'ten okunur).
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı

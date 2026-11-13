@@ -145,3 +145,13 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   oturum gerekir).
 - Karar: **tek aktif anahtar telefon** önerilir; ikincisi gözlemci
   kalmalı. Doküman notu; ileride sunucu tarafı kilit gerekirse ayrı iş.
+
+### K. Saat tanısı — **TAMAM ✓** (`26486ea`)
+- `Core/WatchDiagnostics`: saat UserDefaults'unda halka tampon
+  (`toqdas.watch.diagnostics.v1`, 40 olay, mesaj 160 karakter).
+- Kayıt noktaları (`Shared/WatchLink`): snapshot alındı, yenileme
+  istendi/reddedildi/iletilemedi, komut sonucu (`status`), oturum
+  etkinleşti, telefon erişilebilir/erişilemiyor.
+- VIN/token yazılmaz; UI'da gösterilmez, komut/ağ kullanımı yok.
+- Okuma: saatten plist çekimi (`com.toqdas.ios.dev.watchkitapp`),
+  `toqdas.watch.diagnostics.v1` anahtarı. +6 test (483/483).
