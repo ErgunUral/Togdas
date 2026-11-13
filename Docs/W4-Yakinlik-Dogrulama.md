@@ -119,9 +119,15 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   cihaz ayarlarından unutup yeniden eşleştirmektir (rehber bunu söyler).
 - +5 test (464/464).
 
-### G. Retry politikası — **karar bekliyor**
+### G. Retry politikası — **karar: retry yok** (13.11, onaylı varsayılan)
 - `automatic_command_failed` sonrası aynı döngüde yeniden deneme yok.
-- Seçenek: kapılar kapalıyken ~5 sn sonra **tek** retry (çift bip/komut
-  tekrarı riski) veya mevcut davranış (yeniden deneme yok, bildirim yeter).
-- Karar kullanıcıya ait; varsayılan öneri: **retry yok** — bildirim +
-  kullanıcı kontrolü (yanlış kilitleme riski düşük tutulur).
+- Gerekçe: bildirim + kullanıcı kontrolü; çift komut/çift bip ve yanlış
+  kilitleme riski düşük tutulur.
+
+### H. Geofence ↔ yakınlık çakışması — **TAMAM ✓** (`22dbfc4`)
+- Bulgu: `ToqdasApp` geofence kapanışları yakınlık guard'larını atlayıp
+  doğrudan `ble.unlock()/lock()` çağırıyordu.
+- `Core/AutomaticCommandLedger` (saf, testli): kaynak (proximity/geofence)
+  + eylem başına son komut zamanı; ikinci kaynak 30 sn içinde komut
+  göndermez (`geofence_unlock_skipped` / `proximity_lock_skipped`).
+- +7 test (471/471).

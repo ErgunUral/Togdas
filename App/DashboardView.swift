@@ -101,6 +101,7 @@ struct DashboardView: View {
     @State private var proximityProfile: ProximityProfile = .balanced
     @State private var proximityNearSample: Int?
     @State private var proximityFarSample: Int?
+    @State private var proximityCalibrationSavedAt: Date?
     @State private var proximityGate: ProximityGate?
     @State private var proximityRSSISamples: [Int] = []
     @State private var proximityStatus = "Ölçüm bekleniyor"
@@ -876,6 +877,16 @@ struct DashboardView: View {
                 .font(ToggTheme.text(.caption, weight: .medium))
                 .foregroundStyle(proximityEnabled ? ToggTheme.teal : ToggTheme.muted)
 
+            if let savedAt = proximityCalibrationSavedAt,
+               ProximityCalibrationAge.needsRefresh(savedAt) {
+                Label(ProximityCalibrationAge.message(
+                    days: ProximityCalibrationAge.daysSince(savedAt)),
+                      systemImage: "clock.arrow.circlepath")
+                    .font(ToggTheme.text(.micro))
+                    .foregroundStyle(ToggTheme.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             HStack(spacing: 10) {
                 Button { captureProximitySample(isNear: true) } label: {
                     Label("Yakında ölç", systemImage: "figure.walk")
@@ -1359,6 +1370,7 @@ struct DashboardView: View {
         }
         proximityNearSample = proximitySettings.nearSample(vin: vehicle.vin)
         proximityFarSample = proximitySettings.farSample(vin: vehicle.vin)
+        proximityCalibrationSavedAt = proximitySettings.calibrationSavedAt(vin: vehicle.vin)
         let requested = preferences.proximityEnabled(for: vehicle.vin)
         if requested, proximityAutoOffEnabled,
            let deadline = proximityAutoOffDeadline,
@@ -1414,6 +1426,7 @@ struct DashboardView: View {
     private func resetProximityCalibration() {
         proximityNearSample = nil
         proximityFarSample = nil
+        proximityCalibrationSavedAt = nil
         proximityGate = nil
         proximitySettings.clearCalibration(vin: vehicle.vin)
         proximityStatus = "Ölçümler sıfırlandı. Yeniden yakın ve uzak ölçüm alın."
@@ -1437,6 +1450,10 @@ struct DashboardView: View {
             proximitySettings.setFarSample(sample, vin: vehicle.vin)
             proximityStatus = "Uzak ölçüm kaydedildi: \(sample) dBm"
         }
+        // Ölçüm anı kaydedilir: eskime uyarısı (30 gün) bundan hesaplanır.
+        let savedAt = Date()
+        proximityCalibrationSavedAt = savedAt
+        proximitySettings.setCalibrationSavedAt(savedAt, vin: vehicle.vin)
 
         if let calibration = proximityCalibration, calibration.isValid {
             proximityGate = ProximityGate(calibration: calibration, profile: proximityProfile)

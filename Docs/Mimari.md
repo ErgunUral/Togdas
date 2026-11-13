@@ -278,6 +278,11 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     eşleştirmedir; uygulama kendi silemez.
   - Dashboard `needsRepair` banner'ı Core metinlerine bağlandı; kurtarma
     bildirimi araç başına günde bir (`StorageKeys.pairingRecoveryNotified`).
+- **Geofence ↔ yakınlık çakışma koruması (2026-11-13, 471 test, `22dbfc4`):**
+  - `Core/AutomaticCommandLedger` (saf, testli): kaynak + eylem başına son
+    otomatik komut zamanı. Geofence giriş/çıkışı artık yakınlık guard'larını
+    atlamıyor; iki kaynak 30 sn içinde aynı eylemi tekrarlamıyor
+    (`geofence_*_skipped`, `proximity_*_skipped` tanı satırları).
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı

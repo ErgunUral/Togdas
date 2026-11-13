@@ -26,6 +26,7 @@ struct ProximitySettings {
     static func profileKey(_ vin: String) -> String { "toqdas.proximity.profile.\(vin)" }
     static func nearKey(_ vin: String) -> String { "toqdas.proximity.near.\(vin)" }
     static func farKey(_ vin: String) -> String { "toqdas.proximity.far.\(vin)" }
+    static func calibrationSavedAtKey(_ vin: String) -> String { "toqdas.proximity.calibrationAt.\(vin)" }
     static func autoOffEnabledKey(_ vin: String) -> String { "toqdas.proximity.autoOff.enabled.\(vin)" }
     static func autoOffMinutesKey(_ vin: String) -> String { "toqdas.proximity.autoOff.minutes.\(vin)" }
     static func autoOffCustomKey(_ vin: String) -> String { "toqdas.proximity.autoOff.custom.\(vin)" }
@@ -64,10 +65,24 @@ struct ProximitySettings {
         store.set(sample, forKey: Self.farKey(vin))
     }
 
+    /// Kalibrasyonun kaydedildiği an (eskime uyarısı için); yoksa `nil`.
+    func calibrationSavedAt(vin: String) -> Date? {
+        store.object(forKey: Self.calibrationSavedAtKey(vin)) as? Date
+    }
+
+    func setCalibrationSavedAt(_ date: Date?, vin: String) {
+        if let date {
+            store.set(date, forKey: Self.calibrationSavedAtKey(vin))
+        } else {
+            store.removeObject(forKey: Self.calibrationSavedAtKey(vin))
+        }
+    }
+
     /// Sıfırlama: yakın ve uzak ölçüm anahtarları kaldırılır.
     func clearCalibration(vin: String) {
         store.removeObject(forKey: Self.nearKey(vin))
         store.removeObject(forKey: Self.farKey(vin))
+        store.removeObject(forKey: Self.calibrationSavedAtKey(vin))
     }
 
     // MARK: Oto-kapanma

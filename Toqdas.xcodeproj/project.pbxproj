@@ -54,6 +54,7 @@
 		D1E2F3A4B5C6D7E8F9012345 /* ProximityCommandNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7D8E9F0A1B2C3D4E5F60718 /* ProximityCommandNotice.swift */; };
 		A9B8C7D6E5F40312A9B8C7D6 /* PairingRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C7D6E5F40312A9B8C7D6E5 /* PairingRecovery.swift */; };
 		C3D4E5F60718293A4B5C6D7E /* AutomaticCommandLedger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F9A0B1C2D3E4F5A6B7C8D /* AutomaticCommandLedger.swift */; };
+		F0E1D2C3B4A5968778695A4B /* ProximityCalibrationAge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5A6B7C8D9E0F1 /* ProximityCalibrationAge.swift */; };
 		8F6091A2B3C4D5E6F7A8B9C0 /* App/ScenarioGuideSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F8091A2B3C4D5E6F7A8B9 /* App/ScenarioGuideSheet.swift */; };
 		3E573134388F2997403C7038 /* Core/ShortcutLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E6553C89E34442D30915FB /* Core/ShortcutLink.swift */; };
 		404ABC4D3DD42DABB1BE60AC /* LockConfirmationSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CA21BA085F722911635017 /* LockConfirmationSound.swift */; };
@@ -397,6 +398,7 @@
 		C7D8E9F0A1B2C3D4E5F60718 /* ProximityCommandNotice.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityCommandNotice.swift; path = Core/ProximityCommandNotice.swift; sourceTree = "<group>"; };
 		B8C7D6E5F40312A9B8C7D6E5 /* PairingRecovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PairingRecovery.swift; path = Core/PairingRecovery.swift; sourceTree = "<group>"; };
 		E8F9A0B1C2D3E4F5A6B7C8D /* AutomaticCommandLedger.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AutomaticCommandLedger.swift; path = Core/AutomaticCommandLedger.swift; sourceTree = "<group>"; };
+		A0B1C2D3E4F5A6B7C8D9E0F1 /* ProximityCalibrationAge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityCalibrationAge.swift; path = Core/ProximityCalibrationAge.swift; sourceTree = "<group>"; };
 		7E5F8091A2B3C4D5E6F7A8B9 /* App/ScenarioGuideSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App/ScenarioGuideSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -629,6 +631,7 @@
 				C7D8E9F0A1B2C3D4E5F60718 /* ProximityCommandNotice.swift */,
 				B8C7D6E5F40312A9B8C7D6E5 /* PairingRecovery.swift */,
 				E8F9A0B1C2D3E4F5A6B7C8D /* AutomaticCommandLedger.swift */,
+				A0B1C2D3E4F5A6B7C8D9E0F1 /* ProximityCalibrationAge.swift */,
 				C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */,
 			);
 			name = Core;
@@ -992,6 +995,7 @@
 				D1E2F3A4B5C6D7E8F9012345 /* ProximityCommandNotice.swift in Sources */,
 				A9B8C7D6E5F40312A9B8C7D6 /* PairingRecovery.swift in Sources */,
 				C3D4E5F60718293A4B5C6D7E /* AutomaticCommandLedger.swift in Sources */,
+				F0E1D2C3B4A5968778695A4B /* ProximityCalibrationAge.swift in Sources */,
 				8F6091A2B3C4D5E6F7A8B9C0 /* App/ScenarioGuideSheet.swift in Sources */,
 				84C01423028B7B78968A0D58 /* Core/UserFacingError.swift in Sources */,
 				A109CC28F6CAA2BDEC125112 /* App/UserFacingError+App.swift in Sources */,
