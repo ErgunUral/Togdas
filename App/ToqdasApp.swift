@@ -99,10 +99,32 @@ final class GarageModel: ObservableObject {
         }
 
         geofence.onEnterHome = { [weak self] in
-            Task { @MainActor in guard self?.ble.state.isReady == true else { return }; _ = self?.ble.unlock() }
+            Task { @MainActor in
+                guard let self, self.ble.state.isReady else { return }
+                if let recent = AutomaticCommandLedger.shared.recent(action: "unlock",
+                                                                     vin: self.selectedVin ?? "",
+                                                                     within: 60, excluding: .geofence) {
+                    self.ble.recordDiagnostic("geofence_unlock_skipped · son açma komutu \(recent.source.rawValue) kaynaklı; çift komut engellendi")
+                    return
+                }
+                AutomaticCommandLedger.shared.note(source: .geofence, action: "unlock",
+                                                   vin: self.selectedVin ?? "")
+                _ = self.ble.unlock()
+            }
         }
         geofence.onExitHome = { [weak self] in
-            Task { @MainActor in guard self?.ble.state.isReady == true else { return }; _ = self?.ble.lock() }
+            Task { @MainActor in
+                guard let self, self.ble.state.isReady else { return }
+                if let recent = AutomaticCommandLedger.shared.recent(action: "lock",
+                                                                     vin: self.selectedVin ?? "",
+                                                                     within: 60, excluding: .geofence) {
+                    self.ble.recordDiagnostic("geofence_lock_skipped · son kilitleme komutu \(recent.source.rawValue) kaynaklı; çift komut engellendi")
+                    return
+                }
+                AutomaticCommandLedger.shared.note(source: .geofence, action: "lock",
+                                                   vin: self.selectedVin ?? "")
+                _ = self.ble.lock()
+            }
         }
 
         // Arka plan yakınlık algısı: yalnızca izleme; komut göndermez.

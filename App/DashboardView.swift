@@ -1634,8 +1634,14 @@ struct DashboardView: View {
                 let decision = proximityGuard.decideApproach(now: Date())
                 switch decision {
                 case .sendUnlock:
-                    if ble.unlock() {
+                    if let recent = AutomaticCommandLedger.shared.recent(action: "unlock",
+                                                                        vin: vehicle.vin,
+                                                                        within: 30, excluding: .proximity) {
+                        proximityStatus = "Yakınlık algılandı; \(recent.source == .geofence ? "geofence" : "otomatik") açması yeni gönderildi, çift komut engellendi."
+                        ble.recordDiagnostic("proximity_unlock_skipped · son açma \(recent.source.rawValue) kaynaklı; çift komut engellendi")
+                    } else if ble.unlock() {
                         proximityGuard.noteUnlockIssued()
+                        AutomaticCommandLedger.shared.note(source: .proximity, action: "unlock", vin: vehicle.vin)
                         pendingAutomaticCommandKind = .unlock
                         pendingAutomaticCommandAt = Date()
                         recordWidgetCommand("Otomatik kilit açma (yakınlık)")
@@ -1664,6 +1670,12 @@ struct DashboardView: View {
                 return
             }
             if !isLocked {
+                if let recent = AutomaticCommandLedger.shared.recent(action: "lock", vin: vehicle.vin,
+                                                                    within: 30, excluding: .proximity) {
+                    proximityStatus = "Uzaklaşma algılandı; son kilitleme \(recent.source.rawValue) kaynaklı, çift komut engellendi."
+                    ble.recordDiagnostic("proximity_lock_skipped · son kilitleme \(recent.source.rawValue) kaynaklı; çift komut engellendi")
+                    return
+                }
                 if proximityAutoOffEnabled {
                     awaitingProximityLockConfirmation = true
                     pendingAutoLockTask?.cancel()
@@ -1677,6 +1689,7 @@ struct DashboardView: View {
                     }
                 }
                 if ble.lock() {
+                    AutomaticCommandLedger.shared.note(source: .proximity, action: "lock", vin: vehicle.vin)
                     pendingAutomaticCommandKind = .lock
                     pendingAutomaticCommandAt = Date()
                     recordWidgetCommand("Kilitleme (yakınlık)")
