@@ -89,6 +89,7 @@ struct DashboardView: View {
     @State private var showKeyDiscovery = false
     @State private var alert: DashboardAlert?
     @State private var hasAuthenticatedBLE = false
+    @State private var certificateProvenance: CertificateProvenance?
     @AppStorage(GaragePreferences.keepConnectedKey) private var keepBLEConnected = false
     @State private var proximityEnabled = false
     @StateObject private var voice = VoiceAssistant()
@@ -325,7 +326,10 @@ struct DashboardView: View {
         .task { if !usesUITestFixture { await liveLoop() } }
         .task { if !usesUITestFixture { await climateLoop() } }
         .task { if !usesUITestFixture { await prefetchCertificate() } }
-        .task { loadProximitySettings() }
+        .task {
+            loadProximitySettings()
+            loadCertificateProvenance()
+        }
         .task { showLastKnownCloudTelemetryIfNeeded() }
         }
         .onReceive(ble.$state) { state in
@@ -777,6 +781,14 @@ struct DashboardView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!(ble.state.isCertificate || ble.state.isChallenge) || authBusy)
+            }
+
+            if let line = digitalKeyStatusLine {
+                Label(line, systemImage: "checkmark.seal")
+                    .font(ToggTheme.text(.micro))
+                    .foregroundStyle(ToggTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel(line)
             }
 
             if !ble.state.isReady {
@@ -1353,7 +1365,20 @@ struct DashboardView: View {
         }
     }
 
+    /// Dijital anahtarın kaynağını tazele (önbellek / yenilendi / ilk kez).
     @MainActor
+    private func loadCertificateProvenance() {
+        certificateProvenance = CertificateProvenanceStore().load(vin: vehicle.vin)
+    }
+
+    /// "Anahtar tekrar alındı mı?" sorusunun görünür yanıtı.
+    private var digitalKeyStatusLine: String? {
+        guard let provenance = certificateProvenance else { return nil }
+        let hex = PhoneKeyStore.publicKeyHex(for: vehicle.vin) ?? ""
+        let days = CertificateCache.cachedLifecycle(vin: vehicle.vin, phonePublicKeyHex: hex)?.daysRemaining
+        return CertificateProvenance.summary(provenance, daysRemaining: days)
+    }
+
     private func loadProximitySettings() {
         if let profile = proximitySettings.profile(vin: vehicle.vin) {
             proximityProfile = profile
@@ -1777,6 +1802,7 @@ struct DashboardView: View {
         }
         if state.isReady {
             hasAuthenticatedBLE = true
+            loadCertificateProvenance()
             if proximityEnabled { proximityStatus = "Bağlı; yakınlık izleniyor (uygulama ekranda kalmalı)." }
             return
         }

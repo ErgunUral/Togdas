@@ -683,6 +683,15 @@ final class ToggAPI: ToggAPIClient {
         return (payload["email"] as? String) ?? (payload["preferred_username"] as? String)
     }
 
+    /// Sertifikanın kaynağını kaydeder (önbellek / yenilendi / ilk kez).
+    /// "Dijital anahtar tekrar alındı mı" sorusunun tek kanıtı budur.
+    static func recordProvenance(_ source: CertificateProvenance.Source, vin: String) {
+        CertificateProvenanceStore().save(
+            CertificateProvenance(source: source, at: Date().timeIntervalSince1970),
+            vin: vin
+        )
+    }
+
     private static func resultEnum(in data: Data) -> String? {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         return object["resultEnum"] as? String
@@ -724,6 +733,7 @@ final class ToggAPI: ToggAPIClient {
             print("[CERT] cached certificate used len=\(cached.certificateBase64.count) carKey=\(cached.carPublicKey.isEmpty ? "yok" : "var") status=\(lifecycle?.state.rawValue ?? "bilinmiyor")")
             if !cached.carPublicKey.isEmpty {
                 guard lifecycle?.needsRefresh == true else {
+                    Self.recordProvenance(.reused, vin: vin)
                     return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: cached.carPublicKey)
                 }
                 // Son 24 saat: yeni sertifika almayı dene. Ağ yoksa hâlâ
@@ -740,9 +750,11 @@ final class ToggAPI: ToggAPIClient {
                     )
                     let carKey = fresh.carPublicKey.isEmpty ? cached.carPublicKey : fresh.carPublicKey
                     print("[CERT] certificate refreshed len=\(fresh.certificateBase64.count) carKeyPresent=\(!carKey.isEmpty)")
+                    Self.recordProvenance(.refreshed, vin: vin)
                     return CertificateRecord(certificateBase64: fresh.certificateBase64, carPublicKey: carKey)
                 }
                 print("[CERT] refresh failed; using still-valid cached certificate")
+                Self.recordProvenance(.reused, vin: vin)
                 return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: cached.carPublicKey)
             }
             // Sertifika var ama araç açık anahtarı yok: el sıkışma araç anahtarı
@@ -753,9 +765,11 @@ final class ToggAPI: ToggAPIClient {
                !fresh.carPublicKey.isEmpty {
                 CertificateCache.updateCarKey(vin: vin, phonePublicKeyHex: phonePublicKeyHex, carKey: fresh.carPublicKey)
                 print("[CERT] vehicle key refreshed from server")
+                Self.recordProvenance(.reused, vin: vin)
                 return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: fresh.carPublicKey)
             }
             print("[CERT] server returned no vehicle key; using cached certificate only")
+            Self.recordProvenance(.reused, vin: vin)
             return CertificateRecord(certificateBase64: cached.certificateBase64, carPublicKey: "")
         }
         print("[CERT] getCertificate başlıyor")
@@ -764,6 +778,7 @@ final class ToggAPI: ToggAPIClient {
             if let record = try CertificateRecord.parse(data, vin: vin, excluding: phonePublicKeyHex), !record.certificateBase64.isEmpty {
                 print("[CERT] mevcut sertifika alındı len=\(record.certificateBase64.count)")
                 CertificateCache.save(certificateBase64: record.certificateBase64, carPublicKey: record.carPublicKey, vin: vin, phonePublicKeyHex: phonePublicKeyHex)
+                Self.recordProvenance(.issued, vin: vin)
                 return record
             }
             print("[CERT] yanıtta sertifika yok")
@@ -825,6 +840,7 @@ final class ToggAPI: ToggAPIClient {
         )
         if let record = try CertificateRecord.parse(data, vin: vin, excluding: phonePublicKeyHex), !record.certificateBase64.isEmpty {
             CertificateCache.save(certificateBase64: record.certificateBase64, carPublicKey: record.carPublicKey, vin: vin, phonePublicKeyHex: phonePublicKeyHex)
+            Self.recordProvenance(.issued, vin: vin)
             return record
         }
         // Sunucu sertifikayı hemen döndürmezse timeToWaitBeforeFetch kadar
@@ -837,6 +853,7 @@ final class ToggAPI: ToggAPIClient {
                 if let record = try CertificateRecord.parse(fetched, vin: vin, excluding: phonePublicKeyHex), !record.certificateBase64.isEmpty {
                     print("[CERT] certificate fetched after create attempt \(attempt + 1) len=\(record.certificateBase64.count)")
                     CertificateCache.save(certificateBase64: record.certificateBase64, carPublicKey: record.carPublicKey, vin: vin, phonePublicKeyHex: phonePublicKeyHex)
+                    Self.recordProvenance(.issued, vin: vin)
                     return record
                 }
             } catch {

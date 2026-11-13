@@ -416,6 +416,15 @@ final class BleLinkCoordinator: ObservableObject {
             ble.requireRepair(reason)
             notePhase("anahtar değişti")
             throw AppError.message(reason)
+        case .missing(let previous):
+            // Kayıtlı anahtar vardı, Keychain'de artık yok. Sessizce yeni
+            // anahtar üretmek aracın eski eşleşmesini geçersiz kılar; kullanıcı
+            // bilinçli olarak yeniden eşleştirmeli.
+            ble.recordDiagnostic("key_fingerprint_missing · önceki \(previous)")
+            let reason = "Telefonun dijital anahtarı bu cihazda bulunamadı (Keychain). Yeniden eşleştirme gerekiyor."
+            ble.requireRepair(reason)
+            notePhase("anahtar kayboldu")
+            throw AppError.message(reason)
         case .firstUse, .match:
             if let fingerprint {
                 defaults.set(fingerprint, forKey: KeyIdentity.fingerprintKey(vin))

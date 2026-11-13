@@ -25,9 +25,11 @@ final class KeyIdentityTests: XCTestCase {
                        .changed(previous: "aaaa1111"))
     }
 
-    func testMissingKeyIsNotTreatedAsChange() {
-        // Anahtar yoksa (henüz üretilmemiş) sessiz geçilir; üretim akışı ayrıdır.
-        XCTAssertEqual(KeyIdentity.check(current: nil, stored: "aaaa1111"), .match)
+    /// Anahtar kaybolduysa sessizce yenisi üretilip yeniden eşleştirilmez.
+    func testMissingKeyIsReportedNotSilentlyRegenerated() {
+        XCTAssertEqual(KeyIdentity.check(current: nil, stored: "aaaa1111"),
+                       .missing(previous: "aaaa1111"))
+        XCTAssertEqual(KeyIdentity.check(current: nil, stored: nil), .firstUse)
     }
 
     func testKeysAreVINScoped() {

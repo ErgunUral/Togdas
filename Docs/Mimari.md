@@ -318,6 +318,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Dijital anahtar kalıcılığı (2026-11-13, 520 test):**
+  - `Core/CertificateProvenance` (saf, testli): sertifikanın kaynağı
+    (`reused` / `refreshed` / `issued`) VIN başına kaydedilir; pano bunu
+    “yeniden kullanılıyor · N gün geçerli” diye gösterir.
+  - `CertificateCache` doğrulama hatasında kaydı silmiyor; yalnız kesin
+    süresi dolmuşsa siliyor. Anahtar kaybı `KeyIdentity.missing` ile onarım
+    akışına gider — sessiz yeni anahtar/yeniden eşleştirme yok.
 - **Sahiplik çakışması tanısı (2026-11-13, 516 test, `c1f27d8`):**
   - `Core/ClaimResponseShape` (saf, testli): `ClaimCarToUser` yanıtının
     yalnız alan adları/tip/uzunlukları kaydedilir (`toqdas.claim.shape.v1`);

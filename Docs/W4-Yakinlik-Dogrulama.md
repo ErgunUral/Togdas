@@ -208,3 +208,17 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
 - Uyarı metni dürüstleştirildi: “hangi telefon olduğu sunucu tarafından
   paylaşılmıyor” + iki eylem (sahip anahtarını taşı / paylaşım daveti iste).
 - +5 test (516/516).
+
+### O. “Dijital anahtar bir kez alınır” (2026-11-13)
+- Sertifika ~365 gün geçerlidir ve **yalnız son 24 saatte** yenilenir; normal
+  bağlantıda sunucuya sertifika isteği gitmez.
+- **Önbellek artık kolay silinmiyor:** doğrulama, telefon anahtarı okunamadığı
+  için başarısız olduysa kayıt korunur; yalnız kesin süresi dolmuş/bozuk
+  sertifika silinir (`CertificateCache.isDefinitelyExpired`).
+- **Anahtar kaybı sessizce onarılmıyor:** `KeyIdentity.missing(previous:)`
+  durumunda yeni anahtar üretilip yeniden eşleştirilmez; onarım akışı ve
+  “Telefonun dijital anahtarı bu cihazda bulunamadı (Keychain)” mesajı çıkar.
+- **Kanıt satırı:** pano dijital anahtar bölümünde “Dijital anahtar yeniden
+  kullanılıyor · N gün geçerli” / “alındı” / “yenilendi” satırı
+  (`toqdas.cert.provenance.<vin>`).
+- +4 test (520/520).

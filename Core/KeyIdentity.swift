@@ -21,6 +21,9 @@ enum KeyIdentity {
         case match
         /// Kayıtlıdan farklı: sessiz devam etmek yanlış sonuç üretir.
         case changed(previous: String)
+        /// Daha önce anahtar vardı, şimdi yok (Keychain kaybı). Sessizce yeni
+        /// anahtar üretip yeniden eşleştirmek "anahtarı tekrar alma" demektir.
+        case missing(previous: String)
     }
 
     static func fingerprintKey(_ vin: String) -> String {
@@ -36,9 +39,11 @@ enum KeyIdentity {
     }
 
     static func check(current: String?, stored: String?) -> Verdict {
-        guard let current else { return .match }
-        guard let stored else { return .firstUse }
-        guard current != stored else { return .match }
-        return .changed(previous: stored)
+        guard let stored else {
+            // Hiç kayıt yok: ilk kullanım (anahtar üretimi normal akış).
+            return .firstUse
+        }
+        guard let current else { return .missing(previous: stored) }
+        return current == stored ? .match : .changed(previous: stored)
     }
 }

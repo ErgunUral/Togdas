@@ -296,9 +296,16 @@ enum CertificateCache {
         }
         let carPublicKey = payload["carPublicKey"] as? String ?? ""
         guard isValid(certificateBase64: certificate, vin: vin, phonePublicKeyHex: phonePublicKeyHex) else {
-            print("[CERT] cached certificate invalid; removing vin=…\(vin.suffix(4))")
-            deletePayload(vin: vin)
-            UserDefaults.standard.removeObject(forKey: legacyPrefix + vin)
+            // Yalnız **kesin** süresi dolmuş/bozuk sertifika silinir. Telefon
+            // anahtarı okunamadığı için doğrulama başarısız olduysa kayıt
+            // korunur: silmek "anahtarı tekrar alma" zincirini başlatıyordu.
+            if Self.isDefinitelyExpired(certificateBase64: certificate, vin: vin) {
+                print("[CERT] cached certificate expired; removing vin=…\(vin.suffix(4))")
+                deletePayload(vin: vin)
+                UserDefaults.standard.removeObject(forKey: legacyPrefix + vin)
+            } else {
+                print("[CERT] cached certificate not usable now; keeping cache vin=…\(vin.suffix(4))")
+            }
             return nil
         }
         return (certificate, carPublicKey)
@@ -424,6 +431,16 @@ enum CertificateCache {
         }
         save(certificateBase64: base64, carPublicKey: "", vin: vin, phonePublicKeyHex: phonePublicKeyHex)
         print("[CERT] seeded certificate for vin=…\(vin.suffix(4))")
+    }
+
+    /// Sertifika gerçekten süresi dolmuş/bozuk mu? (Anahtar erişimi sorunu
+    /// ayrı bir durumdur ve önbellek silinmez.)
+    private static func isDefinitelyExpired(certificateBase64: String, vin: String) -> Bool {
+        guard let data = Data(base64Encoded: certificateBase64), data.count == 247,
+              let end = BLEProtocol.certificateEndDate(data) else {
+            return true
+        }
+        return end <= Date()
     }
 
     private static func isValid(certificateBase64: String, vin: String, phonePublicKeyHex: String) -> Bool {
