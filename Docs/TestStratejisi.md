@@ -22,7 +22,7 @@ xcodebuild test \
   -only-testing:ToqdasUITests
 ```
 
-31 test, 7 dosya (2026-11-13: 325 sn, 31/31 yeşil):
+35 test, 8 dosya (2026-11-13: 377 sn, 35/35 yeşil):
 
 - `UITests/ToqdasSmokeTests.swift` (4): Giriş ekranı ve Togg ID düğmesi
   erişilebilir; cihaz dili İngilizce olsa da Türkçe arayüz metni korunur;
@@ -50,6 +50,14 @@ xcodebuild test \
   `performAccessibilityAudit` — dokunma hedefi, okunabilir etiket, metin
   kırpılması ve trait. Dynamic Type ve kontrast bilinçli kapsam dışı
   (bkz. `Docs/Erisilebilirlik.md`).
+- `UITests/ToqdasSettingsTests.swift` (4): Tema (Okyanus) ve düzen
+  (Minimal) seçimi yeniden başlatmada korunuyor; Minimal düzende
+  yakınlık kartı gizleniyor; VoiceOver tek tema/tek düzen seçili
+  bildiriyor; "Çıkış yap" giriş ekranına dönüyor.
+
+`-uiTestResetLook` (yalnız DEBUG) tema ve düzen `@AppStorage`
+anahtarlarını temizler; ayar testleri kendi başlangıç durumlarını
+garantiler ve sonunda varsayılana döner.
 
 `UITests/ToqdasUITestSupport.swift` ortak altyapıdır: `-uiTestSignedOut`
 ile oturum kapatılır, `-uiTestFixture` panoyu açar; sabit `sleep` yok,
@@ -57,6 +65,10 @@ yalnız koşula bağlı bekleme ve kaydırma kullanılır.
 
 UI testleri ağa çıkmaz. `-uiTestSignedOut` yalnız DEBUG derlemesinde oturumu
 temizler; giriş düğmesine basmaz.
+
+Not: yeni bir test dosyası eklendikten sonra ilk koşu "0 test" raporlarsa
+dosyaya `touch` atıp yeniden çalıştırın (Xcode artımlı derleme bazen yeni
+dosyayı test paketine almıyor).
 
 ## Kapsam ölçümü (2026-11-13)
 

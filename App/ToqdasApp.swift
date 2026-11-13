@@ -42,6 +42,10 @@ final class GarageModel: ObservableObject {
         if ProcessInfo.processInfo.arguments.contains("-uiTestSignedOut") {
             try? api.logout()
         }
+        if ProcessInfo.processInfo.arguments.contains("-uiTestResetLook") {
+            UserDefaults.standard.removeObject(forKey: StorageKeys.theme)
+            UserDefaults.standard.removeObject(forKey: StorageKeys.dashboardLayout)
+        }
         #endif
         do { signedIn = try api.hasSession() }
         catch { self.facingError = .from(error) }

@@ -569,6 +569,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   komut sheet'i satır içi başlık). Dynamic Type (xxxLarge sınırı) ve
   kontrast (tokenlar elle AA üstü) bilinçli kapsam dışı. Koşu: 31/31.
 
+- **Görünüm tercihleri ve oturum (2026-11-13, 35 UI testi):**
+  `ToqdasSettingsTests` (4) — tema (Okyanus) ve düzen (Minimal) seçimi
+  yeniden başlatmada korunuyor; Minimal düzende yakınlık kartı gizli;
+  menüde VoiceOver tek tema/tek düzen seçili; "Çıkış yap" giriş ekranına
+  dönüyor. Test izolasyonu için `-uiTestResetLook` (yalnız DEBUG) tema ve
+  düzen anahtarlarını temizler. Koşu: 35/35.
+
 ## 9. İlkeler
 
 - Sıfırdan rewrite yok; strangler pattern benzeri kademeli geçiş.
