@@ -10,3 +10,5 @@ xcuserdata/
 
 node_modules/
 test-results/
+build17/
+buildWatch/
