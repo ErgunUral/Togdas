@@ -7,7 +7,7 @@ enum CertificateServiceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .ownerTransferRequired:
-            return "Araç başka bir telefon anahtarına bağlı. Sahip anahtarını bu iPhone'a taşımak için onay gerekiyor."
+            return "Araç başka bir telefon anahtarına bağlı. Hangi telefon olduğu sunucu tarafından paylaşılmıyor. Sahip anahtarını bu iPhone'a taşıyabilir veya diğer telefondan paylaşım daveti isteyebilirsin."
         }
     }
 }
@@ -784,10 +784,13 @@ final class ToggAPI: ToggAPIClient {
         // RelationAlreadyExists, bu telefon anahtarı için ilişkinin zaten kurulu
         // olduğu anlamına gelir; sertifika üretimine devam edilebilir.
         let transferResults: Set<String> = ["OverwriteDetection", "OwnerChange", "NotOwner"]
-        if !overwriteOwner, let claimResult, claimResult == "OverwriteDetection" {
-            throw CertificateServiceError.ownerTransferRequired
-        }
         if !overwriteOwner, let claimResult, transferResults.contains(claimResult) {
+            // Sahiplik çakışması: yanıtta başka telefonun kimliği var mı?
+            // Yalnız alan adları/tip/uzunluk kaydedilir (değer yazılmaz);
+            // bir sonraki saha olayında plist'ten okunur.
+            let shape = ClaimResponseShape.describe(claim)
+            ClaimResponseShape.save(shape)
+            print("[CERT][CLAIM] result=\(claimResult) shape=\(shape)")
             throw CertificateServiceError.ownerTransferRequired
         }
         if overwriteOwner, let claimResult, transferResults.contains(claimResult) {
