@@ -295,6 +295,16 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     noktaları: snapshot alındı, yenileme isteği/reddi, komut sonucu
     (`status`), oturum ve erişilebilirlik değişimi. VIN/token yazılmaz;
     UI etkisi yok, komut/ağ kullanımı yok (saha tanısı plist'ten okunur).
+- **Eşleşme onarım kilidi + zayıf sinyal seyreltmesi (2026-11-13, 486 test, `02fc072`):**
+  - `BleReconnectPolicy.shouldStartConnection`: `needsRepair` varken yalnız
+    kullanıcı onayı (`clearRepair: true`) bağlantı başlatır. `BleConnection.start`
+    artık onarım durumunu kendiliğinden **sıfırlamaz**; sonsuz
+    `pairing_lost` döngüsü biter. Yeni `BleLinkCoordinator.retryAfterRepair()`
+    ve Dashboard kurtarma kartındaki “yeniden dene” düğmesi tek açma yolu.
+  - `BleReconnectPolicy.weakDropLimit = 3`: üst üste 3 zayıf sinyal
+    kopmasından sonra yeniden bağlanma 60 sn’ye seyreltilir (`weak_drop`
+    tanısı); 60 sn kararlı bağlantıda veya uygulama öne gelince sıfırlanır.
+    Log kanıtı: RSSI −89…−98, oturum 59/44 sn, 8/8 doğrulama başarılı.
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı

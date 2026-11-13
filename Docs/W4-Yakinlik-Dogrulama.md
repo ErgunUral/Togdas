@@ -159,3 +159,20 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   `watch-tani.plist` olayları: `oturum etkin · erişilebilir=hayır`,
   `snapshot alındı` ×3, `telefon erişilebilir`, `telefon erişilemiyor`.
   Yani saat veriyi gerçekten alıyor; sorun veri gelmemesi değil.
+
+### L. Kimlik doğrulama “sürekli kopuyor” — **TAMAM ✓** (`02fc072`)
+- **Teşhis (13.11 logları, 18:32–18:51):** 8 kimlik doğrulamanın 8’i
+  `Komut hazır`a ulaştı (sertifika akışı sağlam). Kopan katman oturum:
+  9 kopma (5 araç kapattı, 4 zaman aşımı), RSSI −89…−98, oturum
+  ömürleri 59/44/44/3/0 sn. 2× `pairing_lost` (araç eşleşme kaydını sildi).
+- **Kök neden 1:** `BleConnection.start()` `needsRepair`i sıfırlıyordu →
+  onarım durumu unutulup otomatik denemeler aynı iOS hatasına çarpıyordu.
+  Çözüm: onarım kilidi (`BleReconnectPolicy.shouldStartConnection`).
+  Otomatik yollar (geri çekilme, ön plan, yakınlık) kilidi açamaz; yalnız
+  “Adımları tamamladım, yeniden dene” (`retryAfterRepair`) veya Komutlar
+  ekranındaki elle bağlan açar.
+- **Kök neden 2:** Zayıf sinyalde 8 denemelik döngü radyoyu/pili yoruyordu.
+  Çözüm: üst üste 3 zayıf kopmada denemeler 60 sn (`weak_drop` tanısı);
+  ön plana gelince sayaç sıfırlanır.
+- +3 test (486/486). Araç 60 sn’de oturumu kapatmayı sürdürür (tasarım);
+  her bağlantıda sertifika yenilenir, bu normaldir.
