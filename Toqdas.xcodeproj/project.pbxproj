@@ -199,6 +199,11 @@
 		F5F0D21B12E85F377E6A18B7 /* VoiceChat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078320CBB05152234D17A51F /* VoiceChat.swift */; };
 		FD593741F80E5D1BCB317F2D /* BLECommandPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19744B31775E323987033834 /* BLECommandPolicy.swift */; };
 		FE316FB93C1BDE077C180F54 /* ToqdasSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C03C4E5036E16BC226F6839 /* ToqdasSmokeTests.swift */; };
+		A1B2C3D4E5F60718293A4B02 /* ToqdasUITestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B01 /* ToqdasUITestSupport.swift */; };
+		A1B2C3D4E5F60718293A4B04 /* ToqdasFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B03 /* ToqdasFlowTests.swift */; };
+		A1B2C3D4E5F60718293A4B06 /* ToqdasCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B05 /* ToqdasCommandTests.swift */; };
+		A1B2C3D4E5F60718293A4B08 /* ToqdasGuideTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B07 /* ToqdasGuideTests.swift */; };
+		A1B2C3D4E5F60718293A4B0A /* ToqdasAccessibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B09 /* ToqdasAccessibilityTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -295,6 +300,11 @@
 		2A3B4C5D6E7F8A9B0C1D2E3F /* ProximityCycleGuard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityCycleGuard.swift; path = Core/ProximityCycleGuard.swift; sourceTree = "<group>"; };
 		2B3C4D5E6F0A1728394A5B1C /* AuxiliaryBatteryPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AuxiliaryBatteryPolicy.swift; path = Core/AuxiliaryBatteryPolicy.swift; sourceTree = "<group>"; };
 		2C03C4E5036E16BC226F6839 /* ToqdasSmokeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasSmokeTests.swift; path = UITests/ToqdasSmokeTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B01 /* ToqdasUITestSupport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasUITestSupport.swift; path = UITests/ToqdasUITestSupport.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B03 /* ToqdasFlowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasFlowTests.swift; path = UITests/ToqdasFlowTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B05 /* ToqdasCommandTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasCommandTests.swift; path = UITests/ToqdasCommandTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B07 /* ToqdasGuideTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasGuideTests.swift; path = UITests/ToqdasGuideTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B09 /* ToqdasAccessibilityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasAccessibilityTests.swift; path = UITests/ToqdasAccessibilityTests.swift; sourceTree = "<group>"; };
 		2E78CC5BA15E8412DB097101 /* ToqdasWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToqdasWatchApp.swift; path = Watch/ToqdasWatchApp.swift; sourceTree = "<group>"; };
 		2FA11CF63088BBE37B16DB9B /* VoiceIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceIntent.swift; path = Core/VoiceIntent.swift; sourceTree = "<group>"; };
 		32B2F569158F2E67568D3968 /* ProtocolModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProtocolModels.swift; path = Core/ProtocolModels.swift; sourceTree = "<group>"; };
@@ -601,6 +611,11 @@
 				F5804F9E0A1E3B61CB06D137 /* PrivacyInfo.xcprivacy */,
 				4EDFED152C5F6A3C1F1D0224 /* PrivacyInfo.xcprivacy */,
 				2C03C4E5036E16BC226F6839 /* ToqdasSmokeTests.swift */,
+				A1B2C3D4E5F60718293A4B01 /* ToqdasUITestSupport.swift */,
+				A1B2C3D4E5F60718293A4B03 /* ToqdasFlowTests.swift */,
+				A1B2C3D4E5F60718293A4B05 /* ToqdasCommandTests.swift */,
+				A1B2C3D4E5F60718293A4B07 /* ToqdasGuideTests.swift */,
+				A1B2C3D4E5F60718293A4B09 /* ToqdasAccessibilityTests.swift */,
 				8395345D30A6507700C9AE4B /* Recovered References */,
 			);
 			sourceTree = "<group>";
@@ -897,6 +912,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				FE316FB93C1BDE077C180F54 /* ToqdasSmokeTests.swift in Sources */,
+				A1B2C3D4E5F60718293A4B02 /* ToqdasUITestSupport.swift in Sources */,
+				A1B2C3D4E5F60718293A4B04 /* ToqdasFlowTests.swift in Sources */,
+				A1B2C3D4E5F60718293A4B06 /* ToqdasCommandTests.swift in Sources */,
+				A1B2C3D4E5F60718293A4B08 /* ToqdasGuideTests.swift in Sources */,
+				A1B2C3D4E5F60718293A4B0A /* ToqdasAccessibilityTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -541,6 +541,19 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   (mimari/kalite/test/arayüz; App katmanı test ve DashboardView bölünmesi
   sonraki işler).
 
+- **UI test kapsamı genişletildi (2026-11-13, 19 UI testi):**
+  `UITests/ToqdasUITestSupport.swift` ortak altyapı (fixture başlatma,
+  etiket/türden bağımsız sorgu, koşula bağlı kaydırma; sabit `sleep` yok)
+  + dört yeni dosya: `ToqdasFlowTests` (sekmeler, telemetri, sağlık kartı,
+  Trugo), `ToqdasCommandTests` (komut kapısı, devre dışı komut, menü),
+  `ToqdasGuideTests` (senaryolar rehberi + kalibrasyon sheet'i),
+  `ToqdasAccessibilityTests` (44 pt, VoiceOver, XXXL Dynamic Type).
+  App tarafında yalnız erişilebilirlik kimlikleri eklendi
+  (`tab.*`, `header.menu`, `guide.close`, `proximity.*`). UI testinin
+  bulduğu gerçek eksik: sekme düğmelerinin erişilebilirlik çerçevesi
+  34,7 pt'ti — 44 pt `minHeight` içerik VStack'inde kalıyordu, düğmeye
+  taşındı. Koşu: 19/19 yeşil, 190 sn. Birim test sayısı değişmedi.
+
 ## 9. İlkeler
 
 - Sıfırdan rewrite yok; strangler pattern benzeri kademeli geçiş.

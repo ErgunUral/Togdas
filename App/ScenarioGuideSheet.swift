@@ -38,6 +38,7 @@ struct ScenarioGuideSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Kapat") { dismiss() }
+                        .accessibilityIdentifier("guide.close")
                 }
             }
         }

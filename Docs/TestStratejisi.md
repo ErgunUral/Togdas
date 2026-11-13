@@ -17,16 +17,34 @@ xcodebuild test \
   -project Toqdas.xcodeproj \
   -scheme Toqdas \
   -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6' \
-  -derivedDataPath build-uitest \
-  CODE_SIGNING_ALLOWED=NO
+  -derivedDataPath build \
+  CODE_SIGNING_ALLOWED=NO \
+  -only-testing:ToqdasUITests
 ```
 
-`UITests/ToqdasSmokeTests.swift` şunları doğrular:
+19 test, 5 dosya (2026-11-13: 190 sn, 19/19 yeşil):
 
-- Giriş ekranı ve Togg ID düğmesi erişilebilir.
-- Cihaz dili İngilizce olsa da Türkçe arayüz metni korunur.
-- `-uiTestFixture` (yalnız DEBUG) ile ağa çıkmadan pano açılır ve sekmeler görünür.
-- Araç READY değilken komut düğmeleri kapalıdır ve neden ekranda görünür.
+- `UITests/ToqdasSmokeTests.swift` (4): Giriş ekranı ve Togg ID düğmesi
+  erişilebilir; cihaz dili İngilizce olsa da Türkçe arayüz metni korunur;
+  `-uiTestFixture` (yalnız DEBUG) ile ağa çıkmadan pano açılır ve sekmeler
+  görünür; araç READY değilken komut düğmeleri kapalıdır ve neden ekranda
+  görünür.
+- `UITests/ToqdasFlowTests.swift` (5): Dört sekme görünür/seçilebilir;
+  fixture telemetrisi (%79, 365 km); klima hedef sıcaklık kontrolleri;
+  12 V %65 ve eksik veri `—` kuralı; Trugo istasyon kartı.
+- `UITests/ToqdasCommandTests.swift` (3): Komut kapısı açıklaması; beş
+  komutun devre dışı olması; devre dışı komuta dokununca onay
+  istenmemesi; başlık menüsünden komut sheet'i açılıp kapanması.
+- `UITests/ToqdasGuideTests.swift` (4): Senaryolar rehberi aç/kapat;
+  canlı durum rozetleri; yakınlık kartından rehberin yakınlık bölümüne
+  odaklanması; yakınlık kalibrasyon sheet'i.
+- `UITests/ToqdasAccessibilityTests.swift` (3): Sekme dokunma hedefleri
+  ≥44 pt; VoiceOver etiketleri ve seçili durum; XXXL Dynamic Type ile
+  pano kullanılabilirliği.
+
+`UITests/ToqdasUITestSupport.swift` ortak altyapıdır: `-uiTestSignedOut`
+ile oturum kapatılır, `-uiTestFixture` panoyu açar; sabit `sleep` yok,
+yalnız koşula bağlı bekleme ve kaydırma kullanılır.
 
 UI testleri ağa çıkmaz. `-uiTestSignedOut` yalnız DEBUG derlemesinde oturumu
 temizler; giriş düğmesine basmaz.
@@ -46,7 +64,11 @@ eklenir. READY veya komut başarısı fiziksel kanıt olmadan iddia edilmez.
 
 ## Bilinen sınırlar
 
-- UI testleri oturum açmış pano için `-uiTestFixture` ile yalnız giriş ekranı,
-  sekmeler ve komut kapısını kapsıyor; gerçek API/telemetri verisi kullanılmaz.
+- UI testleri oturum açmış pano için `-uiTestFixture` ile giriş ekranı,
+  sekmeler, komut kapısı, senaryolar rehberi ve erişilebilirlik
+  davranışlarını kapsıyor; gerçek API/telemetri verisi kullanılmaz.
+- Fixture'ın bulut anlık görüntüsü lastik basıncını taşımaz: sağlık
+  kartında lastikler "basınç bilgisi yok" olarak doğrulanır (0 PSI'ye
+  sıkıştırılmadığının kanıtı).
 - BLE ve WatchConnectivity simulator'da gerçek donanımı temsil etmez.
 - Watch UI testi fiziksel watch gerektirir.

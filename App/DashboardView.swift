@@ -864,6 +864,7 @@ struct DashboardView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Yakınlık senaryoları")
+                .accessibilityIdentifier("proximity.scenarios")
                 Button {
                     showProximityGuide = true
                 } label: {
@@ -873,6 +874,7 @@ struct DashboardView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Yakınlık kalibrasyon rehberi")
+                .accessibilityIdentifier("proximity.calibration")
                 Toggle("", isOn: Binding(
                     get: { proximityEnabled },
                     set: { enabled in
@@ -2500,7 +2502,12 @@ struct DashboardView: View {
                     .foregroundStyle(tab == item ? ToggTheme.teal : ToggTheme.muted)
                 }
                 .buttonStyle(.plain)
+                // Dokunma hedefi düğmenin kendisinde 44pt olmalı; aksi halde
+                // erişilebilirlik çerçevesi yalnız ikon+yazı boyutunda kalıyor.
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(Rectangle())
                 .accessibilityLabel("\(item.title) sekmesi")
+                .accessibilityIdentifier("tab.\(item.rawValue)")
                 .accessibilityValue(tab == item ? "Seçili" : "")
                 .accessibilityAddTraits(tab == item ? .isSelected : [])
             }

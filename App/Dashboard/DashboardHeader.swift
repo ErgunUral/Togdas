@@ -161,6 +161,7 @@ struct DashboardHeader: View {
                             .foregroundStyle(ToggTheme.teal)
                             .frame(width: 32, height: 32)
                     }
+                    .accessibilityIdentifier("header.menu")
                 }
             }
 
