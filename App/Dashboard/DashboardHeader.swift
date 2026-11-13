@@ -24,6 +24,7 @@ struct DashboardHeader: View {
     let onOpenAccount: () -> Void
     let onOpenDetail: () -> Void
     let onOpenDiscovery: () -> Void
+    let onOpenScenarioGuide: () -> Void
     let onLogout: () -> Void
     @Binding var themeName: String
     @Binding var layoutName: String
@@ -136,6 +137,7 @@ struct DashboardHeader: View {
                             Divider()
                         }
                         Button("Araç detayı", systemImage: "info.circle") { onOpenDetail() }
+                        Button("Senaryolar rehberi", systemImage: "book") { onOpenScenarioGuide() }
                         Button("Servis kartı", systemImage: "wrench.and.screwdriver") { onOpenService() }
                         Button("Seyahatname", systemImage: "chart.xyaxis.line") { onOpenExperience() }
                         Button("Bildirimler & destek", systemImage: "bell.badge") { onOpenAccount() }

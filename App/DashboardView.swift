@@ -113,6 +113,8 @@ struct DashboardView: View {
     @State private var proximitySuggester = ProximityAutoCalibrationSuggester()
     @State private var showProximityConfirmation = false
     @State private var showProximityGuide = false
+    @State private var showScenarioGuide = false
+    @State private var scenarioGuideSection: ScenarioSection?
     private var drivingStats: DrivingStatsStore { DrivingStatsStore(vin: vehicle.vin) }
     /// UI testinde ağ ve CoreBluetooth tarafı sessizleştirilir; yalnız yerel
     /// fixture verisi ve komut kapısı gösterimi test edilir.
@@ -200,6 +202,10 @@ struct DashboardView: View {
             onOpenAccount: { showAccount = true },
             onOpenDetail: { showDetail = true },
             onOpenDiscovery: { showDiscovery = true },
+            onOpenScenarioGuide: {
+                scenarioGuideSection = nil
+                showScenarioGuide = true
+            },
             onLogout: { model.logout() },
             themeName: $themeName,
             layoutName: $layoutName
@@ -499,6 +505,17 @@ struct DashboardView: View {
                 onCaptureNear: { captureProximitySample(isNear: true) },
                 onCaptureFar: { captureProximitySample(isNear: false) },
                 onReset: resetProximityCalibration
+            )
+        }
+        .sheet(isPresented: $showScenarioGuide, onDismiss: { scenarioGuideSection = nil }) {
+            ScenarioGuideSheet(
+                initialSection: scenarioGuideSection,
+                live: ScenarioLiveStatus(
+                    bleReady: ble.state.isReady,
+                    automationEnabled: proximityEnabled,
+                    calibrationValid: proximityCalibration?.isValid,
+                    telemetryFresh: updatedAt.map { Date().timeIntervalSince($0) < 300 }
+                )
             )
         }
         .sheet(isPresented: $showCommands) {
@@ -806,6 +823,16 @@ struct DashboardView: View {
                     .font(ToggTheme.text(.lead, weight: .bold))
                     .foregroundStyle(.white)
                 Spacer()
+                Button {
+                    scenarioGuideSection = .proximity
+                    showScenarioGuide = true
+                } label: {
+                    Image(systemName: "book")
+                        .font(ToggTheme.text(.lead))
+                        .foregroundStyle(ToggTheme.teal)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Yakınlık senaryoları")
                 Button {
                     showProximityGuide = true
                 } label: {
