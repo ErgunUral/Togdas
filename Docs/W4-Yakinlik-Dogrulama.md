@@ -108,3 +108,20 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   60 sn penceresi; "komut yeniden gönderilmedi" metni.
 - Açma doğrulaması zaten BLE katmanındaydı (`pendingLockVerification`);
   eksik olan bildirimdi. +7 test (459/459).
+
+### F. `pairing_lost` kurtarma rehberi — **TAMAM ✓** (13.11, `83d62bd`)
+- `Core/PairingRecovery`: başlık + 3 adım + özet tek kaynak; banner ve
+  bildirim aynı metni kullanır. "Bu tamamlanana kadar otomatik komut
+  gönderilmez" — davranışa sadık; VIN görünür metinde yok.
+- Dashboard: `needsRepair` banner'ı Core metinlerine bağlandı; kurtarma
+  bildirimi araç başına **günde bir** (`StorageKeys.pairingRecoveryNotified`).
+- Not: iOS'ta BLE bağı OS seviyesinde; uygulama silemez — doğru kurtarma
+  cihaz ayarlarından unutup yeniden eşleştirmektir (rehber bunu söyler).
+- +5 test (464/464).
+
+### G. Retry politikası — **karar bekliyor**
+- `automatic_command_failed` sonrası aynı döngüde yeniden deneme yok.
+- Seçenek: kapılar kapalıyken ~5 sn sonra **tek** retry (çift bip/komut
+  tekrarı riski) veya mevcut davranış (yeniden deneme yok, bildirim yeter).
+- Karar kullanıcıya ait; varsayılan öneri: **retry yok** — bildirim +
+  kullanıcı kontrolü (yanlış kilitleme riski düşük tutulur).

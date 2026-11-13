@@ -270,6 +270,14 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     bildirime dönüşmesiydi.
   - Repo hijyeni: `build17/`, `buildWatch/` git takibinden çıkarıldı
     (`.gitignore`, `cd1deba`; önceki commit'lerde birikmişti).
+- **Eşleşme kurtarma rehberi (2026-11-13, 464 test, `83d62bd`):**
+  - `Core/PairingRecovery` (saf, testli): `pairingLost` için başlık +
+    3 adım + özet tek kaynak; banner ve bildirim aynı metni kullanır
+    ("Bu tamamlanana kadar otomatik komut gönderilmez"). iOS bağı OS
+    seviyesinde olduğundan kurtarma cihaz ayarlarından unutup yeniden
+    eşleştirmedir; uygulama kendi silemez.
+  - Dashboard `needsRepair` banner'ı Core metinlerine bağlandı; kurtarma
+    bildirimi araç başına günde bir (`StorageKeys.pairingRecoveryNotified`).
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı
