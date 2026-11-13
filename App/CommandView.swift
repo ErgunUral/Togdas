@@ -100,7 +100,8 @@ struct CommandView: View {
                     }
                 }
                 Button(ble.state.isDisconnected ? "Araç servisine bağlan" : "Bağlantıyı kes") {
-                    ble.state.isDisconnected ? ble.start(vin: vehicle.vin) : ble.disconnect()
+                    // Kullanıcı açıkça dokundu: onarım kilidi açılabilir tek yol.
+                    ble.state.isDisconnected ? ble.start(vin: vehicle.vin, clearRepair: true) : ble.disconnect()
                 }
                 if !ble.channels.isEmpty {
                     DisclosureGroup("Kanallar (\(ble.channels.count))", isExpanded: $showChannels) {

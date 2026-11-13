@@ -703,11 +703,22 @@ struct DashboardView: View {
                             .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    Button {
+                        model.link.retryAfterRepair()
+                    } label: {
+                        Label("Adımları tamamladım, yeniden dene", systemImage: "arrow.clockwise")
+                            .font(ToggTheme.text(.caption, weight: .semibold))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(ToggTheme.orange)
+                    .padding(.top, 4)
+                    .accessibilityHint("iPhone ve araç tarafında eşleşmeyi yenilediysen bağlantıyı tekrar dener")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
                 .background(RoundedRectangle(cornerRadius: 12).fill(ToggTheme.orange.opacity(0.12)))
-                .accessibilityElement(children: .combine)
+                .accessibilityElement(children: .contain)
             }
 
             if let telemetry = ble.telemetry {

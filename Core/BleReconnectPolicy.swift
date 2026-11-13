@@ -19,6 +19,10 @@ struct BleReconnectPolicy {
     static let weakSignalThreshold = -85
     static let weakSignalDelayFactor = 2.0
     static let weakMaxDelay: TimeInterval = 30
+    /// Art arda bu kadar zayıf sinyal kopmasından sonra denemeler seyreltilir:
+    /// araçtan uzaktayken 8 denemelik döngü radyoyu/pili boşa yoruyordu.
+    static let weakDropLimit = 3
+    static let weakCooldownDelay: TimeInterval = 60
 
     /// Kopma bildiriminde koordinatörün uygulayacağı tek eylem.
     enum Action: Equatable {
@@ -48,9 +52,14 @@ struct BleReconnectPolicy {
 
     /// Son ölçülen RSSI zayıfsa temel geri çekilme uzatılır (×2, üst sınır 30 sn);
     /// güçlü sinyal ya da bilinmeyen RSSI'da davranış birebir korunur.
-    static func reconnectDelay(attempt: Int, lastRSSI: Int?) -> TimeInterval {
+    /// Üst üste `weakDropLimit` zayıf kopma olduysa denemeler 60 sn'ye seyreltilir
+    /// (kullanıcı ön plana gelince sayaç sıfırlanır; bkz. `handleForeground`).
+    static func reconnectDelay(attempt: Int, lastRSSI: Int?,
+                               consecutiveWeakDrops: Int = 0) -> TimeInterval {
+        guard attempt > 0 else { return 0 }
         let base = backoffDelay(attempt: attempt)
-        guard let lastRSSI, lastRSSI < weakSignalThreshold, attempt > 0 else { return base }
+        if consecutiveWeakDrops >= weakDropLimit { return weakCooldownDelay }
+        guard let lastRSSI, lastRSSI < weakSignalThreshold else { return base }
         return min(base * weakSignalDelayFactor, weakMaxDelay)
     }
 
@@ -65,7 +74,8 @@ struct BleReconnectPolicy {
         radioFailureStatus: String?,
         attempts: Int,
         pairingAttempts: Int,
-        lastRSSI: Int? = nil
+        lastRSSI: Int? = nil,
+        consecutiveWeakDrops: Int = 0
     ) -> Action {
         // Combine aboneliği mevcut değeri hemen yayınlar; ilk kopma sayılmaz.
         guard connectedBefore || awaitingConnection else { return .ignore }
@@ -90,7 +100,19 @@ struct BleReconnectPolicy {
             )
         }
         let attempt = attempts + 1
-        return .reconnect(delay: reconnectDelay(attempt: attempt, lastRSSI: lastRSSI), attempt: attempt)
+        return .reconnect(
+            delay: reconnectDelay(attempt: attempt, lastRSSI: lastRSSI,
+                                  consecutiveWeakDrops: consecutiveWeakDrops),
+            attempt: attempt
+        )
+    }
+
+    /// Eşleşme onarımı gerekiyorsa bağlantı **yalnız** kullanıcı onayıyla
+    /// başlatılır. Otomatik yollar (geri çekilme, ön plan, yakınlık) onarım
+    /// kilidini açamaz; araç eşleşmeyi sildiyse her deneme aynı iOS hatasına
+    /// çarpar ve sonsuz `pairing_lost` döngüsü oluşur.
+    static func shouldStartConnection(needsRepair: Bool, clearRepair: Bool) -> Bool {
+        !needsRepair || clearRepair
     }
 
     /// Uygulama öne geldiğinde bekleyen geri çekilme atlanmalı mı?

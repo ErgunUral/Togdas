@@ -166,8 +166,25 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     // MARK: - Bağlantı
 
-    func start(vin: String? = nil) {
-        if let vin, !vin.isEmpty { targetVIN = vin.uppercased() }
+    /// `clearRepair` yalnız kullanıcı onarımı yeniden denediğinde `true` olur.
+    /// Otomatik yollar (yeniden bağlanma, ön plan, yakınlık) onarım kilidini
+    /// **açamaz**: araç eşleşmeyi sildiyse tekrar denemek aynı iOS hatasına
+    /// çarpar (sonsuz `pairing_lost` döngüsü).
+    func start(vin: String? = nil, clearRepair: Bool = false) {
+        if let vin, !vin.isEmpty {
+            let target = vin.uppercased()
+            if target != targetVIN {
+                // Araç değiştiyse eski aracın onarım durumu taşınmaz.
+                targetVIN = target
+                needsRepair = false
+            }
+        }
+        if !BleReconnectPolicy.shouldStartConnection(needsRepair: needsRepair,
+                                                     clearRepair: clearRepair) {
+            lastEvent = "Araç eşleşmesi geçersiz; otomatik bağlanma durduruldu."
+            recordDiagnostic("start_blocked · eşleşme onarımı gerekli; kullanıcı onayı bekleniyor")
+            return
+        }
         wantsScan = true
         shouldStayConnected = true
         needsRepair = false

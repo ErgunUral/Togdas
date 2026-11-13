@@ -11,7 +11,8 @@ final class BleReconnectPolicyTests: XCTestCase {
         radio: Bool = true,
         attempts: Int = 0,
         pairingAttempts: Int = 0,
-        lastRSSI: Int? = nil
+        lastRSSI: Int? = nil,
+        weakDrops: Int = 0
     ) -> BleReconnectPolicy.Action {
         BleReconnectPolicy.action(
             connectedBefore: connectedBefore,
@@ -24,7 +25,8 @@ final class BleReconnectPolicyTests: XCTestCase {
             radioFailureStatus: "Bluetooth kapalı",
             attempts: attempts,
             pairingAttempts: pairingAttempts,
-            lastRSSI: lastRSSI
+            lastRSSI: lastRSSI,
+            consecutiveWeakDrops: weakDrops
         )
     }
 
@@ -49,6 +51,33 @@ final class BleReconnectPolicyTests: XCTestCase {
         XCTAssertEqual(action(attempts: 0, lastRSSI: -85), .reconnect(delay: 1.5, attempt: 1))
         XCTAssertEqual(action(attempts: 2, lastRSSI: nil), .reconnect(delay: 6.0, attempt: 3))
         XCTAssertEqual(action(attempts: 7), .reconnect(delay: 15.0, attempt: 8))
+    }
+
+    /// Üst üste üç zayıf kopmadan sonra denemeler 60 sn'ye seyrelir; iki
+    /// kopmada eski (×2) davranış korunur.
+    func testConsecutiveWeakDropsSlowRetries() {
+        XCTAssertEqual(action(attempts: 0, lastRSSI: -92, weakDrops: 2),
+                       .reconnect(delay: 3.0, attempt: 1))
+        XCTAssertEqual(action(attempts: 0, lastRSSI: -92, weakDrops: 3),
+                       .reconnect(delay: 60.0, attempt: 1))
+        XCTAssertEqual(action(attempts: 2, lastRSSI: -95, weakDrops: 4),
+                       .reconnect(delay: 60.0, attempt: 3))
+        // Sinyal bilinmese/iYi olsa da ardışık zayıf kopma sayacı geçerliyse
+        // 60 sn korunur: kopmalar zaten zayıf sinyalde yaşandı.
+        XCTAssertEqual(action(attempts: 1, lastRSSI: nil, weakDrops: 3),
+                       .reconnect(delay: 60.0, attempt: 2))
+    }
+
+    /// Onarım kilidi: otomatik yollar başlatamaz, yalnız kullanıcı onayı açar.
+    func testRepairLockBlocksAutomaticStart() {
+        XCTAssertFalse(BleReconnectPolicy.shouldStartConnection(needsRepair: true, clearRepair: false))
+        XCTAssertTrue(BleReconnectPolicy.shouldStartConnection(needsRepair: true, clearRepair: true))
+        XCTAssertTrue(BleReconnectPolicy.shouldStartConnection(needsRepair: false, clearRepair: false))
+    }
+
+    func testWeakDropCounterBelowLimitKeepsBaseRetry() {
+        XCTAssertEqual(action(attempts: 0, weakDrops: 0), .reconnect(delay: 1.5, attempt: 1))
+        XCTAssertEqual(action(attempts: 0, weakDrops: 1), .reconnect(delay: 1.5, attempt: 1))
     }
 
     func testAwaitingConnectionCountsAsDrop() {

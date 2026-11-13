@@ -89,6 +89,7 @@
 		768BE458489998C0C6392676 /* WatchLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8E453F271AC262C7B58756 /* WatchLink.swift */; };
 		E4D3C2B1A098877665544332 /* WatchDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E3D2C1B0A9988776655443 /* WatchDiagnostics.swift */; };
 		D4C3B2A19088776655443322 /* WatchDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E3D2C1B0A9988776655443 /* WatchDiagnostics.swift */; };
+		A7B8C9D0E1F2031425364758 /* BleReconnectPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25AE24F767FA57184C0C3002 /* BleReconnectPolicy.swift */; };
 		78635F3C036060F244481CA3 /* App/MaintenanceNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962EAB5F4FCFF9ABEB3F0D6E /* App/MaintenanceNotifier.swift */; };
 		78B95720E4FE860F8E25C1EC /* Core/GaragePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A90646A8F064CC74B8E1653 /* Core/GaragePreferences.swift */; };
 		7C8D9E0F1A2B3C4D5E6F0A1B /* ProximityLatencyMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6B7C8D9E0F1A2B3C4D5E6F /* ProximityLatencyMeter.swift */; };
@@ -893,6 +894,7 @@
 				C614A7D049EC7F0F9A9AB2D7 /* BluetoothDiscovery.swift in Sources */,
 				9CBC366849E488FE1A0AC93C /* WatchLink.swift in Sources */,
 				D4C3B2A19088776655443322 /* WatchDiagnostics.swift in Sources */,
+				A7B8C9D0E1F2031425364758 /* BleReconnectPolicy.swift in Sources */,
 				8395345930A6507700C9AE4B /* WatchSnapshot.swift in Sources */,
 				8395345A30A6507700C9AE4B /* WatchComplicationStore.swift in Sources */,
 				8395345B30A6507700C9AE4B /* WatchSnapshotThrottle.swift in Sources */,

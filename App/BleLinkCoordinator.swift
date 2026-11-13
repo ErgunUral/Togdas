@@ -32,6 +32,9 @@ final class BleLinkCoordinator: ObservableObject {
     private var stableTask: Task<Void, Never>?
     private var attempts = 0
     private var pairingAttempts = 0
+    /// Üst üste zayıf sinyalle kopma sayısı; `weakDropLimit` aşılınca
+    /// yeniden bağlanma 60 sn'ye seyreltilir (radyo/pil yükü).
+    private var weakDrops = 0
     private var authenticatedThisConnection = false
     private var connectedAt: Date?
     private var awaitingConnection = false
@@ -62,6 +65,7 @@ final class BleLinkCoordinator: ObservableObject {
         if vin != self.vin {
             self.vin = vin
             attempts = 0
+            weakDrops = 0
             status = ""
         }
         // Araç listesi (ownedVins/friendVins) authoritative source'dur.
@@ -69,7 +73,9 @@ final class BleLinkCoordinator: ObservableObject {
         isSharedVehicle = isShared
     }
 
-    func start() {
+    /// `clearRepair` yalnız kullanıcı onarımı açıkça yeniden denediğinde
+    /// `true` olur (`retryAfterRepair`). Otomatik yollar onarım kilidini açmaz.
+    func start(clearRepair: Bool = false) {
         guard !vin.isEmpty else { return }
         reconnectTask?.cancel()
         reconnectTask = nil
@@ -78,14 +84,27 @@ final class BleLinkCoordinator: ObservableObject {
         awaitingConnection = true
         lastStartAt = Date()
         status = "Araç aranıyor…"
-        ble.recordDiagnostic("Elle bağlantı başlatıldı")
-        ble.start(vin: vin)
+        ble.recordDiagnostic(clearRepair ? "Onarım sonrası elle bağlantı" : "Elle bağlantı başlatıldı")
+        ble.start(vin: vin, clearRepair: clearRepair)
+    }
+
+    /// Eşleşme kurtarma kullanıcı adımları tamamlandıktan sonraki tek deneme.
+    /// Onarım kilidini açan **tek** yol budur.
+    func retryAfterRepair() {
+        weakDrops = 0
+        attempts = 0
+        ble.recordDiagnostic("repair_retry · kullanıcı onarımı yeniden denedi")
+        start(clearRepair: true)
     }
 
     /// Uygulama öne geldiğinde bekleyen geri çekilme süresini atlar.
     /// Android 1.0.24.42'deki "ekran açıldı · etkileşimli" davranışının
     /// iOS karşılığı: telefon ekranı açılınca bağlantı hemen yeniden denenir.
     func handleForeground() {
+        if ble.needsRepair {
+            ble.recordDiagnostic("foreground_retry_skipped · eşleşme onarımı bekleniyor")
+            return
+        }
         let sinceLastStart = lastStartAt.map { Date().timeIntervalSince($0) }
         guard BleReconnectPolicy.shouldRetryOnForeground(
             autoConnectEnabled: autoConnectEnabled,
@@ -100,12 +119,15 @@ final class BleLinkCoordinator: ObservableObject {
         pairingTask?.cancel()
         pairingTask = nil
         attempts = 0
+        // Kullanıcı ekranı açtı: zayıf sinyal seyreltmesi sıfırlanır.
+        weakDrops = 0
         ble.recordDiagnostic("foreground_retry · uygulama öne geldi; bekleme atlandı")
         start()
     }
 
     /// Uygulama açıldığında, kullanıcı bağlı tutmayı seçtiyse kendiliğinden bağlanır.
     func startIfDesired() {
+        guard !ble.needsRepair else { return }
         guard autoConnectEnabled,
               ble.state.isDisconnected || ble.state.isFailed else { return }
         ble.recordDiagnostic("Otomatik bağlantı: bağlı tutma/yakınlık açık")
@@ -126,6 +148,7 @@ final class BleLinkCoordinator: ObservableObject {
         lastWatchdogLabel = ""
         attempts = 0
         pairingAttempts = 0
+        weakDrops = 0
         reconnecting = false
         silentRecovery = false
         authenticatedThisConnection = false
@@ -163,6 +186,7 @@ final class BleLinkCoordinator: ObservableObject {
                 try? await Task.sleep(nanoseconds: 60_000_000_000)
                 guard !Task.isCancelled else { return }
                 self?.attempts = 0
+                self?.weakDrops = 0
             }
 
         case .certificate:
@@ -212,6 +236,13 @@ final class BleLinkCoordinator: ObservableObject {
 
     /// Kopma kararını saf politikaya devreder; politika yalnızca eylem üretir.
     private func handleDrop() {
+        // Zayıf sinyalle kopma sayacı: yalnız gerçek oturum kopmalarında artar
+        // (ilk "bağlı değil" yayını sayılmaz).
+        if hasConnectedOnce, let rssi = ble.rssi,
+           rssi < BleReconnectPolicy.weakSignalThreshold {
+            weakDrops += 1
+            ble.recordDiagnostic("weak_drop · \(rssi) dBm; üst üste \(weakDrops)")
+        }
         let decision = BleReconnectPolicy.action(
             connectedBefore: hasConnectedOnce,
             awaitingConnection: awaitingConnection,
@@ -223,7 +254,8 @@ final class BleLinkCoordinator: ObservableObject {
             radioFailureStatus: ble.failureSummary,
             attempts: attempts,
             pairingAttempts: pairingAttempts,
-            lastRSSI: ble.rssi
+            lastRSSI: ble.rssi,
+            consecutiveWeakDrops: weakDrops
         )
 
         switch decision {
@@ -264,6 +296,14 @@ final class BleLinkCoordinator: ObservableObject {
             self.reconnectTask = nil
             guard self.autoConnectEnabled,
                   self.ble.state.isDisconnected || self.ble.state.isFailed else { return }
+            guard !self.ble.needsRepair else {
+                // Onarım kilidi: otomatik denemeler burada durur, kullanıcı
+                // adımları tamamlayıp "Yeniden dene"ye basana kadar sürmez.
+                self.reconnecting = false
+                self.status = self.ble.lastEvent
+                self.ble.recordDiagnostic("ble_reconnect_blocked · eşleşme onarımı gerekli")
+                return
+            }
             self.lastStartAt = Date()
             self.ble.start(vin: self.vin)
         }
