@@ -101,3 +101,10 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
 ### D. Saat/widget ekran kanıtı (5. adım) — öncelik 4 (kullanıcı)
 - Saat + widget ekran görüntüsü; tazelik rozeti tonu; yeni metin
   "Yakınlık otomasyonu telefonda açık — saat yalnızca görüntüler".
+
+### E. Sessiz başarısızlık kapatıldı — **TAMAM ✓** (13.11, `a53d1be`)
+- `Core/ProximityCommandNotice`: otomatik komut sonucu → yerel bildirim
+  (doğrulanamadı / başlatılamadı). Yalnız yakınlık kaynaklı komutlar,
+  60 sn penceresi; "komut yeniden gönderilmedi" metni.
+- Açma doğrulaması zaten BLE katmanındaydı (`pendingLockVerification`);
+  eksik olan bildirimdi. +7 test (459/459).

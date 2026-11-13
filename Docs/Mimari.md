@@ -256,6 +256,20 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     düğme adı "Kurulumu adım adım dinle"), widget/saat ekleme, geofence
     (resmî metin: "Bölgeye girince açma, çıkınca kilitleme denenir";
     'Her zaman' izni şart).
+- **Yakınlık otomatik komut bildirimi (2026-11-13, 459 test, `a53d1be`):**
+  - `Core/ProximityCommandNotice` (saf, testli): `BleConnection.lastEvent`
+    metnini verified/failed olarak yorumlar (doğrulama: "araç durumuyla
+    doğrulandı" / "hedef değerle eşleşiyor"; başarısızlık: "kilit
+    değişikliği doğrulanamadı"). Başarısız otomatik komut için bildirim
+    taslağı — "doğrulanamadı" ve "başlatılamadı" ayrımı; metin "komut
+    yeniden gönderilmedi" der (davranışa sadık). Kimlik VIN içerir,
+    başlık/gövde VIN'siz.
+  - Dashboard: yalnız yakınlık kaynaklı komutlar için 60 sn penceresiyle
+    bildirim; manuel komutlar hariç. Not: açma tarafını BLE katmanı zaten
+    `pendingLockVerification` ile doğruluyordu — eksik olan sonucun
+    bildirime dönüşmesiydi.
+  - Repo hijyeni: `build17/`, `buildWatch/` git takibinden çıkarıldı
+    (`.gitignore`, `cd1deba`; önceki commit'lerde birikmişti).
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı
