@@ -40,9 +40,10 @@ enum TurkishFormat {
     }
 
     /// Örn. "29 Eki 23:45". Saat dilimi cihazın yerel saatidir.
-    static func date(_ date: Date, format: String) -> String {
+    static func date(_ date: Date, format: String, timeZone: TimeZone = .current) -> String {
         let formatter = DateFormatter()
         formatter.locale = locale
+        formatter.timeZone = timeZone
         formatter.dateFormat = format
         return formatter.string(from: date)
     }

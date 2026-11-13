@@ -582,6 +582,14 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   (en yeni iOS + iPhone, yoksa oluşturulur), imzalama kapalı, hata
   durumunda `.xcresult` artifact.
 
+- **CI ilk koşu düzeltmesi (2026-11-13, 521 birim testi):** CI UTC saat
+  diliminde `TurkishFormatTests.testDateFormatUsesTurkishMonthNames`
+  kırılıyordu (beklenen "29 Eki 23:45", alınan "29 Eki 20:45").
+  `TurkishFormat.date`'a isteğe bağlı `timeZone` parametresi eklendi
+  (varsayılan `.current`, üretim davranışı aynı); test açık saat dilimi
+  veriyor ve saat diliminden bağımsız yeni bir test eklendi.
+  `TZ=UTC swift test`: 521/521.
+
 ## 9. İlkeler
 
 - Sıfırdan rewrite yok; strangler pattern benzeri kademeli geçiş.

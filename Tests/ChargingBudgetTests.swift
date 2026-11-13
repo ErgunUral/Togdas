@@ -197,6 +197,25 @@ final class TurkishFormatTests: XCTestCase {
         calendar.timeZone = TimeZone(identifier: "Europe/Istanbul")!
         let date = calendar.date(from: DateComponents(year: 2026, month: 10, day: 29,
                                                       hour: 23, minute: 45))!
-        XCTAssertEqual(TurkishFormat.date(date, format: "d MMM HH:mm"), "29 Eki 23:45")
+        // Saat dilimi açıkça verilmezse test, koşucunun varsayılan dilimine
+        // (CI'da UTC) bağlı kalır; üretimde varsayılan .current'tir.
+        XCTAssertEqual(
+            TurkishFormat.date(date, format: "d MMM HH:mm",
+                               timeZone: TimeZone(identifier: "Europe/Istanbul")!),
+            "29 Eki 23:45"
+        )
+    }
+
+    func testDateFormatUsesCallerTimeZone() {
+        let date = Date(timeIntervalSince1970: 1_793_306_700) // 2026-10-29 20:45 UTC
+        XCTAssertEqual(
+            TurkishFormat.date(date, format: "d MMM HH:mm", timeZone: TimeZone(secondsFromGMT: 0)!),
+            "29 Eki 20:45"
+        )
+        XCTAssertEqual(
+            TurkishFormat.date(date, format: "d MMM HH:mm",
+                               timeZone: TimeZone(identifier: "Europe/Istanbul")!),
+            "29 Eki 23:45"
+        )
     }
 }

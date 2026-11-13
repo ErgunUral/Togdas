@@ -90,9 +90,9 @@ fiziksel test listesine aittir.
 
 | İş | Tetik | Kapsam | Süre hedefi |
 |---|---|---|---|
-| `unit` | push, PR, gecelik | `swift test` (ToqdasCore) | ~1 dk |
-| `ui` | push, PR | Duman: `ToqdasSmokeTests` + `ToqdasFlowTests` | ~3-5 dk |
-| `ui` | gecelik `03:00 UTC` | Tam paket: `-only-testing:ToqdasUITests` (35 test) | ~8-12 dk |
+| `unit` | push, PR, gecelik | `swift test` (ToqdasCore, 521 test) | ~1 dk |
+| `ui` | push, PR | Duman: `ToqdasSmokeTests` + `ToqdasFlowTests` | CI'da ~10-15 dk |
+| `ui` | gecelik `03:00 UTC` | Tam paket: `-only-testing:ToqdasUITests` (35 test) | ~20-25 dk |
 | `ui` | `workflow_dispatch` | `full: true` ise tam paket, değilse duman | — |
 
 - Runner `macos-26`; Xcode imajın varsayılanıdır. Farklı bir imaj
@@ -105,6 +105,10 @@ fiziksel test listesine aittir.
 - Başarısızlıkta `ui-test-results.xcresult` artifact olarak yüklenir
   (ekran görüntüleri ve test logları dahil, 7 gün saklanır).
 - Yerel koşuyla aynı komut kullanılır; tek fark `-destination` UDID'si.
+- Birim testleri saat diliminden bağımsızdır: CI UTC'de koşar. Yerelde
+  aynı koşulu `TZ=UTC swift test` ile doğrulayın (521 test).
+- Başarısız adım hata satırlarını check-run annotation olarak yayınlar;
+  GitHub logları anonim erişime kapalı olduğu için tanılama buradan okunur.
 
 ## Fiziksel testler
 
