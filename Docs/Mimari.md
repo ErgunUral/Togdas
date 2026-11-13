@@ -576,6 +576,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   dönüyor. Test izolasyonu için `-uiTestResetLook` (yalnız DEBUG) tema ve
   düzen anahtarlarını temizler. Koşu: 35/35.
 
+- **CI (2026-11-13):** `.github/workflows/ci.yml` — macOS runner'da
+  `swift test` ve duman UI testleri (Smoke + Flow) her push/PR'da;
+  gecelik `03:00 UTC` tam 35 testlik paket. Simülatör dinamik seçilir
+  (en yeni iOS + iPhone, yoksa oluşturulur), imzalama kapalı, hata
+  durumunda `.xcresult` artifact.
+
 ## 9. İlkeler
 
 - Sıfırdan rewrite yok; strangler pattern benzeri kademeli geçiş.

@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Tüm UI paketini çalıştır (35 test)"
+        type: boolean
+        default: false
+  schedule:
+    # Her gün 03:00 UTC — gecelik tam UI paketi.
+    - cron: "0 3 * * *"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  XCODE_PROJECT: Toqdas.xcodeproj
+  XCODE_SCHEME: Toqdas
+  UI_TEST_BUNDLE: ToqdasUITests
+
+jobs:
+  unit:
+    name: Birim testleri (swift test)
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Araç sürümleri
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: SwiftPM önbelleği
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.swift') }}
+          restore-keys: |
+            spm-${{ runner.os }}-
+
+      - name: Testler
+        run: swift test
+
+  ui:
+    name: UI testleri
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Simülatör seç
+        id: sim
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import re
+          import subprocess
+
+
+          def simctl(*args):
+              return subprocess.check_output(["xcrun", "simctl", *args])
+
+
+          def model_number(name):
+              match = re.search(r"iPhone (\d+)", name)
+              return int(match.group(1)) if match else 0
+
+
+          devices = json.loads(simctl("list", "devices", "available", "-j"))["devices"]
+
+          best = None
+          for runtime, entries in devices.items():
+              if "iOS" not in runtime:
+                  continue
+              parts = re.findall(r"\d+", runtime.split(".")[-1])
+              version = tuple(int(part) for part in parts[:2]) or (0,)
+              for device in entries:
+                  if not device["name"].startswith("iPhone"):
+                      continue
+                  score = (version, model_number(device["name"]))
+                  if best is None or score > best[0]:
+                      best = (score, device["name"], device["udid"])
+
+          # Runner imajında hazır cihaz yoksa en yeni iPhone tipiyle oluştur.
+          if best is None:
+              types = json.loads(simctl("list", "devicetypes", "-j"))["devicetypes"]
+              iphones = [item for item in types if item["name"].startswith("iPhone")]
+              if not iphones:
+                  raise SystemExit("iPhone cihaz tipi bulunamadı")
+              device_type = max(iphones, key=lambda item: model_number(item["name"]))
+
+              runtimes = json.loads(simctl("list", "runtimes", "-j"))["runtimes"]
+              ios_runtimes = [
+                  item for item in runtimes
+                  if item.get("isAvailable")
+                  and item["identifier"].startswith("com.apple.CoreSimulator.SimRuntime.iOS-")
+              ]
+              if not ios_runtimes:
+                  raise SystemExit("iOS simülatör çalışma zamanı bulunamadı")
+              runtime = sorted(
+                  ios_runtimes,
+                  key=lambda item: tuple(int(p) for p in re.findall(r"\d+", item["identifier"].split(".")[-1])[:2]),
+              )[-1]
+
+              udid = simctl(
+                  "create", "Toqdas CI", device_type["identifier"], runtime["identifier"]
+              ).decode().strip()
+              best = ((0, 0), "Toqdas CI", udid)
+
+          print(f"name={best[1]}")
+          print(f"udid={best[2]}")
+          PY
+          cat "$GITHUB_OUTPUT"
+
+      - name: Simülatörü hazırla
+        run: |
+          udid="${{ steps.sim.outputs.udid }}"
+          xcrun simctl boot "$udid" 2>/dev/null || true
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl list devices | grep "$udid"
+
+      - name: UI testlerini çalıştır
+        run: |
+          set -o pipefail
+
+          full=false
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            full=true
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.full }}" = "true" ]; then
+            full=true
+          fi
+
+          # PR/push: hızlı duman (Smoke + Flow). Gecelik ve isteğe bağlı
+          # tam koşu: 35 testin tamamı.
+          if [ "$full" = "true" ]; then
+            ONLY_TESTING="-only-testing:$UI_TEST_BUNDLE"
+            echo "Tam UI paketi çalışıyor"
+          else
+            ONLY_TESTING="-only-testing:$UI_TEST_BUNDLE/ToqdasSmokeTests -only-testing:$UI_TEST_BUNDLE/ToqdasFlowTests"
+            echo "Duman paketi çalışıyor (Smoke + Flow)"
+          fi
+
+          xcodebuild test \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO \
+            $ONLY_TESTING
+
+      - name: Sonuçları yükle
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: ${{ runner.temp }}/TestResults.xcresult
+          retention-days: 7
+          if-no-files-found: ignore

@@ -84,6 +84,28 @@ gerektirir). Senaryo rehberindeki 32 maddenin ~21'i BLE, araç veya
 donanım gerektirdiği için simülatörde uçtan uca doğrulanamaz; bu maddeler
 fiziksel test listesine aittir.
 
+## Sürekli entegrasyon (CI)
+
+`.github/workflows/ci.yml` iki iş çalıştırır:
+
+| İş | Tetik | Kapsam | Süre hedefi |
+|---|---|---|---|
+| `unit` | push, PR, gecelik | `swift test` (ToqdasCore) | ~1 dk |
+| `ui` | push, PR | Duman: `ToqdasSmokeTests` + `ToqdasFlowTests` | ~3-5 dk |
+| `ui` | gecelik `03:00 UTC` | Tam paket: `-only-testing:ToqdasUITests` (35 test) | ~8-12 dk |
+| `ui` | `workflow_dispatch` | `full: true` ise tam paket, değilse duman | — |
+
+- Runner `macos-26`; Xcode imajın varsayılanıdır. Farklı bir imaj
+  gerekiyorsa `runs-on` etiketi güncellenir.
+- Simülatör dinamik seçilir: en yeni iOS çalışma zamanındaki en yeni
+  iPhone; runner'da hazır cihaz yoksa `Toqdas CI` adıyla oluşturulur.
+  Bu yüzden cihaz adı/sürümü workflow'a gömülü değildir.
+- `CODE_SIGNING_ALLOWED=NO`, `-derivedDataPath $RUNNER_TEMP/DerivedData`,
+  `-parallel-testing-enabled NO` (testler `UserDefaults` paylaştığı için).
+- Başarısızlıkta `ui-test-results.xcresult` artifact olarak yüklenir
+  (ekran görüntüleri ve test logları dahil, 7 gün saklanır).
+- Yerel koşuyla aynı komut kullanılır; tek fark `-destination` UDID'si.
+
 ## Fiziksel testler
 
 Aşağıdakiler otomatik test değildir ve gerçek iPhone + araç gerektirir:

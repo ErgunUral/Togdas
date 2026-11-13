@@ -6,6 +6,7 @@ build-watch/
 DerivedData/
 *.xcuserstate
 xcuserdata/
+project.xcworkspace/
 .DS_Store
 
 node_modules/

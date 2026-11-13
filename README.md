@@ -20,6 +20,10 @@ xcodebuild -project Toqdas.xcodeproj -scheme ToqdasWatch -destination 'generic/p
 `generate_project.rb` regenerates the Xcode project using the `xcodeproj` Ruby gem.
 It overwrites project settings; preserve manual project changes before running it.
 
+CI (`.github/workflows/ci.yml`): her push/PR'da `swift test` ve duman UI
+testleri; gecelik tam UI paketi. Ayrıntı ve simülatör seçimi:
+[Docs/TestStratejisi.md](Docs/TestStratejisi.md).
+
 ## Implemented
 
 - Togg Trumore tarzı koyu tema dashboard: başlık, canlı telemetri şeridi, batarya/menzil
