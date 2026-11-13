@@ -127,7 +127,7 @@ struct WatchGarageView: View {
                     }
 
                     if snapshot?.proximityEnabled == true {
-                        Text("Pasif giriş: açık (yalnızca algılama)")
+                        Text("Yakınlık otomasyonu telefonda açık — saat yalnızca görüntüler")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
