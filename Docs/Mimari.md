@@ -250,6 +250,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   - `App/ScenarioGuideSheet` (U1/U2/U3 uyumlu) + girişler: header
     menüsü ve yakınlık kartı `book` düğmesi (odaklı açılış); `?`
     kalibrasyon sheet'i değişmedi.
+    - Kurulum bölümü eklendi (2026-11-13, 450 test, `9e6468b`): 8. bölüm
+    ilk sırada — Togg ID girişi, izinler (Bluetooth/bildirim/mikrofon/
+    konum), Bluetooth 5 adımlı rehber (`BLESetupGuideSheet` özeti, gerçek
+    düğme adı "Kurulumu adım adım dinle"), widget/saat ekleme, geofence
+    (resmî metin: "Bölgeye girince açma, çıkınca kilitleme denenir";
+    'Her zaman' izni şart).
 - **İyileştirme turu (2026-11-12, 435 test):**
   - Eşleştirme bekleme UI'da açık: `BleConnection.State.isPairingWait`
     (yalnız `vehicleKeyMissing`), Dashboard başlığı
