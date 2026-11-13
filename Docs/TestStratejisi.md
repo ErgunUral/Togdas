@@ -90,6 +90,9 @@ gerektirir). Senaryo rehberindeki 32 maddenin ~21'i BLE, araç veya
 donanım gerektirdiği için simülatörde uçtan uca doğrulanamaz; bu maddeler
 fiziksel test listesine aittir.
 
+İşlev bazlı envanter (45 işlev, A/B/C sınıflandırması ve öncelikli
+boşluklar): [FonksiyonEnvanteri.md](FonksiyonEnvanteri.md).
+
 ## Sürekli entegrasyon (CI)
 
 `.github/workflows/ci.yml` iki iş çalıştırır:

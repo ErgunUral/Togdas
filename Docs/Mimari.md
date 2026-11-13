@@ -597,6 +597,11 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   ekran nesneleri iddia içermez. Test iddiaları değişmedi. Koşu: 35/35,
   374 sn.
 
+- **Fonksiyon envanteri (2026-11-14):** `Docs/FonksiyonEnvanteri.md` —
+  F01–F45 işlev, 8 sistem yüzeyi (widget/watch/Siri/kısayol/deep link),
+  A/B/C sınıflandırması ve ilk 10 öncelikli boşluk. Yöntem: statik tarama
+  + 35 UI testinin simülatör koşuları. Uygulama ve testler değişmedi.
+
 ## 9. İlkeler
 
 - Sıfırdan rewrite yok; strangler pattern benzeri kademeli geçiş.
