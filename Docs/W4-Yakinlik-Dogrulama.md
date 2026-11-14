@@ -222,3 +222,26 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   kullanılıyor · N gün geçerli” / “alındı” / “yenilendi” satırı
   (`toqdas.cert.provenance.<vin>`).
 - +4 test (520/520).
+
+### P. Kök neden: kilitliyken anahtarın yeniden üretilmesi (2026-11-14)
+- Cihaz günlüğü: `key_fingerprint_changed · önceki ea4a44f2 · yeni
+  dc99f29b` 13:53'ten itibaren tekrarlandı; ardından `repairRequired`.
+- Neden: dijital anahtar Keychain'de `WhenUnlocked` ile saklanıyordu.
+  Telefon kilitliyken (arka plan yakınlık) okunamadı, kod bunu “anahtar yok”
+  sayıp **yeni anahtar üretti**. Sunucudaki sertifika eski anahtara ait
+  kaldığı için araç imzayı reddetti ve her seferinde yeniden eşleştirme
+  gerekti. “Dijital anahtarı tekrar almak” bundan kaynaklanıyordu.
+- Düzeltme:
+  - Anahtar `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` ile üretilir;
+    mevcut anahtar `SecItemUpdate` ile yükseltilir (cihazda `status=0`
+    doğrulandı, `toqdas.key.accessibility.v1`).
+  - `PhoneKeyStore.canGenerate` yalnız `errSecItemNotFound` durumunda
+    üretime izin verir. Kilitli/geçici Keychain hatasında yeni anahtar
+    **üretilmez**; “Telefon kilitli; dijital anahtar şu an okunamıyor”
+    denir ve onarım kilidi açılmaz (`key_unavailable`).
+  - Anahtar kimliği gerçekten değişmişse eski sertifika önbelleği bırakılır
+    (`CertificateCache.clear`), onarım akışı temiz bir talebe başlar.
+- Bir kerelik sonuç: bu olaydan önce anahtar zaten değişmişti; araçta **bir
+  kez** “Dijital anahtarı yeniden eşleştir” gerekiyor. Sonrasında anahtar
+  sabit kalır.
+- +6 test (526/526).

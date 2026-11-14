@@ -85,6 +85,26 @@ final class GarageModel: ObservableObject {
             signedIn = true
             facingError = nil
             noteCloudTelemetry(telemetry)
+
+            // Bütçe/bakım kartları: her açılışta bilinen duruma getir.
+            // `-uiTestResetStores` temizler; `-uiTestSeedStores` temizleyip
+            // sabit limit, harcama ve bakım kalemleri yazar.
+            let storeArguments = ProcessInfo.processInfo.arguments
+            if storeArguments.contains("-uiTestResetStores")
+                || storeArguments.contains("-uiTestSeedStores") {
+                let budgetStore = ChargingSpendStore(vin: vehicle.vin)
+                budgetStore.clear()
+                let maintenanceStore = MaintenanceStore(vin: vehicle.vin)
+                maintenanceStore.items = []
+                if storeArguments.contains("-uiTestSeedStores") {
+                    budgetStore.setMonthlyLimit(5_000)
+                    budgetStore.record(amountTRY: 4_250)
+                    maintenanceStore.items = [
+                        MaintenanceItem(title: "Lastik rotasyonu", dueKm: 1_500),
+                        MaintenanceItem(title: "Fren bakımı", dueKm: 900),
+                    ]
+                }
+            }
         }
         #endif
         // Soğuk başlangıçta ağ yanıtı gelmeden pano boş kalmasın: seçili VIN'in

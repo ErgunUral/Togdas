@@ -407,11 +407,25 @@ final class BleLinkCoordinator: ObservableObject {
     /// Anahtar değişmişse sessizce yeni anahtarla devam etmek yanlış olur:
     /// sunucu sertifikası eski anahtara aittir, araç imzayı reddeder.
     private func checkKeyIdentity() throws {
-        let fingerprint = PhoneKeyStore.publicKeyFingerprint(for: vin)
+        let fingerprint: String?
+        switch PhoneKeyStore.fingerprintStatus(for: vin) {
+        case .found(let value):
+            fingerprint = value
+        case .missing:
+            fingerprint = nil
+        case .unavailable:
+            // Kilitli cihazda Keychain okunamaz. Bunu "anahtar kayboldu"
+            // saymak onarım kilidini açar ve gereksiz yeniden eşleştirmeye
+            // sürükler; yalnız bu oturumu atlarız.
+            ble.recordDiagnostic("key_unavailable · cihaz kilitli veya Keychain erişilemiyor")
+            notePhase("anahtar okunamadı")
+            throw AppError.message("Dijital anahtar şu an okunamıyor (cihaz kilitli olabilir). Kilidi açıp yeniden dene.")
+        }
         let stored = defaults.string(forKey: KeyIdentity.fingerprintKey(vin))
         switch KeyIdentity.check(current: fingerprint, stored: stored) {
         case .changed(let previous):
             ble.recordDiagnostic("key_fingerprint_changed · önceki \(previous) · yeni \(fingerprint ?? "—")")
+            CertificateCache.clear(vin: vin)
             let reason = "Telefonun dijital anahtarı değişmiş; sunucu sertifikası eski anahtara ait. Yeniden eşleştir."
             ble.requireRepair(reason)
             notePhase("anahtar değişti")
@@ -421,6 +435,7 @@ final class BleLinkCoordinator: ObservableObject {
             // anahtar üretmek aracın eski eşleşmesini geçersiz kılar; kullanıcı
             // bilinçli olarak yeniden eşleştirmeli.
             ble.recordDiagnostic("key_fingerprint_missing · önceki \(previous)")
+            CertificateCache.clear(vin: vin)
             let reason = "Telefonun dijital anahtarı bu cihazda bulunamadı (Keychain). Yeniden eşleştirme gerekiyor."
             ble.requireRepair(reason)
             notePhase("anahtar kayboldu")

@@ -318,6 +318,11 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Anahtar sürekliliği kök nedeni (2026-11-14, 526 test):**
+  - `Keychain` anahtarı `WhenUnlocked` ile saklanıyordu; arka planda kilitli
+    cihazda okunamayınca sessizce yeniden üretiliyor ve araç eşleşmesi
+    bozuluyordu. Artık `AfterFirstUnlock` + yalnız `errSecItemNotFound`da
+    üretim (`PhoneKeyStore.canGenerate`); kilitli durum onarım açmaz.
 - **Dijital anahtar kalıcılığı (2026-11-13, 520 test):**
   - `Core/CertificateProvenance` (saf, testli): sertifikanın kaynağı
     (`reused` / `refreshed` / `issued`) VIN başına kaydedilir; pano bunu

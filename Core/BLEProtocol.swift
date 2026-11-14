@@ -345,6 +345,13 @@ enum CertificateCache {
         print("[CERT] certificate cached (keychain) vin=…\(vin.suffix(4)) carKeyPresent=\(!resolvedCarKey.isEmpty)")
     }
 
+    /// Anahtar kimliği değiştiğinde (onarım) eski sertifikayı bırakır:
+    /// sertifika eski anahtara bağlıdır ve yeniden kullanılamaz.
+    static func clear(vin: String) {
+        deletePayload(vin: vin)
+        UserDefaults.standard.removeObject(forKey: legacyPrefix + vin)
+    }
+
     static func updateCarKey(vin: String, phonePublicKeyHex: String, carKey: String) {
         guard !carKey.isEmpty,
               let existing = loadCertificate(vin: vin, phonePublicKeyHex: phonePublicKeyHex) else { return }
