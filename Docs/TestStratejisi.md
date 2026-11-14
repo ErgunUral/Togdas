@@ -22,7 +22,7 @@ xcodebuild test \
   -only-testing:ToqdasUITests
 ```
 
-35 test, 8 dosya (2026-11-13: 377 sn, 35/35 yeşil):
+39 test, 9 dosya (2026-11-14: 437 sn, 39/39 yeşil):
 
 - `UITests/ToqdasSmokeTests.swift` (4): Giriş ekranı ve Togg ID düğmesi
   erişilebilir; cihaz dili İngilizce olsa da Türkçe arayüz metni korunur;
@@ -50,6 +50,13 @@ xcodebuild test \
   `performAccessibilityAudit` — dokunma hedefi, okunabilir etiket, metin
   kırpılması ve trait. Dynamic Type ve kontrast bilinçli kapsam dışı
   (bkz. `Docs/Erisilebilirlik.md`).
+- `UITests/ToqdasLayoutTests.swift` (4): Sportif düzende hızlı kontroller
+  BLE kartından önce gelir ve cam/güvenlik bölümü korunur; Teknik düzende
+  "Canlı BLE Tanısı" bloğu yakınlık kartından önce gelir; şarj
+  hesaplayıcıda hedef doluluk %20'den %100'e çekilince tahmini enerji ve
+  ücret yenilenir; varsayım/şarj başlatmama notu görünür. Hesaplayıcıya
+  `-scrollChargingCalculator` (yalnız DEBUG) ile otomatik kaydırılır;
+  düzen seçimi test sonunda Klasik'e döner.
 - `UITests/ToqdasSettingsTests.swift` (4): Tema (Okyanus) ve düzen
   (Minimal) seçimi yeniden başlatmada korunuyor; Minimal düzende
   yakınlık kartı gizleniyor; VoiceOver tek tema/tek düzen seçili
@@ -101,7 +108,7 @@ boşluklar): [FonksiyonEnvanteri.md](FonksiyonEnvanteri.md).
 |---|---|---|---|
 | `unit` | push, PR, gecelik | `swift test` (ToqdasCore, 521 test) | ~1 dk |
 | `ui` | push, PR | Duman: `ToqdasSmokeTests` + `ToqdasFlowTests` | CI'da ~10-15 dk |
-| `ui` | gecelik `03:00 UTC` | Tam paket: `-only-testing:ToqdasUITests` (35 test) | ~20-25 dk |
+| `ui` | gecelik `03:00 UTC` | Tam paket: `-only-testing:ToqdasUITests` (39 test) | ~20-25 dk |
 | `ui` | `workflow_dispatch` | `full: true` ise tam paket, değilse duman | — |
 
 - Runner `macos-26`; Xcode imajın varsayılanıdır. Farklı bir imaj

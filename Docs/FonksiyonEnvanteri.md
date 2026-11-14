@@ -24,7 +24,7 @@ Amaç: her kullanıcı işlevini tek tabloda toplamak ve şu üç sınıfa ayır
 | F08 | XXXL Dynamic Type açılışı | launch arg | — | A | Accessibility |
 | F09 | Bluetooth dijital anahtar kartı (boş/hata durumu) | Pano | BLE yok | A | Audit (genel), doğrudan değil |
 | F10 | Yakınlık kartı: senaryolar düğmesi | Pano kartı | fixture | A | Guide |
-| F11 | Yakınlık otomasyonu aç/kapat | Pano kartı | yerel ayar | A | **yok** |
+| F11 | Yakınlık otomasyonu aç/kapat | Pano kartı | yerel ayar | A | Kısmi — kart Sportif/Teknik düzen testinde; toggle yok |
 | F12 | Yakınlık kalibrasyon sheet'i | kart düğmesi | BLE sinyali | A (açılış) | Guide |
 | F13 | Geofence: ev konumu ayarla/güncelle/sil | Pano kartı | konum izni | B | **yok** |
 | F14 | Sürüş istatistikleri kartı | Pano | fixture | A | **yok** (yalnız görünür) |
@@ -33,7 +33,7 @@ Amaç: her kullanıcı işlevini tek tabloda toplamak ve şu üç sınıfa ayır
 | F17 | Hızlı araç kontrolleri (kapı, klima, …) | Pano | BLE hazır değil → komut sheet'i | A (kapı) | Command (dolaylı) |
 | F18 | Cam ve güvenlik bölümü | Pano | BLE | C | **yok** |
 | F19 | İklimlendirme: aç/kapat, hedef sıcaklık | sekme | BLE/API | C (komut), A (görünüm) | Flow (görünüm) |
-| F20 | Şarj sekmesi: şarj kartı + hesaplayıcı | sekme | fixture | A (kart), B (hesaplama) | **yok** |
+| F20 | Şarj sekmesi: şarj kartı + hesaplayıcı | sekme | fixture | A (kart), B (hesaplama) | Layout (hesaplayıcı), Flow (kart) |
 | F21 | Trugo istasyon kartı | `-openChargingTab` | fixture | A | Flow |
 | F22 | EPDK haritası/listesi | Şarj sekmesi | ağ + konum | B/C | **yok** (bilinçli) |
 | F23 | Araç sağlığı: 12 V akü, lastikler, sürüş modu | sekme | fixture | A | Flow |
@@ -55,7 +55,7 @@ Amaç: her kullanıcı işlevini tek tabloda toplamak ve şu üç sınıfa ayır
 | F39 | Tanı özeti/günlüğü paylaşımı | komut sheet'i | BLE | C | **yok** |
 | F40 | Kilit teyit sesini dene | komut sheet'i | yerel | A | **yok** |
 | F41 | Tema seçimi (3) ve kalıcılığı | menü | UserDefaults | A | Settings |
-| F42 | Pano düzeni (4) ve kalıcılığı | menü | UserDefaults | A | Settings (Klasik/Minimal) |
+| F42 | Pano düzeni (4) ve kalıcılığı | menü | UserDefaults | A | Settings + Layout (Sportif/Teknik) |
 | F43 | Araç seçimi (çoklu) | menü | fixture'da 1 araç | B | **yok** |
 | F44 | Çıkış yap → giriş ekranı | menü | yerel | A | Settings |
 | F45 | Hata bandı / çevrimdışı durumlar | çeşitli | ağ hatası | B | Kısmen (kapı metni) |
@@ -86,9 +86,9 @@ Sistem yüzeyleri:
 | Mercek | Değer |
 |---|---|
 | Yüzey (ekran/sheet) | 16 / 17 (%94) |
-| Ana yüzey envanteri (F01–F45) | 14 tam/aktif test, 9 açılış-kapanış, 22 boşluk |
+| Ana yüzey envanteri (F01–F45) | 14 tam/aktif test, 9 açılış-kapanış, 22 boşluk (ilk tarama 2026-11-14; güncel satır durumları tabloda) |
 | Birim testi | 521 (Core mantığı: bütçe, bakım, sesli ayrıştırma, dışa aktarma, widget politikası) |
-| UI testi | 35 |
+| UI testi | 39 |
 
 Not: "Boşluk" her zaman hata değildir; bir kısmı B/C sınıfı olduğu için
 simülatörde uçtan uca doğrulanamaz.
@@ -99,14 +99,17 @@ simülatörde uçtan uca doğrulanamaz.
 |---|---|---|---|---|
 | 1 | F24–F25 Seyahatname içerik durumları | B | Yüksek kullanıcı değeri, geniş mantık | fixture dönem verisi + boş/hata durumu |
 | 2 | F15–F16 bütçe ve bakım kartları | B | Pano her açılışta görünür | `-uiTestSeedStores` hook'u |
-| 3 | F42 Sportif/Teknik düzenler | A | 2 düzen hiç denenmiyor | düzen başına duman (kart sırası) |
-| 4 | F20 şarj hesaplayıcı | A/B | Yanlış tutar riski | hesaplayıcı etkileşimi + sonuç |
+| 3 | F42 Sportif/Teknik düzenler | A | 2 düzen hiç denenmiyor | ✅ 2026-11-14: kart sırası testi (`ToqdasLayoutTests`) |
+| 4 | F20 şarj hesaplayıcı | A/B | Yanlış tutar riski | ✅ 2026-11-14: hedef değişimi + varsayım notu (`ToqdasLayoutTests`) |
 | 5 | F11 yakınlık aç/kapat | A | Yanlış açık kalma riski | toggle + kalıcılık |
 | 6 | F17 hızlı kontrol → komut yönlendirmesi | A | Kapı davranışı | BLE hazır değilken sheet'e düşme |
 | 7 | F40 kilit teyit sesi | A | Yerel, izole | düğme → çalma durumu |
 | 8 | F43 araç seçimi | B | Çoklu araç gerçek senaryo | ikinci fixture aracı + reset hook'u |
 | 9 | F29 hesap merkezi alt ekranları | B | Destek/bildirim akışı | fixture API yanıtı |
 | 10 | Deep link'ler (`-openDrive*`) | A | Açılış yolları test dışı | arg başına açılış dumanı |
+
+3 ve 4 numaralı boşluklar 2026-11-14'te kapandı (4 yeni UI testi);
+sıradaki adım 2 (bütçe/bakım seed hook'u) ve 1 (Seyahatname fixture).
 
 ## 5. Bilinçli kapsam dışı
 

@@ -2395,8 +2395,10 @@ struct DashboardView: View {
                 Spacer()
             }
 
-            percentRow(title: "Başlangıç doluluğu", value: $chargeStartPercent, range: 0...99)
-            percentRow(title: "Hedef doluluk", value: $chargeTargetPercent, range: 1...100)
+            percentRow(title: "Başlangıç doluluğu", value: $chargeStartPercent,
+                       range: 0...99, identifier: "calculator.startPercent")
+            percentRow(title: "Hedef doluluk", value: $chargeTargetPercent,
+                       range: 1...100, identifier: "calculator.targetPercent")
 
             VStack(spacing: 8) {
                 assumptionRow(title: "Hesaplama kapasitesi", value: $chargeCapacityKWh,
@@ -2411,12 +2413,14 @@ struct DashboardView: View {
                     Spacer()
                     Text(chargeEstimate.energyText)
                         .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white).monospacedDigit()
+                        .accessibilityIdentifier("calculator.energy")
                 }
                 HStack {
                     Text("Tahmini ücret").font(ToggTheme.text(.body)).foregroundStyle(ToggTheme.muted)
                     Spacer()
                     Text(chargeEstimate.costText)
                         .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(ToggTheme.teal).monospacedDigit()
+                        .accessibilityIdentifier("calculator.cost")
                 }
             }
             .padding(14)
@@ -2431,7 +2435,7 @@ struct DashboardView: View {
     }
 
     private func percentRow(title: String, value: Binding<Double>,
-                            range: ClosedRange<Double>) -> some View {
+                            range: ClosedRange<Double>, identifier: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(title).font(ToggTheme.text(.body, weight: .semibold)).foregroundStyle(ToggTheme.muted)
@@ -2441,6 +2445,8 @@ struct DashboardView: View {
             }
             Slider(value: value, in: range, step: 1)
                 .tint(ToggTheme.teal)
+                .accessibilityLabel(title)
+                .accessibilityIdentifier(identifier)
         }
     }
 
@@ -2457,6 +2463,7 @@ struct DashboardView: View {
             Stepper("", value: value, in: range, step: step)
                 .labelsHidden()
                 .scaleEffect(0.8)
+                .accessibilityLabel(title)
         }
         .padding(.horizontal, 12).padding(.vertical, 5)
         .frame(maxWidth: .infinity)

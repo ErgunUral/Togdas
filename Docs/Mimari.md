@@ -597,6 +597,16 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   ekran nesneleri iddia içermez. Test iddiaları değişmedi. Koşu: 35/35,
   374 sn.
 
+- **Düzen varyantları + şarj hesaplayıcı testleri (2026-11-14, 39 UI testi):**
+  `UITests/ToqdasLayoutTests.swift` — Sportif düzende kart sırası
+  (hızlı kontroller < BLE kartı) ve cam/güvenlik bölümü; Teknik düzende
+  "Canlı BLE Tanısı" bloğunun yakınlık kartından önce gelmesi; şarj
+  hesaplayıcıda hedef doluluk değişiminin enerji/ücreti yenilemesi;
+  varsayım ve "araçta şarj başlatmaz" notu. Hesaplayıcıya erişilebilirlik
+  kimlikleri (`calculator.startPercent`, `calculator.targetPercent`,
+  `calculator.energy`, `calculator.cost`) ve kaydırıcı etiketleri eklendi;
+  üretim davranışı değişmedi. Tam paket: 39/39 UI, 521 birim.
+
 - **Fonksiyon envanteri (2026-11-14):** `Docs/FonksiyonEnvanteri.md` —
   F01–F45 işlev, 8 sistem yüzeyi (widget/watch/Siri/kısayol/deep link),
   A/B/C sınıflandırması ve ilk 10 öncelikli boşluk. Yöntem: statik tarama
