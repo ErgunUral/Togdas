@@ -608,6 +608,14 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   ekran nesneleri iddia içermez. Test iddiaları değişmedi. Koşu: 35/35,
   374 sn.
 
+- **Bütçe ve bakım kartı testleri (2026-11-14, 43 UI testi):**
+  `UITests/ToqdasStoreSeedTests.swift` — `-uiTestResetStores` (boş bütçe)
+  ve `-uiTestSeedStores` (limit 5.000 ₺, harcama 4.250 ₺; bakım 1.500 km
+  ve 900 km) DEBUG hook'ları; her açılışta store'lar temizlenip sabit
+  değerler yazıldığı için test sırası sonucu değiştirmez. Boş/dolu bütçe,
+  yaklaşan ve gecikmiş bakım olmak üzere 4 test. Tam paket: 43/43 UI,
+  529 birim.
+
 - **Düzen varyantları + şarj hesaplayıcı testleri (2026-11-14, 39 UI testi):**
   `UITests/ToqdasLayoutTests.swift` — Sportif düzende kart sırası
   (hızlı kontroller < BLE kartı) ve cam/güvenlik bölümü; Teknik düzende

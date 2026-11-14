@@ -22,7 +22,7 @@ xcodebuild test \
   -only-testing:ToqdasUITests
 ```
 
-39 test, 9 dosya (2026-11-14: 437 sn, 39/39 yeşil):
+43 test, 10 dosya (2026-11-14: 605 sn, 43/43 yeşil):
 
 - `UITests/ToqdasSmokeTests.swift` (4): Giriş ekranı ve Togg ID düğmesi
   erişilebilir; cihaz dili İngilizce olsa da Türkçe arayüz metni korunur;
@@ -57,6 +57,11 @@ xcodebuild test \
   ücret yenilenir; varsayım/şarj başlatmama notu görünür. Hesaplayıcıya
   `-scrollChargingCalculator` (yalnız DEBUG) ile otomatik kaydırılır;
   düzen seçimi test sonunda Klasik'e döner.
+- `UITests/ToqdasStoreSeedTests.swift` (4): `-uiTestResetStores` ile boş
+  bütçe kartı ("Kapalı", harcama verisi yok); `-uiTestSeedStores` ile
+  limit 5.000 ₺ / harcama 4.250 ₺ (%85, 750 ₺ kaldı) ve bakım kalemleri
+  (1.500 km → 266 km kaldı; 900 km → gecikti). Seed her açılışta önce
+  temizler, sonra sabit değerleri yazar; test sırasından bağımsızdır.
 - `UITests/ToqdasSettingsTests.swift` (4): Tema (Okyanus) ve düzen
   (Minimal) seçimi yeniden başlatmada korunuyor; Minimal düzende
   yakınlık kartı gizleniyor; VoiceOver tek tema/tek düzen seçili
@@ -106,9 +111,9 @@ boşluklar): [FonksiyonEnvanteri.md](FonksiyonEnvanteri.md).
 
 | İş | Tetik | Kapsam | Süre hedefi |
 |---|---|---|---|
-| `unit` | push, PR, gecelik | `swift test` (ToqdasCore, 521 test) | ~1 dk |
+| `unit` | push, PR, gecelik | `swift test` (ToqdasCore, 529 test) | ~1 dk |
 | `ui` | push, PR | Duman: `ToqdasSmokeTests` + `ToqdasFlowTests` | CI'da ~10-15 dk |
-| `ui` | gecelik `03:00 UTC` | Tam paket: `-only-testing:ToqdasUITests` (39 test) | ~20-25 dk |
+| `ui` | gecelik `03:00 UTC` | Tam paket: `-only-testing:ToqdasUITests` (43 test) | ~20-25 dk |
 | `ui` | `workflow_dispatch` | `full: true` ise tam paket, değilse duman | — |
 
 - Runner `macos-26`; Xcode imajın varsayılanıdır. Farklı bir imaj
@@ -122,7 +127,7 @@ boşluklar): [FonksiyonEnvanteri.md](FonksiyonEnvanteri.md).
   (ekran görüntüleri ve test logları dahil, 7 gün saklanır).
 - Yerel koşuyla aynı komut kullanılır; tek fark `-destination` UDID'si.
 - Birim testleri saat diliminden bağımsızdır: CI UTC'de koşar. Yerelde
-  aynı koşulu `TZ=UTC swift test` ile doğrulayın (521 test).
+  aynı koşulu `TZ=UTC swift test` ile doğrulayın (529 test).
 - Başarısız adım hata satırlarını check-run annotation olarak yayınlar;
   GitHub logları anonim erişime kapalı olduğu için tanılama buradan okunur.
 
