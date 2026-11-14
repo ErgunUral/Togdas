@@ -245,3 +245,21 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   kez** “Dijital anahtarı yeniden eşleştir” gerekiyor. Sonrasında anahtar
   sabit kalır.
 - +6 test (526/526).
+
+### Q. “Eşleştirdikten sonra yine anahtar değişti” (2026-11-14)
+- İkinci kök neden: “Yeniden eşleştir” (`overwriteOwner: true`) akışı da ilk
+  adımda `checkKeyIdentity()` çağırıyordu ve eski parmak izini görüp
+  **onarımı başlamadan** durduruyordu. Logdaki `repair_retry` →
+  `key_fingerprint_changed` tekrarı bunu gösteriyordu.
+- Düzeltme: `KeyIdentity.blocksAuthentication(_:isExplicitRepair:)` — açık
+  onarımda kimlik değişikliği engel değil; sertifika önbelleği bırakılır,
+  sunucuda sahiplik yeni anahtara taşınır ve **yeni parmak izi ancak
+  sertifika alındıktan sonra** kaydedilir (`repair_completed`).
+- Kalıcı tanı: `Core/KeyAudit` (`toqdas.key.history.v1`, son 20 olay) —
+  `generated` (Keychain status kodu ile), `changed`, `missing`,
+  `unavailable`, `repair_allowed`, `confirmed`. “Neden değişti” sorusu artık
+  plist'ten okunur.
+- Bulunan diğer kanıt: 15:03:51 `pairing_lost · eşleşme bilgisi geçersiz` —
+  BLE bond'u da düşmüş; onarım adımları (iPhone'da aracı unut + araç
+  ekranından telefonu kaldır + iki cihazı yeniden başlat) gerekiyor.
+- +3 test (529/529).

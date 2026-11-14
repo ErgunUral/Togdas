@@ -77,6 +77,7 @@ enum PhoneKeyStore {
             ]
         ]
         var error: Unmanaged<CFError>?
+        KeyAudit.record("generated", detail: "status=\(loaded.status)")
         guard let key = SecKeyCreateRandomKey(attributes as CFDictionary, &error) else {
             throw AppError.message("Telefon anahtarı oluşturulamadı: \(error?.takeRetainedValue().localizedDescription ?? "bilinmiyor")")
         }

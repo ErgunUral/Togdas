@@ -318,6 +318,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Onarımın kendisi kilitleniyordu (2026-11-14, 529 test):**
+  - `checkKeyIdentity` açık onarımda da eski parmak izini görüp duruyordu;
+    “Yeniden eşleştir” hiçbir zaman sunucuya ulaşmıyordu. Artık
+    `blocksAuthentication(isExplicitRepair:)` ile açık onarım geçer, yeni
+    parmak izi sertifika alındıktan sonra yazılır.
+  - `Core/KeyAudit` son 20 anahtar olayını sebep/status ile saklar.
 - **Anahtar sürekliliği kök nedeni (2026-11-14, 526 test):**
   - `Keychain` anahtarı `WhenUnlocked` ile saklanıyordu; arka planda kilitli
     cihazda okunamayınca sessizce yeniden üretiliyor ve araç eşleşmesi

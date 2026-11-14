@@ -383,7 +383,7 @@ final class BleLinkCoordinator: ObservableObject {
 
     private func authenticate(overwriteOwner: Bool) async throws {
         guard !vin.isEmpty else { throw AppError.message("Araç seçili değil.") }
-        try checkKeyIdentity()
+        try checkKeyIdentity(allowChange: overwriteOwner)
         let pair = try PhoneKeyStore.keyPair(for: vin)
         let hex = pair.publicKey.hexString
         let record = try await api.ensureCertificate(
@@ -394,6 +394,13 @@ final class BleLinkCoordinator: ObservableObject {
         )
         try Task.checkCancellation()
         noteCertificateFingerprint(record.certificateBase64)
+        // Kimlik ancak sunucu sertifikayı verdikten sonra "doğrulandı" sayılır.
+        let fingerprint = KeyIdentity.fingerprint(pair.publicKey)
+        defaults.set(fingerprint, forKey: KeyIdentity.fingerprintKey(vin))
+        KeyAudit.record("confirmed", detail: overwriteOwner ? "onarım \(fingerprint)" : fingerprint)
+        if overwriteOwner {
+            ble.recordDiagnostic("repair_completed · yeni anahtar \(fingerprint)")
+        }
         authenticatedThisConnection = true
         ble.recordDiagnostic("Kimlik doğrulama başlatılıyor (sertifika \(record.certificateBase64.count) bayt)")
         try ble.beginAuthentication(
@@ -406,7 +413,7 @@ final class BleLinkCoordinator: ObservableObject {
     /// Dijital imza kimliğinin değişmediğini doğrular.
     /// Anahtar değişmişse sessizce yeni anahtarla devam etmek yanlış olur:
     /// sunucu sertifikası eski anahtara aittir, araç imzayı reddeder.
-    private func checkKeyIdentity() throws {
+    private func checkKeyIdentity(allowChange: Bool = false) throws {
         let fingerprint: String?
         switch PhoneKeyStore.fingerprintStatus(for: vin) {
         case .found(let value):
@@ -418,32 +425,53 @@ final class BleLinkCoordinator: ObservableObject {
             // saymak onarım kilidini açar ve gereksiz yeniden eşleştirmeye
             // sürükler; yalnız bu oturumu atlarız.
             ble.recordDiagnostic("key_unavailable · cihaz kilitli veya Keychain erişilemiyor")
+            KeyAudit.record("unavailable")
             notePhase("anahtar okunamadı")
             throw AppError.message("Dijital anahtar şu an okunamıyor (cihaz kilitli olabilir). Kilidi açıp yeniden dene.")
         }
         let stored = defaults.string(forKey: KeyIdentity.fingerprintKey(vin))
-        switch KeyIdentity.check(current: fingerprint, stored: stored) {
-        case .changed(let previous):
-            ble.recordDiagnostic("key_fingerprint_changed · önceki \(previous) · yeni \(fingerprint ?? "—")")
-            CertificateCache.clear(vin: vin)
-            let reason = "Telefonun dijital anahtarı değişmiş; sunucu sertifikası eski anahtara ait. Yeniden eşleştir."
-            ble.requireRepair(reason)
-            notePhase("anahtar değişti")
-            throw AppError.message(reason)
-        case .missing(let previous):
-            // Kayıtlı anahtar vardı, Keychain'de artık yok. Sessizce yeni
-            // anahtar üretmek aracın eski eşleşmesini geçersiz kılar; kullanıcı
-            // bilinçli olarak yeniden eşleştirmeli.
-            ble.recordDiagnostic("key_fingerprint_missing · önceki \(previous)")
-            CertificateCache.clear(vin: vin)
-            let reason = "Telefonun dijital anahtarı bu cihazda bulunamadı (Keychain). Yeniden eşleştirme gerekiyor."
-            ble.requireRepair(reason)
-            notePhase("anahtar kayboldu")
-            throw AppError.message(reason)
-        case .firstUse, .match:
-            if let fingerprint {
-                defaults.set(fingerprint, forKey: KeyIdentity.fingerprintKey(vin))
+        let verdict = KeyIdentity.check(current: fingerprint, stored: stored)
+
+        if KeyIdentity.blocksAuthentication(verdict, isExplicitRepair: allowChange) {
+            switch verdict {
+            case .changed(let previous):
+                ble.recordDiagnostic("key_fingerprint_changed · önceki \(previous) · yeni \(fingerprint ?? "—")")
+                KeyAudit.record("changed", detail: "önceki \(previous) yeni \(fingerprint ?? "—")")
+                CertificateCache.clear(vin: vin)
+                let reason = "Telefonun dijital anahtarı değişmiş; sunucu sertifikası eski anahtara ait. Yeniden eşleştir."
+                ble.requireRepair(reason)
+                notePhase("anahtar değişti")
+                throw AppError.message(reason)
+            case .missing(let previous):
+                // Kayıtlı anahtar vardı, Keychain'de artık yok. Sessizce yeni
+                // anahtar üretmek aracın eski eşleşmesini geçersiz kılar; kullanıcı
+                // bilinçli olarak yeniden eşleştirmeli.
+                ble.recordDiagnostic("key_fingerprint_missing · önceki \(previous)")
+                KeyAudit.record("missing", detail: "önceki \(previous)")
+                CertificateCache.clear(vin: vin)
+                let reason = "Telefonun dijital anahtarı bu cihazda bulunamadı (Keychain). Yeniden eşleştirme gerekiyor."
+                ble.requireRepair(reason)
+                notePhase("anahtar kayboldu")
+                throw AppError.message(reason)
+            case .firstUse, .match:
+                break
             }
+        }
+
+        switch verdict {
+        case .changed(let previous):
+            // Açık onarım: kullanıcı yeni anahtarı kabul etti. Sertifika
+            // önbelleği bırakılır, sunucuda sahiplik bu anahtara taşınır.
+            ble.recordDiagnostic("key_fingerprint_change_allowed · önceki \(previous) · yeni \(fingerprint ?? "—")")
+            KeyAudit.record("repair_allowed", detail: "önceki \(previous) yeni \(fingerprint ?? "—")")
+            CertificateCache.clear(vin: vin)
+            notePhase("anahtar onarılıyor")
+        case .missing(let previous):
+            ble.recordDiagnostic("key_fingerprint_missing_allowed · önceki \(previous)")
+            KeyAudit.record("repair_allowed", detail: "anahtar yok · önceki \(previous)")
+            CertificateCache.clear(vin: vin)
+            notePhase("anahtar yeniden üretiliyor")
+        case .firstUse, .match:
             ble.recordDiagnostic("key_fingerprint · \(fingerprint ?? "—")")
         }
     }

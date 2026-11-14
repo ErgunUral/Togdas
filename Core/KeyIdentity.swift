@@ -38,6 +38,17 @@ enum KeyIdentity {
         SHA256.hash(data: data).prefix(4).map { String(format: "%02x", $0) }.joined()
     }
 
+    /// Sessiz devam yalnız `isExplicitRepair` (kullanıcı "yeniden eşleştir"
+    /// dedi) durumunda serbesttir; otomatik yollarda kimlik değişikliği durdurur.
+    static func blocksAuthentication(_ verdict: Verdict,
+                                     isExplicitRepair: Bool) -> Bool {
+        guard !isExplicitRepair else { return false }
+        switch verdict {
+        case .changed, .missing: return true
+        case .firstUse, .match: return false
+        }
+    }
+
     static func check(current: String?, stored: String?) -> Verdict {
         guard let stored else {
             // Hiç kayıt yok: ilk kullanım (anahtar üretimi normal akış).

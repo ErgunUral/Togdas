@@ -98,6 +98,8 @@
 		5E6F708192A3B4C5D6E7F809 /* ReconnectBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F708192A3B4C5D6E7F8091A /* ReconnectBudget.swift */; };
 		708192A3B4C5D6E7F8091A2B /* ClaimResponseShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8192A3B4C5D6E7F8091A2B3C /* ClaimResponseShape.swift */; };
 		8192A3B4C5D6E7F8091A2B3D /* CertificateProvenance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92A3B4C5D6E7F8091A2B3C4D /* CertificateProvenance.swift */; };
+		92A3B4C5D6E7F8091A2B3C4E /* KeyAudit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B4C5D6E7F8091A2B3C4D5E /* KeyAudit.swift */; };
+		A3B4C5D6E7F8091A2B3C4D5F /* KeyAudit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B4C5D6E7F8091A2B3C4D5E /* KeyAudit.swift */; };
 		78635F3C036060F244481CA3 /* App/MaintenanceNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962EAB5F4FCFF9ABEB3F0D6E /* App/MaintenanceNotifier.swift */; };
 		78B95720E4FE860F8E25C1EC /* Core/GaragePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A90646A8F064CC74B8E1653 /* Core/GaragePreferences.swift */; };
 		7C8D9E0F1A2B3C4D5E6F0A1B /* ProximityLatencyMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6B7C8D9E0F1A2B3C4D5E6F /* ProximityLatencyMeter.swift */; };
@@ -439,6 +441,7 @@
 		6F708192A3B4C5D6E7F8091A /* ReconnectBudget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ReconnectBudget.swift; path = Core/ReconnectBudget.swift; sourceTree = "<group>"; };
 		8192A3B4C5D6E7F8091A2B3C /* ClaimResponseShape.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ClaimResponseShape.swift; path = Core/ClaimResponseShape.swift; sourceTree = "<group>"; };
 		92A3B4C5D6E7F8091A2B3C4D /* CertificateProvenance.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CertificateProvenance.swift; path = Core/CertificateProvenance.swift; sourceTree = "<group>"; };
+		A3B4C5D6E7F8091A2B3C4D5E /* KeyAudit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeyAudit.swift; path = Core/KeyAudit.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5A6B7C8D9E0F1 /* ProximityCalibrationAge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityCalibrationAge.swift; path = Core/ProximityCalibrationAge.swift; sourceTree = "<group>"; };
 		7E5F8091A2B3C4D5E6F7A8B9 /* App/ScenarioGuideSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App/ScenarioGuideSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -691,6 +694,7 @@
 				6F708192A3B4C5D6E7F8091A /* ReconnectBudget.swift */,
 				8192A3B4C5D6E7F8091A2B3C /* ClaimResponseShape.swift */,
 				92A3B4C5D6E7F8091A2B3C4D /* CertificateProvenance.swift */,
+				A3B4C5D6E7F8091A2B3C4D5E /* KeyAudit.swift */,
 				A0B1C2D3E4F5A6B7C8D9E0F1 /* ProximityCalibrationAge.swift */,
 				C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */,
 			);
@@ -954,6 +958,7 @@
 				4DDADFEE2BF3E364DA14765C /* ExperienceFormat.swift in Sources */,
 				00D259AB3EE47C81D03D7D4C /* GRPCProto.swift in Sources */,
 				83F4F96E9B37426E2E33EF7E /* PhoneKeyStore.swift in Sources */,
+				A3B4C5D6E7F8091A2B3C4D5F /* KeyAudit.swift in Sources */,
 				4FBCCB8EB4D6B9AE4F5EC73E /* ProtocolModels.swift in Sources */,
 				5CD83876C4AF566D7FDFF887 /* ProximityAutomation.swift in Sources */,
 				F0370C47E8BC908E55A8CD79 /* VoiceIntent.swift in Sources */,
@@ -1077,6 +1082,7 @@
 				5E6F708192A3B4C5D6E7F809 /* ReconnectBudget.swift in Sources */,
 				708192A3B4C5D6E7F8091A2B /* ClaimResponseShape.swift in Sources */,
 				8192A3B4C5D6E7F8091A2B3D /* CertificateProvenance.swift in Sources */,
+				92A3B4C5D6E7F8091A2B3C4E /* KeyAudit.swift in Sources */,
 				F0E1D2C3B4A5968778695A4B /* ProximityCalibrationAge.swift in Sources */,
 				8F6091A2B3C4D5E6F7A8B9C0 /* App/ScenarioGuideSheet.swift in Sources */,
 				84C01423028B7B78968A0D58 /* Core/UserFacingError.swift in Sources */,
