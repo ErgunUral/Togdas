@@ -14,6 +14,7 @@ struct ToqdasWatchApp: App {
 
 struct WatchGarageView: View {
     @ObservedObject var link: WatchLink
+    @Environment(\.scenePhase) private var scenePhase
     @State private var pendingCommand: String?
     @State private var showCommandConfirmation = false
 
@@ -201,6 +202,22 @@ struct WatchGarageView: View {
             guard let result = link.lastResult else { return }
             Self.playHaptic(for: result)
         }
+        .onAppear { refreshIfStale() }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active { refreshIfStale() }
+        }
+        .onChange(of: link.reachable) { reachable in
+            if reachable { refreshIfStale() }
+        }
+    }
+
+    /// Saat açıldığında veri 30 saniyeden eskiyse iPhone'dan tazeleme ister.
+    /// Böylece kullanıcı "Veriyi yenile" düğmesini aramak zorunda kalmaz;
+    /// istek yalnız telefon erişilebilirse gider (kuyruk yok).
+    private func refreshIfStale() {
+        guard link.reachable else { return }
+        guard WatchSnapshot.isStale(updatedAt: snapshot?.updatedAt, after: 30) else { return }
+        link.requestRefresh()
     }
 
     /// Komut yanıtına göre dokunsal geri bildirim. "forwarded" başarının

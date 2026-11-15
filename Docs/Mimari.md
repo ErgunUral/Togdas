@@ -318,6 +318,14 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Saat eşitleme tanısı (2026-11-15, 533 test):**
+  - Telefon `WCSession` “Watch app is not installed.” hatası verdiğinde bunu
+    yalnız konsola yazıyordu; saat verisi sessizce donuyordu. Artık son
+    gönderim sonucu `toqdas.watch.sync.v1`e yazılır (`installed/paired/
+    reachable` dahil).
+  - Saat uygulaması öne geldiğinde bayat veriyi otomatik tazeler; saat
+    complication'ı 1 saatten eski veriyi “Eski veri” olarak işaretler
+    (`WatchSnapshot.isStale`).
 - **Bayat onarım kaydı (2026-11-15, 529 test):**
   - Başarılı kimlik doğrulamada (`ready`) `PairingRepairStore` temizlenir;
     önceden kayıt silinmediği için her açılışta `repair_restored` oluyordu.

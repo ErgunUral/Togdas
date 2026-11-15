@@ -150,3 +150,16 @@ extension WatchSnapshot {
         return parts.joined(separator: "|")
     }
 }
+
+extension WatchSnapshot {
+    /// Saatte gösterilen verinin "bayat" sayılma eşiği. Saat uygulaması
+    /// kendi tazelemesi için daha kısa eşik kullanır; complication bu
+    /// süreden sonra veriyi "eski" olarak işaretler.
+    static let staleAfter: TimeInterval = 3_600
+
+    static func isStale(updatedAt: TimeInterval?, now: Date = Date(),
+                        after: TimeInterval = staleAfter) -> Bool {
+        guard let updatedAt else { return true }
+        return now.timeIntervalSince1970 - updatedAt > after
+    }
+}

@@ -16,6 +16,12 @@ struct WatchSnapshotEntry: TimelineEntry {
     let auxiliaryBatteryPercent: Double?
     let rangeKM: Double?
 
+    /// App group'daki veri bir saatten eskiyse eski olarak işaretlenir;
+    /// complication sessizce yanlış güncellik izlenimi vermez.
+    var isStale: Bool {
+        WatchSnapshot.isStale(updatedAt: updatedAt?.timeIntervalSince1970)
+    }
+
     static let empty = WatchSnapshotEntry(
         date: Date(), vin: "", vehicleName: "Toqdas", locked: nil, ready: false,
         updatedAt: nil, batteryPercent: nil, auxiliaryBatteryPercent: nil, rangeKM: nil
@@ -95,6 +101,12 @@ struct ComplicationRectangularView: View {
                 Text(entry.vehicleName)
                     .font(.caption2.weight(.semibold))
                     .lineLimit(1)
+                if entry.isStale {
+                    Image(systemName: "clock.badge.exclamationmark")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                        .accessibilityLabel("Veri güncel değil")
+                }
             }
             HStack(spacing: 6) {
                 if let battery = entry.batteryPercent {
@@ -138,11 +150,17 @@ struct ComplicationInlineView: View {
 
     var body: some View {
         HStack(spacing: 3) {
-            Image(systemName: lockSymbol(locked: entry.locked, ready: entry.ready))
-            switch (entry.ready, entry.locked) {
-            case (true, true): Text("Kilitli")
-            case (true, false): Text("Kilit açık")
-            default: Text("Hazır değil")
+            Image(systemName: entry.isStale
+                  ? "clock.badge.exclamationmark"
+                  : lockSymbol(locked: entry.locked, ready: entry.ready))
+            if entry.isStale {
+                Text("Eski veri")
+            } else {
+                switch (entry.ready, entry.locked) {
+                case (true, true): Text("Kilitli")
+                case (true, false): Text("Kilit açık")
+                default: Text("Hazır değil")
+                }
             }
         }
     }

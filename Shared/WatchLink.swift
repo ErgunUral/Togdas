@@ -140,16 +140,41 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
     }
 
     private func flush() {
-        guard !isWatch, WCSession.isSupported(),
-              WCSession.default.activationState == .activated else { return }
+        guard !isWatch, WCSession.isSupported() else { return }
+        let session = WCSession.default
+        guard session.activationState == .activated else {
+            noteSync("not_activated")
+            return
+        }
         do {
-            try WCSession.default.updateApplicationContext(context)
+            try session.updateApplicationContext(context)
             status = "Saat için güncel veri hazır"
-            print("[WATCH] context sent snapshot=\(context["snapshot"] != nil) vehicles=\((context["vehicles"] as? [String])?.count ?? 0) reachable=\(WCSession.default.isReachable)")
+            noteSync("sent")
+            print("[WATCH] context sent snapshot=\(context["snapshot"] != nil) vehicles=\((context["vehicles"] as? [String])?.count ?? 0) reachable=\(session.isReachable)")
         } catch {
             status = "Saat eşitlemesi bekliyor"
+            noteSync("error: \(error.localizedDescription)")
             print("[WATCH] context send failed: \(error.localizedDescription)")
         }
+    }
+
+    /// Telefon tarafında saat eşitlemesinin sonucu. Cihazda "neden saat
+    /// verisi eski" sorusunu yanıtlar: oturum etkin değil mi, gönderim mi
+    /// başarısız? (`toqdas.watch.sync.v1`)
+    private func noteSync(_ outcome: String) {
+        let session = WCSession.isSupported() ? WCSession.default : nil
+        var details: [String: Any] = [
+            "at": Date().timeIntervalSince1970,
+            "outcome": outcome,
+            "activation": session?.activationState.rawValue ?? -1,
+            "reachable": session?.isReachable ?? false,
+            "hasSnapshot": context["snapshot"] != nil,
+        ]
+        #if os(iOS)
+        details["installed"] = session?.isWatchAppInstalled ?? false
+        details["paired"] = session?.isPaired ?? false
+        #endif
+        UserDefaults.standard.set(details, forKey: "toqdas.watch.sync.v1")
     }
 
     // MARK: - Saat tarafı

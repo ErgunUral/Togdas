@@ -274,3 +274,20 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   `repair_cleared` tanısı yazılır. Yalnız gerçek başarı temizler; başarısız
   oturumlar kaydı korur.
 - Beklenen: bir sonraki açılışta `repair_restored` olayı **görünmez**.
+
+### S. Saat verisi neden eskiydi? (2026-11-15)
+- Cihaz kanıtı: saat complication verisi 14 Kasım 12:19'da donmuştu; telefon
+  her bağlantıda yeni anlık görüntü üretiyordu.
+- Kök neden: iPhone `WCSession` tarafında `installed=false` —
+  `updateApplicationContext` “Watch app is not installed.” hatası veriyordu.
+  Hata yalnız `print` ile görünüyordu; arayüzde sessizdi.
+- Düzeltme (kod):
+  - `toqdas.watch.sync.v1`: son gönderim sonucu + `installed/paired/reachable`
+    kalıcı tanı olarak yazılır.
+  - Saat uygulaması açıldığında/öne geldiğinde veri 30 sn'den eskiyse
+    otomatik `requestRefresh()` (yalnız telefon erişilebilirse, kuyruk yok).
+  - Complication 1 saatten eski veriyi “Eski veri” + saat ikonuyla işaretler
+    (`WatchSnapshot.isStale`); sessizce güncel görünmez.
+- Ortam düzeltmesi: saat uygulaması yeniden kuruldu (signed watch build →
+  `devicectl install`). Doğrulama: `installed=true`, `outcome=sent`,
+  complication `updatedAt` 22:30. +4 test (533/533).
