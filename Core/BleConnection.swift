@@ -927,10 +927,6 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
            error.code == CBATTError.Code.insufficientAuthentication.rawValue {
             return "Araç kimlik doğrulaması istedi ancak eşleşme geçersiz. Aracı iPhone'dan unutup yeniden eşleştir."
         }
-        if error.domain == CBErrorDomain,
-           error.code == CBError.Code.encryptionTimedOut.rawValue {
-            return "Araçla şifreli bağlantı kurulamadı. iPhone'da Ayarlar > Bluetooth'tan aracı unut, araç ekranından telefonu kaldır, iki cihazı yeniden başlat ve uygulamadan tekrar bağlan."
-        }
         return nil
     }
 

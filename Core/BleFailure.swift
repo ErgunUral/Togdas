@@ -72,8 +72,15 @@ enum BleFailureClassifier {
                 return .peerClosed
             case .connectionLimitReached:
                 return .busy
-            case .peerRemovedPairingInformation, .encryptionTimedOut:
+            case .peerRemovedPairingInformation:
+                // Araç eşleşmeyi gerçekten sildi: onarım gerekir.
                 return .pairingLost
+            case .encryptionTimedOut:
+                // Zayıf sinyalde şifreleme el sıkışması zaman aşımına düşer;
+                // bu eşleşmenin geçersiz olduğu anlamına gelmez. Sinyal hatası
+                // sayılır, bağlanma politikası yeniden dener (sahte onarım
+                // kaydı engellenir).
+                return .signal
             default:
                 return .unknown
             }

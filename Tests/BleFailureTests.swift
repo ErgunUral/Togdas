@@ -24,12 +24,23 @@ final class BleFailureTests: XCTestCase {
     }
 
     func testRemovedPairingRequiresRepair() {
-        for code in [CBError.Code.peerRemovedPairingInformation,
-                     CBError.Code.encryptionTimedOut] {
-            let kind = BleFailureClassifier.classify(domain: CBErrorDomain, code: code.rawValue)
-            XCTAssertEqual(kind, .pairingLost)
-            XCTAssertTrue(kind.requiresRepair)
-        }
+        let kind = BleFailureClassifier.classify(
+            domain: CBErrorDomain,
+            code: CBError.Code.peerRemovedPairingInformation.rawValue)
+        XCTAssertEqual(kind, .pairingLost)
+        XCTAssertTrue(kind.requiresRepair)
+    }
+
+    /// Zayıf sinyalde şifreleme el sıkışması zaman aşımına düşebilir; bu,
+    /// eşleşmenin silindiği anlamına gelmez. Onarım kilidi yalnız gerçek
+    /// eşleşme kaybında açılır; aksi halde −97 dBm'de kullanıcı sürekli
+    /// onarım akışına itilir (2026-11-15 cihaz kanıtı).
+    func testEncryptionTimeoutIsSignalNotRepair() {
+        let kind = BleFailureClassifier.classify(
+            domain: CBErrorDomain,
+            code: CBError.Code.encryptionTimedOut.rawValue)
+        XCTAssertEqual(kind, .signal)
+        XCTAssertFalse(kind.requiresRepair)
     }
 
     func testAuthenticationErrorsArePairingLost() {

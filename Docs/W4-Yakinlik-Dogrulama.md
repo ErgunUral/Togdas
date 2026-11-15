@@ -317,3 +317,18 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   `~/Desktop/toqdas-analiz/tani/` altına yazılır.
 - Amaç: her doğrulama turunda elle plist incelemeyi kaldırmak; "ne değişti"
   sorusunu 10 saniyede yanıtlamak.
+
+### V. Sahte onarım tetiklenmesinin düzeltmesi (2026-11-15)
+- Cihaz kanıtı: 22:27'de sertifika akışı normaldi (parmak izi `dc99f29b`
+  onaylandı), ardından −97/−99 dBm'de şifreleme zaman aşımı geldi ve
+  uygulama bunu `pairing_lost` sayıp **onarım kaydı yazdı**. Anahtar sağlam
+ ken kullanıcı onarım akışına itiliyordu.
+- Kök neden: `BleFailureClassifier`, `encryptionTimedOut` kodunu
+  `peerRemovedPairingInformation` ile aynı gruba koyuyordu.
+- Düzeltme: `encryptionTimedOut` artık `.signal` (bağlanma politikası
+  yeniden dener, onarım kilidi kapanmaz). `peerRemovedPairingInformation`
+  (araç eşleşmeyi gerçekten sildi) ve ATT `insufficientAuthentication`
+  onarım gerektirmeye devam eder. `pairingGuidance`'dan şifreleme zaman
+  aşımı adımı çıkarıldı.
+- +1 test (541/541). Araç başı doğrulamada beklenen değişim: zayıf sinyalde
+  onarım kaydı oluşmaz; yalnız gerçek eşleşme kaybında oluşur.
