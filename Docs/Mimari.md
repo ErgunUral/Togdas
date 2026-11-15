@@ -318,6 +318,9 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Tanı özeti betiği (2026-11-15):** `Scripts/tani-ozet.py` cihazdan plist
+  çekip anahtar/onarım, BLE oturum kalitesi, sinyal/kopma ve saat eşitleme
+  durumunu tek tabloda özetler; fiziksel doğrulama turlarında kullanılır.
 - **Zayıf sinyal dayanıklılığı (2026-11-15, 540 test):**
   - `BleTimeoutPolicy`: RSSI < −85 dBm'de el sıkışma/komut bekleme süresi
     ×1,5 (üst sınır 20 sn); güçlü sinyalde davranış değişmez.

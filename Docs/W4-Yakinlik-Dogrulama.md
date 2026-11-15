@@ -304,3 +304,16 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   ölçümle yapılır (VIN yok).
 - iOS bağlantı aralığını uygulamaya değiştirtmez; kalan kaldıraç telefon
   konumu + bu bütçedir. +7 test (540/540).
+
+### U. Tek komutla tanı özeti (2026-11-15)
+- `Scripts/tani-ozet.py`: iPhone plist'ini (ve saat erişilebilirse saat app
+  group'unu) çekip tek ekranda özetler; eksik veri "—".
+- Bölümler: dijital anahtar (parmak izi, sertifika kaynağı, onarım kaydı,
+  Keychain erişimi), son anahtar olayları, son BLE oturumları (süre +
+  min/ort/maks RSSI + kopma nedeni), son 24 saat sinyal/kopma sayıları,
+  saat eşitlemesi (`toqdas.watch.sync.v1`) ve complication tazeliği.
+- Kullanım: `python3 Scripts/tani-ozet.py`; cihaz yoksa
+  `--no-pull --plist <dosya> --no-watch`. Çekilen dosyalar varsayılan olarak
+  `~/Desktop/toqdas-analiz/tani/` altına yazılır.
+- Amaç: her doğrulama turunda elle plist incelemeyi kaldırmak; "ne değişti"
+  sorusunu 10 saniyede yanıtlamak.
