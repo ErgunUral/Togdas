@@ -1145,6 +1145,13 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             state = .ready
             lastEvent = "Araç kimliği doğrulandı; komutlar hazır"
             recordDiagnostic("Araç kimliği doğrulandı; komut kanalı hazır")
+            // Başarılı kimlik doğrulama, önceki oturumdan kalan onarım
+            // kaydını geçersiz kılar. Aksi halde uygulama her açılışta
+            // kendini yeniden "onarım gerekli" moduna alıyordu.
+            if !vin.isEmpty, PairingRepairStore().load(vin: vin) != nil {
+                PairingRepairStore().clear(vin: vin)
+                recordDiagnostic("repair_cleared · onarım tamamlandı; kayıt temizlendi")
+            }
             return
         }
         if BLEProtocol.isCommandAck(data) {

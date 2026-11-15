@@ -263,3 +263,14 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
   BLE bond'u da düşmüş; onarım adımları (iPhone'da aracı unut + araç
   ekranından telefonu kaldır + iki cihazı yeniden başlat) gerekiyor.
 - +3 test (529/529).
+
+### R. Bayat onarım kaydı (2026-11-15)
+- Cihaz kanıtı: 15 Kasım'da 5 kez `repair_completed`, ama 5 kez de
+  `repair_restored · önceki oturumdan onarım bekliyor`. Yani onarım başarılı
+  olsa da kalıcı kayıt silinmiyordu; uygulama sonraki açılışta kendini yine
+  onarım moduna alıyordu.
+- Düzeltme: `BleConnection` araç `ready` paketini aldığında (kimlik
+  doğrulandı) `PairingRepairStore` kaydı temizlenir ve
+  `repair_cleared` tanısı yazılır. Yalnız gerçek başarı temizler; başarısız
+  oturumlar kaydı korur.
+- Beklenen: bir sonraki açılışta `repair_restored` olayı **görünmez**.

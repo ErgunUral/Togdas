@@ -318,6 +318,9 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Bayat onarım kaydı (2026-11-15, 529 test):**
+  - Başarılı kimlik doğrulamada (`ready`) `PairingRepairStore` temizlenir;
+    önceden kayıt silinmediği için her açılışta `repair_restored` oluyordu.
 - **Onarımın kendisi kilitleniyordu (2026-11-14, 529 test):**
   - `checkKeyIdentity` açık onarımda da eski parmak izini görüp duruyordu;
     “Yeniden eşleştir” hiçbir zaman sunucuya ulaşmıyordu. Artık

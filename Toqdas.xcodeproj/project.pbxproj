@@ -93,6 +93,7 @@
 		B1C2D3E4F5A60718293A4B5C /* BlePhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F708192A3B4C5 /* BlePhase.swift */; };
 		C2D3E4F5A60718293A4B5C6D /* BlePhaseLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F708192A3B4C5D6 /* BlePhaseLog.swift */; };
 		D3E4F5A60718293A4B5C6D7E /* PairingRepairState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4D5E6F708192A3B4C5D6E7 /* PairingRepairState.swift */; };
+		D3E4F5A60718293A4B5C6D7F /* PairingRepairState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4D5E6F708192A3B4C5D6E7 /* PairingRepairState.swift */; };
 		E4F5A60718293A4B5C6D7E8F /* KeyIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5E6F708192A3B4C5D6E7F8 /* KeyIdentity.swift */; };
 		F5A60718293A4B5C6D7E8F90 /* KeyIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5E6F708192A3B4C5D6E7F8 /* KeyIdentity.swift */; };
 		5E6F708192A3B4C5D6E7F809 /* ReconnectBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F708192A3B4C5D6E7F8091A /* ReconnectBudget.swift */; };
@@ -958,6 +959,7 @@
 				4DDADFEE2BF3E364DA14765C /* ExperienceFormat.swift in Sources */,
 				00D259AB3EE47C81D03D7D4C /* GRPCProto.swift in Sources */,
 				83F4F96E9B37426E2E33EF7E /* PhoneKeyStore.swift in Sources */,
+				D3E4F5A60718293A4B5C6D7F /* PairingRepairState.swift in Sources */,
 				A3B4C5D6E7F8091A2B3C4D5F /* KeyAudit.swift in Sources */,
 				4FBCCB8EB4D6B9AE4F5EC73E /* ProtocolModels.swift in Sources */,
 				5CD83876C4AF566D7FDFF887 /* ProximityAutomation.swift in Sources */,
