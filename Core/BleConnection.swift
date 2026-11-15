@@ -68,6 +68,10 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     }
 
     private var connectedAt: Date?
+    /// Bu oturumda okunan RSSI örnekleri (oturum kalite kaydı için).
+    private var sessionRSSISamples: [Int] = []
+    /// Bağlantı öncesi taramada görülen son RSSI; el sıkışma bütçesi için.
+    private var lastDiscoveredRSSI: Int?
 
     private var writeQueue: [PendingWrite] = []
     private var writing = false
@@ -503,6 +507,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     /// eşleştirme tamamlanınca akışı kaldığı yerden sürdürür.
     private func armPairingTimeout(_ seconds: Double) {
         disarmTimeout()
+        let seconds = timed(seconds)
         timeoutTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             guard !Task.isCancelled, let self else { return }
@@ -669,6 +674,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     private func armCommandTimeout(_ seconds: Double, _ message: String) {
         commandTimeoutTask?.cancel()
+        let seconds = timed(seconds)
         commandTimeoutTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             guard !Task.isCancelled, let self else { return }
@@ -1037,6 +1043,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         guard peripheral === self.peripheral, error == nil else { return }
         rssiUpdatedAt = Date()
         rssi = RSSI.intValue
+        if sessionRSSISamples.count < 500 { sessionRSSISamples.append(RSSI.intValue) }
         print("[BLE] connected RSSI=\(RSSI.intValue) dBm")
         let now = Date()
         let changedMeaningfully = lastRSSIDiagnosticValue.map { abs($0 - RSSI.intValue) >= 5 } ?? true
@@ -1311,8 +1318,16 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     // MARK: - Zaman aşımı ve sinyal
 
+    /// Zayıf sinyalde bütçe uzatılır; güçlü/bilinmeyen sinyalde taban süre.
+    private var effectiveRSSI: Int? { rssi ?? lastDiscoveredRSSI }
+
+    private func timed(_ seconds: Double) -> Double {
+        BleTimeoutPolicy.scaled(seconds, lastRSSI: effectiveRSSI)
+    }
+
     private func armTimeout(_ seconds: Double, _ issue: BLEIssue) {
         disarmTimeout()
+        let seconds = timed(seconds)
         timeoutTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             guard !Task.isCancelled, let self else { return }
@@ -1419,6 +1434,7 @@ extension BleConnection: BLETransportDelegate {
         recordDiagnostic("Araç bulundu; RSSI \(rssi) dBm")
         failureSummary = nil
         lastEvent = "Araç bulundu: \(name) (\(rssi))"
+        lastDiscoveredRSSI = rssi
         self.transport.stopScan()
         connect(to: peripheral)
     }
@@ -1426,6 +1442,7 @@ extension BleConnection: BLETransportDelegate {
     func transportDidConnect(peripheral: CBPeripheral) {
         guard peripheral === self.peripheral else { return }
         connectedAt = Date()
+        sessionRSSISamples = []
         lastPeripheral = peripheral
         lastPeripheralVIN = targetVIN
         state = .discovering
@@ -1459,8 +1476,14 @@ extension BleConnection: BLETransportDelegate {
     func transportDidDisconnect(peripheral: CBPeripheral, error: Error?) {
         guard peripheral === self.peripheral else { return }
         let elapsed = connectedAt.map { Date().timeIntervalSince($0) } ?? 0
-        connectedAt = nil
         let reason = Self.disconnectReason(error)
+        if let startedAt = connectedAt {
+            BleSessionQualityStore().append(BleSessionQuality.make(
+                startedAt: startedAt, endedAt: Date(),
+                samples: sessionRSSISamples, endReason: reason))
+        }
+        connectedAt = nil
+        sessionRSSISamples = []
         if let error = error as NSError? {
             print("[BLE] disconnected \(error.domain) code=\(error.code) \(error.localizedDescription)")
         }

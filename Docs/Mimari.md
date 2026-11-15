@@ -318,6 +318,11 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Zayıf sinyal dayanıklılığı (2026-11-15, 540 test):**
+  - `BleTimeoutPolicy`: RSSI < −85 dBm'de el sıkışma/komut bekleme süresi
+    ×1,5 (üst sınır 20 sn); güçlü sinyalde davranış değişmez.
+  - `BleSessionQuality` (`toqdas.ble.session.v1`): oturum süresi ve
+    min/ort/maks RSSI + kopma nedeni; konum karşılaştırması için.
 - **Saat eşitleme tanısı (2026-11-15, 533 test):**
   - Telefon `WCSession` “Watch app is not installed.” hatası verdiğinde bunu
     yalnız konsola yazıyordu; saat verisi sessizce donuyordu. Artık son

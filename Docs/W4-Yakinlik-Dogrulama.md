@@ -291,3 +291,16 @@ komutunun kapıları gerçekten açtığı henüz doğrulanmadı.
 - Ortam düzeltmesi: saat uygulaması yeniden kuruldu (signed watch build →
   `devicectl install`). Doğrulama: `installed=true`, `outcome=sent`,
   complication `updatedAt` 22:30. +4 test (533/533).
+
+### T. Zayıf sinyal bütçesi ve oturum kalitesi (2026-11-15)
+- Kanıt: oturumlar 3–36 sn, RSSI −88…−97 dBm; 16 zaman aşımı, 8 araç
+  tarafından kapatma. Sabit 6/8/10 sn el sıkışma pencereleri zayıf sinyalde
+  yetmiyor, her aşımda bağlantı düşüp baştan başlıyordu.
+- `Core/BleTimeoutPolicy`: RSSI < −85 dBm iken bekleme süresi ×1,5
+  (6→9, 8→12, 10→15 sn), üst sınır 20 sn. Güçlü/bilinmeyen sinyalde taban
+  süre aynı; protokol sırası ve paketler değişmez.
+- `Core/BleSessionQuality` (`toqdas.ble.session.v1`, son 20 oturum): süre,
+  min/ort/maks RSSI, kopma nedeni. Telefon konumu karşılaştırması artık
+  ölçümle yapılır (VIN yok).
+- iOS bağlantı aralığını uygulamaya değiştirtmez; kalan kaldıraç telefon
+  konumu + bu bütçedir. +7 test (540/540).
