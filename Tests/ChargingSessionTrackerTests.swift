@@ -180,5 +180,40 @@ final class ChargingSessionTrackerTests: XCTestCase {
         XCTAssertEqual(record.last?.lastPercent, 71)
         XCTAssertTrue(record.history.isEmpty)
     }
+    /// Hedefe kalan: bilinen yüzdeyle puan üretir; eksik veri nil; aşım 0.
+    func testChargingTargetRemaining() {
+        XCTAssertEqual(ChargingTargetPolicy.remaining(target: 80, percent: 71.4) ?? -1,
+                       8.6, accuracy: 0.01)
+        XCTAssertEqual(ChargingTargetPolicy.remaining(target: 80, percent: 95) ?? -1,
+                       0, accuracy: 0.01)
+        XCTAssertNil(ChargingTargetPolicy.remaining(target: nil, percent: 71))
+        XCTAssertNil(ChargingTargetPolicy.remaining(target: 80, percent: nil))
+        XCTAssertNil(ChargingTargetPolicy.remaining(target: 80, percent: .nan))
+    }
+
+    /// Ulaşıldı: eşik dahil; bilinmeyen yüzde asla ulaşıldı demez.
+    func testChargingTargetReached() {
+        XCTAssertFalse(ChargingTargetPolicy.reached(target: 80, percent: 79.9))
+        XCTAssertTrue(ChargingTargetPolicy.reached(target: 80, percent: 80))
+        XCTAssertTrue(ChargingTargetPolicy.reached(target: 80, percent: 100))
+        XCTAssertFalse(ChargingTargetPolicy.reached(target: nil, percent: 100))
+        XCTAssertFalse(ChargingTargetPolicy.reached(target: 80, percent: nil))
+    }
+
+    /// Hedef saklaması: tur-uçuş ve kapalı (nil) sıfırlaması.
+    func testChargingTargetStoreRoundTrip() {
+        let suite = "test.chargingTarget"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let store = ChargingTargetStore(defaults: defaults)
+
+        XCTAssertNil(store.load(vin: "TESTVIN123")) // kapalı varsayılan
+        store.save(80, vin: "TESTVIN123")
+        XCTAssertEqual(store.load(vin: "TESTVIN123"), 80)
+        store.save(nil, vin: "TESTVIN123")
+        XCTAssertNil(store.load(vin: "TESTVIN123"))
+        XCTAssertNil(store.load(vin: "")) // boş VIN yutulur
+        defaults.removePersistentDomain(forName: suite)
+    }
 
 }

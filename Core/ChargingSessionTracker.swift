@@ -203,3 +203,52 @@ struct ChargingSessionStore {
         defaults.removeObject(forKey: Self.sessionKey(vin))
     }
 }
+
+
+/// Şarj hedefi: kullanıcı seçimi (Kapalı / %50 / %80 / %90). Uygulama araca
+/// durdurma komutu **göndermez**; hedefe ulaşıldığında yerel bildirim üretir
+/// ve kullanıcıyı uygulamadan kontrol etmeye yönlendirir. Eksik yüzde
+/// "ulaşıldı" üretmez; gerçek %100 korunur.
+enum ChargingTargetPolicy {
+    /// Seçenekler: nil = kapalı.
+    static let options: [Int?] = [nil, 50, 80, 90]
+
+    /// Hedefe kalan yüzde puanı; hedef yoksa veya yüzde bilinmiyorsa nil.
+    /// Hedefin üzerine geçildiğinde 0 döner (eksi kalan gösterilmez).
+    static func remaining(target: Int?, percent: Double?) -> Double? {
+        guard let target, let percent, percent.isFinite else { return nil }
+        return max(0, Double(target) - percent)
+    }
+
+    /// Hedefe ulaşıldı mı? Şarj aktifken çağrılır; bilinmeyen yüzde asla
+    /// "ulaşıldı" sayılmaz.
+    static func reached(target: Int?, percent: Double?) -> Bool {
+        guard let target, let percent, percent.isFinite else { return false }
+        return percent >= Double(target)
+    }
+}
+
+/// VIN başına şarj hedefi saklaması (`toqdas.charging.target.<vin>`).
+/// 0/anahtar yok = kapalı.
+struct ChargingTargetStore {
+    static func key(_ vin: String) -> String { "toqdas.charging.target.\(vin)" }
+
+    let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) { self.defaults = defaults }
+
+    func load(vin: String) -> Int? {
+        guard !vin.isEmpty else { return nil }
+        let value = defaults.integer(forKey: Self.key(vin))
+        return value == 0 ? nil : value
+    }
+
+    func save(_ target: Int?, vin: String) {
+        guard !vin.isEmpty else { return }
+        if let target {
+            defaults.set(target, forKey: Self.key(vin))
+        } else {
+            defaults.removeObject(forKey: Self.key(vin))
+        }
+    }
+}

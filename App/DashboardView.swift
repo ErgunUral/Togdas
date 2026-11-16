@@ -603,6 +603,7 @@ struct DashboardView: View {
         VStack(spacing: 16) {
             chargingCard
             liveChargingCard
+            chargingTargetCard
             chargingHistoryCard
             chargingCalculator
             Button { showExperience = true } label: {
@@ -1945,6 +1946,31 @@ struct DashboardView: View {
     /// Yerel bildirim gönderimi tek noktadan (Core `NotificationPoster`).
     private let notificationPoster = SystemNotificationPoster()
 
+    /// Şarj hedefi gözcüsü: yalnız **taze** telemetri + aktif canlı şarj
+    /// oturumunda değerlendirilir; hedef aşılınca oturum başına bir kez
+    /// bildirim. Anahtar oturum başlangıcını içerir (yeni oturum = yeni
+    /// izin). Metin VIN içermez; "araç durdurulmaz" dürüstlüğü korunur.
+    private func checkChargingTarget(_ parsed: VehicleTelemetry) {
+        guard let target = model.chargingTarget,
+              model.chargingLive?.charging == true,
+              let percent = parsed.batteryPercent,
+              ChargingTargetPolicy.reached(target: target, percent: percent) else { return }
+        let startedAt = model.chargingLive?.startedAt ?? 0
+        let key = "toqdas.chargingtarget.notified.\(vehicle.vin).\(Int(startedAt)).\(target)"
+        guard notificationDedupe.shouldNotify(key: key) else { return }
+        notificationDedupe.record(key: key)
+
+        NotificationPoster.requestAuthorization(using: notificationPoster)
+        NotificationPoster.post(
+            NotificationPoster.Draft(
+                identifier: UUID().uuidString,
+                title: "Şarj hedefi (%\(target)) aşıldı",
+                body: "Akü %\(Int(percent.rounded())). Araç şarjı uygulamadan durdurmaz; gerekirse uygulamadan veya şarj ünitesinden durdurabilirsin.",
+                timeSensitive: false),
+            using: notificationPoster
+        )
+    }
+
     private func checkAuxiliaryBattery(_ percent: Double?) {
         // Geçmiş kaydı uyarıdan bağımsızdır: sağlıklı değer (> %40) de günün
         // en güncel ölçümü olarak yazılır; eksik/aralık dışı değer record
@@ -2426,6 +2452,11 @@ struct DashboardView: View {
                 if let live, live.charging {
                     VStack(spacing: 8) {
                         liveRow("Doluluk", telemetry?.batteryPercent.map { "%\(TurkishFormat.decimal($0, digits: 1))" } ?? "—")
+                        if let target = model.chargingTarget {
+                            liveRow("Hedefe kalan (%\(target))",
+                                    ChargingTargetPolicy.remaining(target: target, percent: telemetry?.batteryPercent)
+                                        .map { "%\(TurkishFormat.integer($0))" } ?? "—")
+                        }
                         liveRow("Menzil", telemetry?.rangeKM.map { "\(TurkishFormat.integer($0)) km" } ?? "—")
                         liveRow("Geçen süre", live.startedAt.map { liveElapsedText(since: $0, now: now) }
                                                   ?? "— (uygulama kapalıydı)")
@@ -2450,6 +2481,42 @@ struct DashboardView: View {
             .toggCardBackground()
             .id("liveChargingCard")
         }
+    }
+
+    /// Şarj hedefi seçimi. Uygulama araca durdurma komutu göndermez;
+    /// hedef aşılınca yerel bildirim üretir (oturum başına bir kez).
+    private var chargingTargetCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(ToggTheme.blue.opacity(0.18)).frame(width: 38, height: 38)
+                    Image(systemName: "target")
+                        .foregroundStyle(ToggTheme.blue)
+                        .accessibilityHidden(true)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Şarj hedefi")
+                        .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
+                    Text(model.chargingTarget.map { "Hedef %\($0)" } ?? "Kapalı")
+                        .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
+                }
+                Spacer()
+            }
+            Picker("Şarj hedefi", selection: Binding(
+                get: { model.chargingTarget ?? 0 },
+                set: { model.setChargingTarget($0 == 0 ? nil : $0) })) {
+                Text("Kapalı").tag(0)
+                Text("%50").tag(50)
+                Text("%80").tag(80)
+                Text("%90").tag(90)
+            }
+            .pickerStyle(.segmented)
+            Text("Araç şarjı uygulamadan durdurulmaz; hedefe ulaşıldığında bildirim alırsın, gerekirse uygulamadan veya şarj ünitesinden durdurursun.")
+                .font(.caption2).foregroundStyle(ToggTheme.muted)
+        }
+        .padding(20)
+        .toggCardBackground()
+        .id("chargingTargetCard")
     }
 
     /// Şarj geçmişi: tamamlanmış oturumların listesi. Enerji telemetrisi
@@ -2926,6 +2993,7 @@ struct DashboardView: View {
             }
             checkTirePressure(parsed.tires)
             checkAuxiliaryBattery(parsed.auxiliaryBatteryPercent)
+            checkChargingTarget(parsed)
             model.noteCloudTelemetry(parsed)
         } catch is CancellationError {
             return

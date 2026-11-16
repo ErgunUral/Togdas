@@ -318,6 +318,15 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Şarj hedefi (2026-11-16, 568 test):** Şarj sekmesinde seçim kartı
+  (Kapalı / %50 / %80 / %90, VIN başına `toqdas.charging.target.<vin>`).
+  Canlı şarj kartında "Hedefe kalan (%80)" satırı; hedef aşılınca
+  **oturum başına bir kez** yerel bildirim (anahtar oturum başlangıcını
+  içerir: `toqdas.chargingtarget.notified.<vin>.<başlangıç>.<hedef>`,
+  günlük `NotificationDedupe` ile). Dürüstlük: uygulama araca durdurma
+  komutu göndermez — bildirim ve kart metni bunu açıkça söyler; eksik
+  yüzde asla "ulaşıldı" üretmez. Core: `ChargingTargetPolicy` (remaining/
+  reached) + `ChargingTargetStore`, 3 testli.
 - **12 V trendi (2026-11-16, 565 test):** Sağlık sekmesinde 3 günlük metin
   satırı 7 günlük mini bar grafiği + trend satırına yükseldi. Core'da
   `AuxiliaryBatteryTrend.make`: bilinen günler arasında net fark ±3 puan

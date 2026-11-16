@@ -23,6 +23,7 @@ enum StorageKeys {
     static func proximityAutoOffCustom(_ vin: String) -> String { ProximitySettings.autoOffCustomKey(vin) }
     static func proximityAutoOffDeadline(_ vin: String) -> String { ProximitySettings.autoOffDeadlineKey(vin) }
     static func auxiliaryHistory(_ vin: String) -> String { "toqdas.aux.history.\(vin)" }
+    static func chargingTarget(_ vin: String) -> String { ChargingTargetStore.key(vin) }
     /// 12 V bildirim tekniği: ciddiyet başına günde bir kez (`critical`/`warning`).
     static func auxiliaryNotified(_ vin: String, severity: String) -> String { "toqdas.auxbattery.notified.\(vin).\(severity)" }
     /// Lastik bildirim tekniği: pozisyon × ciddiyet başına günde bir kez.

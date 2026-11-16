@@ -30,9 +30,19 @@ final class GarageModel: ObservableObject {
     @Published private(set) var chargingLive: ChargingLiveState?
     /// Tamamlanmış şarj oturumlarının geçmişi (en yeni sonda, en fazla 20).
     @Published private(set) var chargingHistory: [ChargingHistoryEntry] = []
+    /// Şarj hedefi (kullanıcı seçimi; nil = kapalı). Araca komut gönderilmez.
+    @Published private(set) var chargingTarget: Int?
     private var chargingRecord: ChargingSessionRecord = .empty
     private var chargingRecordVIN = ""
     private let chargingStore = ChargingSessionStore()
+    private let chargingTargetStore = ChargingTargetStore()
+
+    /// Kullanıcının şarj hedefini seçili araç için değiştirir (Kapalı/%50/%80/%90).
+    func setChargingTarget(_ target: Int?) {
+        guard let vin = selectedVin, !vin.isEmpty else { return }
+        chargingTargetStore.save(target, vin: vin)
+        chargingTarget = target
+    }
 
     convenience init() {
         self.init(api: ToggAPI(), ble: BleConnection(), preferences: GaragePreferences())
@@ -316,6 +326,7 @@ final class GarageModel: ObservableObject {
         if vin != chargingRecordVIN {
             chargingRecord = chargingStore.load(vin: vin)
             chargingRecordVIN = vin
+            chargingTarget = chargingTargetStore.load(vin: vin)
         }
         let charging = ChargingStateClassifier.isCharging(telemetry.chargingState)
         chargingRecord = ChargingSessionTracker.updated(
@@ -335,6 +346,7 @@ final class GarageModel: ObservableObject {
         chargingRecordVIN = selectedVin ?? ""
         // Geçmiş hemen tazelenir; eski aracın oturumları yeni araca karışmasın.
         chargingHistory = (selectedVin.map { chargingStore.load(vin: $0) } ?? .empty).history
+        chargingTarget = selectedVin.flatMap { chargingTargetStore.load(vin: $0) }
         if let vin = selectedVin, let cached = cloudStore.snapshot(for: vin) {
             cloud.batteryPercent = cached.batteryPercent
             cloud.rangeKM = cached.rangeKM
