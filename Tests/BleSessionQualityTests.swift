@@ -76,5 +76,35 @@ func testSummaryAggregatesSessions() {
         XCTAssertNil(summary.averageDuration)
         XCTAssertNil(summary.averageRSSI)
         XCTAssertNil(summary.mostCommonEndReason)
+    }    /// Son görülme: en yeni kanal seçilir; hiçbiri yoksa nil.
+    func testLastSeenPicksNewestSourceAndHandlesEmptiness() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let ble = now.addingTimeInterval(-90)
+        let cloud = now.addingTimeInterval(-7_200)
+
+        let bleNewer = LastSeenSummary.make(ble: ble, cloud: cloud, now: now)
+        XCTAssertEqual(bleNewer?.sourceText, "BLE")
+        XCTAssertEqual(bleNewer?.relativeText, "1 dakika önce")
+
+        let cloudNewer = LastSeenSummary.make(
+            ble: ble, cloud: now.addingTimeInterval(-30), now: now)
+        XCTAssertEqual(cloudNewer?.sourceText, "bulut")
+        XCTAssertEqual(cloudNewer?.relativeText, "az önce")
+
+        XCTAssertNil(LastSeenSummary.make(ble: nil, cloud: nil, now: now))
+        let cloudOnly = LastSeenSummary.make(ble: nil, cloud: cloud, now: now)
+        XCTAssertEqual(cloudOnly?.sourceText, "bulut")
+        XCTAssertEqual(cloudOnly?.relativeText, "2 saat önce")
     }
+
+    /// Göreceli zaman kovaları: saniye→dakika→saat→gün; gelecek tarih
+    /// "az önce" kırpılır (eksi süre yazılmaz).
+    func testLastSeenRelativeBuckets() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        XCTAssertEqual(LastSeenSummary.relative(now.addingTimeInterval(-59), now), "az önce")
+        XCTAssertEqual(LastSeenSummary.relative(now.addingTimeInterval(-5_400), now), "1 saat önce")
+        XCTAssertEqual(LastSeenSummary.relative(now.addingTimeInterval(-3 * 86_400), now), "3 gün önce")
+        XCTAssertEqual(LastSeenSummary.relative(now.addingTimeInterval(60), now), "az önce")
+    }
+
 }

@@ -96,3 +96,45 @@ struct BleSessionQualitySummary: Equatable {
             mostCommonEndReason: common)
     }
 }
+
+
+/// "Son görülme" özeti: araçla en son iletişimin ne zaman ve hangi
+/// kanaldan olduğu (BLE telemetrisi veya bulut telemetrisi). İki
+/// zamanın en yenisini alır; hiçbiri yoksa nil döner ("araç henüz
+/// görülmedi" — asla 0 dakika önce yazılmaz).
+///
+/// Dürüstlük sınırları:
+/// - Tahmin yok: yalnız kayıtlı son iletişim zamanı söylenir.
+/// - VIN taşımaz; gösterim metni de VIN içermez.
+/// - Taze (< 60 sn) iletişim "az önce" der; "şu anda" iddiası için
+///   ayrı bir bağlantı durumu varsayılmaz.
+struct LastSeenSummary: Equatable {
+    let at: Date
+    /// Kanal etiketi: "BLE" veya "bulut".
+    let sourceText: String
+    /// Göreceli zaman: "az önce", "3 dakika önce", "2 saat önce"…
+    let relativeText: String
+
+    static func make(ble: Date?, cloud: Date?, now: Date = Date()) -> LastSeenSummary? {
+        switch (ble, cloud) {
+        case (nil, nil):
+            return nil
+        case (let ble?, nil):
+            return LastSeenSummary(at: ble, sourceText: "BLE", relativeText: relative(ble, now))
+        case (nil, let cloud?):
+            return LastSeenSummary(at: cloud, sourceText: "bulut", relativeText: relative(cloud, now))
+        case (let ble?, let cloud?):
+            return ble >= cloud
+                ? LastSeenSummary(at: ble, sourceText: "BLE", relativeText: relative(ble, now))
+                : LastSeenSummary(at: cloud, sourceText: "bulut", relativeText: relative(cloud, now))
+        }
+    }
+
+    static func relative(_ date: Date, _ now: Date) -> String {
+        let seconds = max(0, Int(now.timeIntervalSince(date)))
+        if seconds < 60 { return "az önce" }
+        if seconds < 3_600 { return "\(seconds / 60) dakika önce" }
+        if seconds < 86_400 { return "\(seconds / 3_600) saat önce" }
+        return "\(seconds / 86_400) gün önce"
+    }
+}

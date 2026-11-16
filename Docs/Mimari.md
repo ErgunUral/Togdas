@@ -318,6 +318,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Son görülme (2026-11-16, 570 test):** Genel Bakış sekmesinin üstünde
+  kart: araçla en son iletişimin zamanı ve kanalı — BLE telemetrisi ile
+  bulut `updatedAt`'ın **en yenisi** ("1 dakika önce · BLE" / "2 saat
+  önce · bulut" / "az önce"). Hiç iletişim yoksa "Araç henüz görülmedi"
+  (asla "0 dakika önce" yazılmaz). Core: `LastSeenSummary.make` (en yeni
+  kanal seçimi + göreceli zaman kovaları, 2 testli). Tahmin yok: yalnız
+  kayıtlı iletişim zamanı söylenir.
 - **Şarj hedefi (2026-11-16, 568 test):** Şarj sekmesinde seçim kartı
   (Kapalı / %50 / %80 / %90, VIN başına `toqdas.charging.target.<vin>`).
   Canlı şarj kartında "Hedefe kalan (%80)" satırı; hedef aşılınca

@@ -569,6 +569,7 @@ struct DashboardView: View {
         return VStack(spacing: 16) {
             bleSecurityBanner
             if layout == .sport { quickActions }
+            lastSeenCard
             bleCard
             if layout == .technical { technicalOverview }
             if layout != .minimal && layout != .sport { proximityCard }
@@ -644,6 +645,38 @@ struct DashboardView: View {
     }
 
     // MARK: - Bluetooth
+
+    /// "Son görülme": araçla en son iletişim (BLE veya bulut, en yeni
+    /// kanal). Hiç iletişim yoksa düz metin; asla 0 dakika önce yazılmaz.
+    private var lastSeenCard: some View {
+        let summary = LastSeenSummary.make(
+            ble: ble.telemetry?.receivedAt,
+            cloud: updatedAt)
+        return HStack(spacing: 12) {
+            ZStack {
+                Circle().fill(ToggTheme.teal.opacity(0.18)).frame(width: 34, height: 34)
+                Image(systemName: "eye")
+                    .foregroundStyle(ToggTheme.teal)
+                    .accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Son görülme")
+                    .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
+                if let summary {
+                    Text("\(summary.relativeText) · \(summary.sourceText)")
+                        .font(ToggTheme.text(.body, weight: .semibold)).foregroundStyle(.white)
+                } else {
+                    Text("Araç henüz görülmedi")
+                        .font(ToggTheme.text(.body, weight: .semibold)).foregroundStyle(.white)
+                }
+            }
+            Spacer()
+        }
+        .padding(16)
+        .toggCardBackground()
+        .id("lastSeenCard")
+        .accessibilityElement(children: .combine)
+    }
 
     private var bleCard: some View {
         VStack(alignment: .leading, spacing: 14) {
