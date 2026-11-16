@@ -318,6 +318,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Bildirim penceresi (2026-11-16, 554 test):** zayıf sinyal döngüsünde
+  otomatik komut başarısızlığı dakikalar içinde 5 bildirim üretmişti
+  (cihaz kanıtı: 22:26–22:28). `NoticeThrottle`: aynı araç × eylem ×
+  başarısızlık türü 10 dakikada en fazla bir bildirim; tekrar sessizce
+  kayda geçer, ilk uyarı gecikmez. Onarım kaydı aynı akşam temizlenmiş
+  (`repair_cleared` dolaylı: kayıt yok) ve araç doğrulama anahtarını
+  sunmaya başlamış.
 - **Canlı şarj gözlemi (2026-11-16, 550 test):** Şarj sekmesinde "Canlı şarj
   gözlemi" kartı: doluluk, menzil, geçen süre (uygulama açıkken ölçülür),
   gözlemlenen yüzde hızı (son 15 dk eğim) ve tahmini bitiş. Dürüstlük

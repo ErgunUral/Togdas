@@ -1777,6 +1777,18 @@ struct DashboardView: View {
                                             failure: ProximityCommandNotice.Failure) {
         pendingAutomaticCommandKind = nil
         pendingAutomaticCommandAt = nil
+        let failureKey = failure == .notVerified ? "notVerified" : "notStarted"
+        let throttleKey = StorageKeys.proximityNoticeThrottle(
+            vehicle.vin, kind: kind.actionText, failure: failureKey)
+        guard noticeThrottle.shouldNotify(key: throttleKey, window: 600) else {
+            // Aynı başarısızlık 10 dakikada bir bildirime sığınır; tekrar
+            // sessizce kayda geçer (spam engeli; ilk uyarı gecikmez).
+            ble.recordDiagnostic("proximity_command_notice · \(kind.actionText) · "
+                                 + (failure == .notVerified ? "doğrulanamadı" : "başlatılamadı")
+                                 + " · pencere içinde, bildirim susturuldu")
+            return
+        }
+        noticeThrottle.record(key: throttleKey)
         NotificationPoster.post(
             ProximityCommandNotice.failureDraft(kind: kind, failure: failure, vin: vehicle.vin),
             using: notificationPoster
@@ -1918,6 +1930,9 @@ struct DashboardView: View {
     /// 12 V geçmiş ve bildirim tekniği ortak altyapısı (Core; testli).
     private let auxiliaryHistoryStore = AuxiliaryBatteryHistoryStore(store: UserDefaults.standard)
     private let notificationDedupe = NotificationDedupe(store: UserDefaults.standard)
+    /// Otomatik komut bildirim penceresi: zayıf sinyal döngüsünde aynı
+    /// başarısızlık dakikalar içinde tekrar bildirim üretmesin.
+    private let noticeThrottle = NoticeThrottle(store: UserDefaults.standard)
     /// Yakınlık/klima kalıcılığı (Core; testli). `enabled` durumu
     /// GaragePreferences'a aittir.
     private let proximitySettings = ProximitySettings(store: UserDefaults.standard)
