@@ -318,6 +318,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Bağlantı sağlığı kartı (2026-11-16, 558 test):** `BleSessionQuality`
+  verisi artık ekranda: Komutlar sayfasında "Bağlantı sağlığı · son
+  oturumlar" bölümü — kayıtlı oturum sayısı + zayıf (ort. −85 dBm altı)
+  oturum sayısı, ortalama süre, ortalama RSSI, en sık kopma nedeni ve son
+  6 oturumun satırları (tarih · süre · min/ort/maks RSSI · neden).
+  Özetleme `BleSessionQualitySummary.make` ile Core'da, 3 testli; eksik
+  veri `—`. 3 konum sinyal testinde bölüm ekran görüntüsüyle kanıtlanır.
 - **Yakınlık karar sağlığı (2026-11-16, 555 test):** 22:26–22:28 cihaz
   kanıtı: RSSI −65…−80 zıplarken tek örnek "uzaklaşma" üretti, 5 kilitleme
   akışı başladı; komutlar araca ulaştı (ack) ama kapı açıkken araç

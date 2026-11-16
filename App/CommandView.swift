@@ -25,6 +25,8 @@ struct CommandView: View {
     /// her `body` değerlendirmesinde 15 kez hesaplanıyordu; BLE olayları
     /// sıklaştığında ana iş parçacığını doldurup uygulamayı sonlandırabiliyordu.
     @State private var diagnosticReport = BLEDiagnosticReport(events: [])
+    @State private var connectionSessions: [BleSessionQuality] = []
+    private let sessionQualityStore = BleSessionQualityStore()
 
     enum PendingCommand: String, Identifiable {
         case unlock, lock, trunkOpen, trunkClose, driveAuthorize
@@ -366,6 +368,7 @@ struct CommandView: View {
         .onReceive(ble.$lastEvent) { message = $0 }
         .onReceive(ble.$diagnosticEvents) { events in
             diagnosticReport = BLEDiagnosticReport(events: events)
+            connectionSessions = sessionQualityStore.load()
         }
         .alert("Komut gönderilsin mi?", isPresented: Binding(
             get: { pending != nil },
@@ -388,6 +391,7 @@ struct CommandView: View {
         }
         .onAppear {
             diagnosticReport = BLEDiagnosticReport(events: ble.diagnosticEvents)
+            connectionSessions = sessionQualityStore.load()
             if shareVIN.isEmpty { shareVIN = vehicle.vin }
             refreshCertificateLifecycle()
         }
@@ -476,6 +480,20 @@ struct CommandView: View {
             Text(value).font(.caption.monospacedDigit()).multilineTextAlignment(.trailing)
         }
     }
+    private func sessionLine(_ session: BleSessionQuality) -> String {
+        let date = TurkishFormat.date(
+            Date(timeIntervalSince1970: session.startedAt), format: "dd.MM HH:mm")
+        let duration = "\(Int(session.duration.rounded())) sn"
+        let rssi: String
+        if let min = session.minRSSI, let max = session.maxRSSI {
+            let average = session.averageRSSI.map { Int($0.rounded()) }.map(String.init) ?? "—"
+            rssi = "\(min)/\(average)/\(max) dBm"
+        } else {
+            rssi = "—"
+        }
+        return "\(date) · \(duration) · \(rssi)"
+    }
+
 
     private var commandGateMessage: String {
         if !ble.state.isReady, !linkStatus.isEmpty { return linkStatus }

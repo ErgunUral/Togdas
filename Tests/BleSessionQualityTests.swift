@@ -40,4 +40,41 @@ final class BleSessionQualityTests: XCTestCase {
         XCTAssertEqual(sessions.last?.endReason, "oturum \(BleSessionQualityStore.limit + 2)")
         defaults.removePersistentDomain(forName: suite)
     }
+
+func testSummaryAggregatesSessions() {
+        let make: (TimeInterval, Int, String) -> BleSessionQuality = { duration, rssi, reason in
+            BleSessionQuality.make(
+                startedAt: self.start, endedAt: self.start.addingTimeInterval(duration),
+                samples: [rssi], endReason: reason)
+        }
+        let summary = BleSessionQualitySummary.make(sessions: [
+            make(30, -88, "araç oturumu kapattı"),
+            make(10, -93, "araç oturumu kapattı"),
+            make(60, -80, "bağlantı zaman aşımı"),
+        ])
+        XCTAssertEqual(summary.count, 3)
+        XCTAssertEqual(summary.averageDuration ?? 0, 33.3, accuracy: 0.1)
+        XCTAssertEqual(summary.averageRSSI ?? 0, -87, accuracy: 0.1)
+        XCTAssertEqual(summary.weakSessions, 2)
+        XCTAssertEqual(summary.mostCommonEndReason, "araç oturumu kapattı")
+    }
+
+    func testSummaryWithoutRSSIStaysUnknown() {
+        let session = BleSessionQuality.make(
+            startedAt: start, endedAt: start.addingTimeInterval(5),
+            samples: [], endReason: "zaman aşımı")
+        let summary = BleSessionQualitySummary.make(sessions: [session])
+        XCTAssertEqual(summary.count, 1)
+        XCTAssertNil(summary.averageRSSI)
+        XCTAssertEqual(summary.weakSessions, 0)
+        XCTAssertEqual(summary.mostCommonEndReason, "zaman aşımı")
+    }
+
+    func testEmptySummaryHasNoValues() {
+        let summary = BleSessionQualitySummary.make(sessions: [])
+        XCTAssertEqual(summary.count, 0)
+        XCTAssertNil(summary.averageDuration)
+        XCTAssertNil(summary.averageRSSI)
+        XCTAssertNil(summary.mostCommonEndReason)
+    }
 }

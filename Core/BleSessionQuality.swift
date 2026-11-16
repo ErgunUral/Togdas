@@ -60,3 +60,39 @@ struct BleSessionQualityStore {
         defaults.removeObject(forKey: Self.storageKey)
     }
 }
+
+/// Birçok oturumun toplu görünümü: "bağlantı sağlığım nasıl?" sorusuna
+/// ekranda tek bakışta yanıt. VIN içermez; ham oturumlar cihazda kalır.
+struct BleSessionQualitySummary: Equatable {
+    let count: Int
+    /// Oturum sürelerinin ortalaması (sn); veri yoksa nil.
+    let averageDuration: Double?
+    /// Oturum ortalama RSSI'larının ortalaması (dBm); veri yoksa nil.
+    let averageRSSI: Double?
+    /// Ortalaması −85 dBm'in altında kalan oturum sayısı (zayıf).
+    let weakSessions: Int
+    /// En sık görülen kopma nedeni; veri yoksa nil.
+    let mostCommonEndReason: String?
+
+    static func make(sessions: [BleSessionQuality]) -> BleSessionQualitySummary {
+        guard !sessions.isEmpty else {
+            return BleSessionQualitySummary(count: 0, averageDuration: nil,
+                                            averageRSSI: nil, weakSessions: 0,
+                                            mostCommonEndReason: nil)
+        }
+        let durations = sessions.map(\.duration)
+        let rssiValues = sessions.compactMap(\.averageRSSI)
+        let weak = rssiValues.filter { $0 < -85 }.count
+        let reasons = Dictionary(grouping: sessions.map(\.endReason), by: { $0 })
+            .mapValues(\.count)
+        let common = reasons.max { $0.value < $1.value }?.key
+        return BleSessionQualitySummary(
+            count: sessions.count,
+            averageDuration: durations.reduce(0, +) / Double(durations.count),
+            averageRSSI: rssiValues.isEmpty
+                ? nil
+                : rssiValues.reduce(0, +) / Double(rssiValues.count),
+            weakSessions: weak,
+            mostCommonEndReason: common)
+    }
+}
