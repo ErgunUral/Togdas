@@ -249,7 +249,7 @@ struct VoiceSheet: View {
     }
 
     private var footnote: some View {
-        Text("Ses kaydı saklanmaz. Kilit, bagaj ve cam komutları onay ister; kilit açma Face ID ile doğrulanır. Bagaj ve cam araçta doğrulanmadı (önizleme); klima servisi şu anda kullanılamıyor.")
+        Text("Ses kaydı saklanmaz. Kilit, bagaj ve cam komutları onay ister; kilit açma Face ID ile doğrulanır. Bagaj ve cam araçta doğrulanmadı (önizleme); klima durumu sesli sorulabilir, komutu panodaki klima kartından verilir.")
             .font(.system(size: 10))
             .foregroundStyle(ToggTheme.muted)
             .multilineTextAlignment(.center)

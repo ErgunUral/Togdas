@@ -318,6 +318,17 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Klima denetimi (2026-11-17, 570 test):** Uzaktan klima akışı
+  gözden geçirildi; sağlamlıklar korundu (komut öncesi 90 sn tazelik
+  sorgusu, tek uçuş kilidi, retry yok, 16–30 °C çift doğrulama, 240 sn
+  akış okuması). Düzeltmeler: (1) araç değişince klima durumu/hedefi
+  sıfırlanıp yeni araçtan yüklenir — eski aracın "taze" durumuyla yeni
+  araca komut gitmesi engellendi; (2) `refreshClimate`/`toggleClimate`/
+  `applyClimateTemperature` VIN'i çağrı başında yakalar — işlem sürerken
+  araç değişse de yanıt karışmaz; (3) sıcaklık uygulaması artık
+  `COMPLETED` sonrası tek okumayla doğrulanır (±0,25 °C tolerans),
+  toggle ile aynı dürüstlük; (4) VoiceSheet alt yazısı güncellendi
+  ("klima durumu sesli sorulabilir, komut panodan verilir").
 - **Son görülme (2026-11-16, 570 test):** Genel Bakış sekmesinin üstünde
   kart: araçla en son iletişimin zamanı ve kanalı — BLE telemetrisi ile
   bulut `updatedAt`'ın **en yenisi** ("1 dakika önce · BLE" / "2 saat

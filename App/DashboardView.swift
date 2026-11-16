@@ -429,6 +429,18 @@ struct DashboardView: View {
         .onChange(of: targetTemperature) { value in
             climateSettings.setTarget(value, vin: vehicle.vin)
         }
+        .onChange(of: vehicle.vin) { _ in
+            // Araç değişince klima durumu eski araçtan taşınmaz: eski
+            // aracın <90 sn "taze" durumuyla yeni araca komut gitmesin.
+            // Hedef yeni aracın kaydından yüklenir; komut gönderilmez.
+            climateOn = false
+            climateKnown = false
+            climateStatusAt = nil
+            climatePending = nil
+            climateNote = nil
+            loadClimateTarget()
+            Task { await refreshClimate() }
+        }
         .onChange(of: proximityProfile) { profile in
             proximitySettings.setProfileRaw(profile.rawValue, vin: vehicle.vin)
             if !proximityEnabled, let calibration = proximityCalibration, calibration.isValid {
@@ -2870,15 +2882,18 @@ struct DashboardView: View {
         guard !climateBusy else { return }
         climateBusy = true
         defer { climateBusy = false }
-        print("[CLIMATE] status query start vin=…\(vehicle.vin.suffix(4))")
+        // VIN çağrı başında yakalanır: döngü sürerken araç değişse de
+        // eski aracın yanıtı yeni araca karışmaz.
+        let vin = vehicle.vin
+        print("[CLIMATE] status query start vin=…\(vin.suffix(4))")
         do {
-            let status = try await model.api.climateStatus(vin: vehicle.vin)
+            let status = try await model.api.climateStatus(vin: vin)
             climateOn = status.active
             climateKnown = true
             climateStatusAt = Date()
             let temperature = status.temperature.map { String($0) } ?? "unknown"
             print("[CLIMATE] status active=\(status.active) temperature=\(temperature)")
-            if !climateSettings.hasTarget(vin: vehicle.vin),
+            if !climateSettings.hasTarget(vin: vin),
                let temperature = status.temperature,
                (16...30).contains(temperature) {
                 targetTemperature = temperature
@@ -2899,14 +2914,15 @@ struct DashboardView: View {
         guard !climateBusy else { return }
         climateBusy = true
         defer { climateBusy = false }
+        let vin = vehicle.vin
         do {
             if !climateStatusFresh {
                 climateNote = "Klima durumu okunuyor…"
-                let status = try await model.api.climateStatus(vin: vehicle.vin)
+                let status = try await model.api.climateStatus(vin: vin)
                 climateOn = status.active
                 climateKnown = true
                 climateStatusAt = Date()
-                if !climateSettings.hasTarget(vin: vehicle.vin),
+                if !climateSettings.hasTarget(vin: vin),
                    let temperature = status.temperature,
                    (16...30).contains(temperature) {
                     targetTemperature = temperature
@@ -2917,7 +2933,7 @@ struct DashboardView: View {
             defer { climatePending = nil }
             climateNote = desired ? "Klima açılıyor…" : "Klima kapatılıyor…"
             let result = try await model.api.setClimate(
-                vin: vehicle.vin,
+                vin: vin,
                 active: desired,
                 temperature: targetTemperature
             )
@@ -2929,7 +2945,7 @@ struct DashboardView: View {
             }
             climateNote = "Araç yanıtı doğrulanıyor…"
             do {
-                let confirmed = try await model.api.climateStatus(vin: vehicle.vin)
+                let confirmed = try await model.api.climateStatus(vin: vin)
                 climateOn = confirmed.active
                 climateKnown = true
                 climateStatusAt = Date()
@@ -2960,21 +2976,38 @@ struct DashboardView: View {
             climateNote = "Hedef \(climateTemperatureText) kaydedildi; klima açıkken uygulanabilir."
             return
         }
+        // VIN çağrı başında yakalanır: işlem sürerken araç değişirse
+        // doğrulama yeni aracın durumunu eski aracın sonucu sanmasın.
+        let vin = vehicle.vin
         climateBusy = true
         defer { climateBusy = false }
         do {
             climateNote = "Hedef sıcaklık gönderiliyor…"
             let result = try await model.api.setClimate(
-                vin: vehicle.vin,
+                vin: vin,
                 active: true,
                 temperature: targetTemperature
             )
-            if result.status == "COMPLETED" {
-                climateNote = "Hedef sıcaklık \(climateTemperatureText) olarak uygulandı."
-            } else {
+            guard result.status == "COMPLETED" else {
                 let status = result.status.isEmpty ? "YANITSIZ" : result.status
                 let code = result.code.isEmpty ? "" : " · \(result.code)"
                 climateNote = "Sıcaklık komutu \(status)\(code)"
+                return
+            }
+            // Toggle ile aynı dürüstlük: COMPLETED ≠ araç durumu; tek okuma
+            // ile doğrulanır. Sıcaklık ±0,25 °C toleransla karşılaştırılır.
+            climateNote = "Araç yanıtı doğrulanıyor…"
+            let confirmed = try await model.api.climateStatus(vin: vin)
+            climateOn = confirmed.active
+            climateKnown = true
+            climateStatusAt = Date()
+            switch confirmed.temperature {
+            case .some(let value) where abs(value - targetTemperature) < 0.25:
+                climateNote = "Hedef sıcaklık \(climateTemperatureText) olarak uygulandı."
+            case .some(let value):
+                climateNote = "Komut tamamlandı; araç hedef \(TurkishFormat.decimal(value, digits: 1))°C bildirdi."
+            case .none:
+                climateNote = "Komut tamamlandı; araç sıcaklığı henüz bildirmedi."
             }
         } catch is CancellationError {
             return
