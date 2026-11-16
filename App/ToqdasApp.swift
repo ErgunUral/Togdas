@@ -26,6 +26,11 @@ final class GarageModel: ObservableObject {
     let cloudStore = CloudSnapshotStore()
     let cloud = CloudTelemetryStore()
     private var lastWidgetReloadAt = Date.distantPast
+    /// Canlı şarj gözlemi: yalnız uygulama açıkken ve telemetri gelirken ölçülür.
+    @Published private(set) var chargingLive: ChargingLiveState?
+    private var chargingRecord: ChargingSessionRecord = .empty
+    private var chargingRecordVIN = ""
+    private let chargingStore = ChargingSessionStore()
 
     convenience init() {
         self.init(api: ToggAPI(), ble: BleConnection(), preferences: GaragePreferences())
@@ -296,7 +301,26 @@ final class GarageModel: ObservableObject {
                 for: vin
             )
         }
+        updateChargingSession(telemetry)
         publishWatchSnapshot()
+    }
+
+    /// Şarj oturumu gözlemi: bulut telemetrisi her geldiğinde yüzde örneği
+    /// biriktirilir; başlangıç/bitiş geçişleri kayda yazılır. Sessiz ölçüm
+    /// yapılır, hiçbir komut gönderilmez.
+    @MainActor
+    private func updateChargingSession(_ telemetry: VehicleTelemetry) {
+        guard let vin = selectedVin, !vin.isEmpty else { return }
+        if vin != chargingRecordVIN {
+            chargingRecord = chargingStore.load(vin: vin)
+            chargingRecordVIN = vin
+        }
+        let charging = ChargingStateClassifier.isCharging(telemetry.chargingState)
+        chargingRecord = ChargingSessionTracker.updated(
+            chargingRecord, charging: charging,
+            percent: telemetry.batteryPercent, at: Date())
+        chargingStore.save(chargingRecord, vin: vin)
+        chargingLive = ChargingSessionTracker.liveView(record: chargingRecord, now: Date())
     }
 
     /// Seçili VIN değiştiğinde kök bulut durumu sıfır; eski aracın değerleri
@@ -304,6 +328,8 @@ final class GarageModel: ObservableObject {
     /// yeterlidir.
     private func applySelectionChange() {
         cloud.clear()
+        chargingRecord = .empty
+        chargingRecordVIN = selectedVin ?? ""
         if let vin = selectedVin, let cached = cloudStore.snapshot(for: vin) {
             cloud.batteryPercent = cached.batteryPercent
             cloud.rangeKM = cached.rangeKM

@@ -318,6 +318,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Canlı şarj gözlemi (2026-11-16, 550 test):** Şarj sekmesinde "Canlı şarj
+  gözlemi" kartı: doluluk, menzil, geçen süre (uygulama açıkken ölçülür),
+  gözlemlenen yüzde hızı (son 15 dk eğim) ve tahmini bitiş. Dürüstlük
+  kuralları: kWh/kW telemetrisi olmadığı için enerji gösterilmez; "kalan
+  süre" ile "tahmini bitiş" tek hız tabanından üretilir (resmi uygulamadaki
+  çelişki kopyalanmaz); eksik veri "—". Oturum `toqdas.charging.session.<vin>`
+  ile kalıcıdır; VIN yalnız depolama anahtarında.
 - **Sahte onarım düzeltmesi (2026-11-15, 541 test):** zayıf sinyaldeki
   `encryptionTimedOut` hatası eşleşme kaybı sayılmıyordu; kullanıcı anahtar
   sağlamken onarım akışına itiliyordu. Artık sinyal hatasıdır ve otomatik

@@ -602,6 +602,7 @@ struct DashboardView: View {
     private var chargingTab: some View {
         VStack(spacing: 16) {
             chargingCard
+            liveChargingCard
             chargingCalculator
             Button { showExperience = true } label: {
                 HStack(spacing: 10) {
@@ -2377,6 +2378,101 @@ struct DashboardView: View {
             .toggCardBackground()
         }
         .buttonStyle(.plain)
+    }
+
+    /// Canlı şarj gözlemi. Dürüst sınırlar: enerji (kWh/kW) telemetride
+    /// yok, gösterilmez; hız ve bitiş gözlemlenen yüzde eğiminden hesaplanır;
+    /// geçen süre yalnız uygulama açıkken ölçülür. "Kalan süre" ile "tahmini
+    /// bitiş" tek tabandan üretilir (resmi uygulamadaki çelişki burada yok).
+    private var liveChargingCard: some View {
+        TimelineView(.periodic(from: .now, by: 5)) { timeline in
+            let now = timeline.date
+            let live = model.chargingLive
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle().fill(ToggTheme.blue.opacity(0.18)).frame(width: 38, height: 38)
+                        Image(systemName: "bolt.badge.clock")
+                            .foregroundStyle(ToggTheme.blue)
+                            .accessibilityHidden(true)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Canlı şarj gözlemi")
+                            .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
+                        Text(live?.charging == true ? "Ölçüm sürüyor" : "Şarj oturumu bekleniyor")
+                            .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
+                    }
+                    Spacer()
+                }
+
+                if let live, live.charging {
+                    VStack(spacing: 8) {
+                        liveRow("Doluluk", telemetry?.batteryPercent.map { "%\(TurkishFormat.decimal($0, digits: 1))" } ?? "—")
+                        liveRow("Menzil", telemetry?.rangeKM.map { "\(TurkishFormat.integer($0)) km" } ?? "—")
+                        liveRow("Geçen süre", live.startedAt.map { liveElapsedText(since: $0, now: now) }
+                                                  ?? "— (uygulama kapalıydı)")
+                        liveRow("Gözlemlenen hız", live.percentPerMinute.map { "%\(TurkishFormat.decimal($0, digits: 2))/dk" }
+                                                    ?? "ölçülüyor…")
+                        liveRow("Kalan süre", liveRemainingText(live: live, now: now))
+                        liveRow("Tahmini bitiş", liveFinishText(live: live, now: now))
+                    }
+                    .accessibilityElement(children: .combine)
+                } else if let last = live?.lastSession {
+                    Text("Son oturum: \(TurkishFormat.date(Date(timeIntervalSince1970: last.startedAt), format: "dd.MM HH:mm")) – \(TurkishFormat.date(Date(timeIntervalSince1970: last.endedAt), format: "HH:mm")) · \(liveDurationText(last.endedAt - last.startedAt))")
+                        .font(ToggTheme.text(.body)).foregroundStyle(.white)
+                } else {
+                    Text("Şarj sırasında bu kart süre ve tahmini bitişi izler.")
+                        .font(ToggTheme.text(.body)).foregroundStyle(ToggTheme.muted)
+                }
+
+                Text("Enerji (kWh/kW) telemetrisi gelmediği için gösterilmez; hız ve bitiş, gözlemlenen yüzde değişiminden hesaplanır. Geçen süre yalnız uygulama açıkken ölçülür.")
+                    .font(.caption2).foregroundStyle(ToggTheme.muted)
+            }
+            .padding(20)
+            .toggCardBackground()
+            .id("liveChargingCard")
+        }
+    }
+
+    private func liveRow(_ title: String, _ value: String) -> some View {
+        HStack {
+            Text(title).font(ToggTheme.text(.body)).foregroundStyle(ToggTheme.muted)
+            Spacer()
+            Text(value)
+                .font(ToggTheme.text(.body, weight: .semibold)).foregroundStyle(.white)
+                .monospacedDigit()
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func liveElapsedText(since startedAt: TimeInterval, now: Date) -> String {
+        liveDurationText(max(0, now.timeIntervalSince1970 - startedAt))
+    }
+
+    private func liveDurationText(_ seconds: Double) -> String {
+        let total = Int(seconds.rounded())
+        if total < 60 { return "\(total) sn" }
+        if total < 3600 { return "\(total / 60) dk \(total % 60) sn" }
+        return "\(total / 3600) sa \((total % 3600) / 60) dk"
+    }
+
+    private func liveRemainingMinutes(live: ChargingLiveState, now: Date) -> Double? {
+        guard let rate = live.percentPerMinute,
+              let percent = telemetry?.batteryPercent else { return nil }
+        let remaining = max(0, 100 - percent)
+        return remaining / rate * 60
+    }
+
+    private func liveRemainingText(live: ChargingLiveState, now: Date) -> String {
+        guard let seconds = liveRemainingMinutes(live: live, now: now) else { return "—" }
+        return liveDurationText(seconds)
+    }
+
+    /// Tahmini bitiş, kalan süre ile aynı hızdan üretilir: iki değer asla
+    /// çelişmez (aynı taban, iki gösterim).
+    private func liveFinishText(live: ChargingLiveState, now: Date) -> String {
+        guard let seconds = liveRemainingMinutes(live: live, now: now) else { return "—" }
+        return TurkishFormat.date(now.addingTimeInterval(seconds), format: "HH:mm")
     }
 
     private var chargingCalculator: some View {

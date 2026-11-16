@@ -104,6 +104,8 @@
 		B4C5D6E7F8091A2B3C4D5E6F /* BleTimeoutPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D6E7F8091A2B3C4D5E6F70 /* BleTimeoutPolicy.swift */; };
 		B4C5D6E7F8091A2B3C4D5E70 /* BleTimeoutPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D6E7F8091A2B3C4D5E6F70 /* BleTimeoutPolicy.swift */; };
 		C5D6E7F8091A2B3C4D5E6F71 /* BleSessionQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8091A2B3C4D5E6F7081 /* BleSessionQuality.swift */; };
+		E7F8091A2B3C4D5E6F7081A2 /* ChargingSessionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8091A2B3C4D5E6F7081A2B3 /* ChargingSessionTracker.swift */; };
+		E7F8091A2B3C4D5E6F7081B2 /* ChargingSessionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8091A2B3C4D5E6F7081A2B3 /* ChargingSessionTracker.swift */; };
 		C5D6E7F8091A2B3C4D5E6F72 /* BleSessionQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8091A2B3C4D5E6F7081 /* BleSessionQuality.swift */; };
 		78635F3C036060F244481CA3 /* App/MaintenanceNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962EAB5F4FCFF9ABEB3F0D6E /* App/MaintenanceNotifier.swift */; };
 		78B95720E4FE860F8E25C1EC /* Core/GaragePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A90646A8F064CC74B8E1653 /* Core/GaragePreferences.swift */; };
@@ -449,6 +451,7 @@
 		A3B4C5D6E7F8091A2B3C4D5E /* KeyAudit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeyAudit.swift; path = Core/KeyAudit.swift; sourceTree = "<group>"; };
 		C5D6E7F8091A2B3C4D5E6F70 /* BleTimeoutPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleTimeoutPolicy.swift; path = Core/BleTimeoutPolicy.swift; sourceTree = "<group>"; };
 		D6E7F8091A2B3C4D5E6F7081 /* BleSessionQuality.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleSessionQuality.swift; path = Core/BleSessionQuality.swift; sourceTree = "<group>"; };
+		F8091A2B3C4D5E6F7081A2B3 /* ChargingSessionTracker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChargingSessionTracker.swift; path = Core/ChargingSessionTracker.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5A6B7C8D9E0F1 /* ProximityCalibrationAge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityCalibrationAge.swift; path = Core/ProximityCalibrationAge.swift; sourceTree = "<group>"; };
 		7E5F8091A2B3C4D5E6F7A8B9 /* App/ScenarioGuideSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App/ScenarioGuideSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -704,6 +707,7 @@
 				A3B4C5D6E7F8091A2B3C4D5E /* KeyAudit.swift */,
 				C5D6E7F8091A2B3C4D5E6F70 /* BleTimeoutPolicy.swift */,
 				D6E7F8091A2B3C4D5E6F7081 /* BleSessionQuality.swift */,
+				F8091A2B3C4D5E6F7081A2B3 /* ChargingSessionTracker.swift */,
 				A0B1C2D3E4F5A6B7C8D9E0F1 /* ProximityCalibrationAge.swift */,
 				C0A1B2C3D4E5061728394A0F /* WatchSnapshot.swift */,
 			);
@@ -971,6 +975,7 @@
 				A3B4C5D6E7F8091A2B3C4D5F /* KeyAudit.swift in Sources */,
 				B4C5D6E7F8091A2B3C4D5E70 /* BleTimeoutPolicy.swift in Sources */,
 				C5D6E7F8091A2B3C4D5E6F72 /* BleSessionQuality.swift in Sources */,
+				E7F8091A2B3C4D5E6F7081B2 /* ChargingSessionTracker.swift in Sources */,
 				4FBCCB8EB4D6B9AE4F5EC73E /* ProtocolModels.swift in Sources */,
 				5CD83876C4AF566D7FDFF887 /* ProximityAutomation.swift in Sources */,
 				F0370C47E8BC908E55A8CD79 /* VoiceIntent.swift in Sources */,
@@ -1097,6 +1102,7 @@
 				92A3B4C5D6E7F8091A2B3C4E /* KeyAudit.swift in Sources */,
 				B4C5D6E7F8091A2B3C4D5E6F /* BleTimeoutPolicy.swift in Sources */,
 				C5D6E7F8091A2B3C4D5E6F71 /* BleSessionQuality.swift in Sources */,
+				E7F8091A2B3C4D5E6F7081A2 /* ChargingSessionTracker.swift in Sources */,
 				F0E1D2C3B4A5968778695A4B /* ProximityCalibrationAge.swift in Sources */,
 				8F6091A2B3C4D5E6F7A8B9C0 /* App/ScenarioGuideSheet.swift in Sources */,
 				84C01423028B7B78968A0D58 /* Core/UserFacingError.swift in Sources */,
