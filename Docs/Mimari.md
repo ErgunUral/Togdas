@@ -318,6 +318,14 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **12 V trendi (2026-11-16, 565 test):** Sağlık sekmesinde 3 günlük metin
+  satırı 7 günlük mini bar grafiği + trend satırına yükseldi. Core'da
+  `AuxiliaryBatteryTrend.make`: bilinen günler arasında net fark ±3 puan
+  bandının dışına çıkarsa yön üretir (düşüş / kararlı / toparlanıyor),
+  tek bilinen gün trend üretmez; eksik günler nil ("bilgi yok" ≠ 0).
+  Özet satırı: "−8 puan, düşüş eğilimi · en düşük %72 / en yüksek %80".
+  Düşük akü bildirimi (zayıf/kritik, günde bir, time-sensitive kritik)
+  aynen korunur — uyarı zaten vardı, bu tur yalnız trend/görsel ekledi.
 - **Şarj geçmişi (2026-11-16, 562 test):** tamamlanan her şarj oturumu
   `ChargingHistoryEntry` olarak kayda yazılır (en yeni sonda, en fazla 20):
   başlangıç/bitiş, ilk/son yüzde, oturum sonunda gözlemlenen hız. Hız

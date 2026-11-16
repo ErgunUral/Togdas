@@ -8,7 +8,7 @@ import SwiftUI
 struct VehicleHealthCard: View {
     let auxiliaryBattery: Double?
     /// "Son 3 gün (12 V): %72 · %74 · —" satırı; kayıt yoksa nil.
-    let auxiliaryHistoryLine: String?
+    let auxiliaryTrend: AuxiliaryBatteryTrend?
     let tires: [TireReading]
     let insideTemperature: Double?
     let brakeWarning: Bool?
@@ -91,11 +91,8 @@ struct VehicleHealthCard: View {
                         icon: "bolt.circle", color: ToggTheme.cyan)
             }
 
-            if let auxiliaryHistoryLine {
-                Text(auxiliaryHistoryLine)
-                    .font(.system(size: 9, design: .monospaced))
-                    .foregroundStyle(ToggTheme.muted)
-                    .accessibilityLabel("Son üç gün 12 volt akü geçmişi")
+            if let auxiliaryTrend {
+                auxiliaryTrendSection(auxiliaryTrend)
             }
 
             HStack(spacing: 12) {
@@ -276,5 +273,35 @@ struct VehicleHealthCard: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)
         .accessibilityValue(warning == nil ? "bilgi yok" : (active ? "uyarı var" : "uyarı yok"))
+    }    /// 12 V trend bölümü: son 7 günün mini barları + yön özeti.
+    /// Bilgi yok günler kısa soluk çizgiyle gösterilir; 0 çizilmez.
+    private func auxiliaryTrendSection(_ trend: AuxiliaryBatteryTrend) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .bottom, spacing: 5) {
+                ForEach(trend.dailyValues.indices, id: \.self) { index in
+                    if let value = trend.dailyValues[index] {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(ToggTheme.teal.opacity(value <= 40 ? 0.5 : 1))
+                            .frame(height: max(4, CGFloat(value) * 0.3))
+                    } else {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(ToggTheme.muted.opacity(0.35))
+                            .frame(height: 4)
+                    }
+                }
+            }
+            .frame(height: 34, alignment: .bottom)
+
+            if let summary = trend.summaryText() {
+                Text("Son 7 gün: \(summary)")
+                    .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
+            } else {
+                Text("Trend için yeterli gün yok; günler doldukça belirir.")
+                    .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Son yedi gün 12 volt akü trendi")
     }
+
 }

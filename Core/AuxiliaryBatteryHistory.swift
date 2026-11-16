@@ -83,3 +83,67 @@ struct AuxiliaryBatteryHistory: Codable, Equatable {
         )
     }
 }
+
+/// 12 V akü trendi: günlük geçmişten yön ve net değişim çıkarımı.
+/// Kasıtlı sınırlar:
+/// - Kaydı olmayan günler `nil` kalır ("bilgi yok" ≠ 0); yön çıkarımı
+///   yalnız **bilinen** günler arasında yapılır.
+/// - Tek bilinen gün veya hiç bilinen gün yoksa trend üretilmez (nil) —
+///   tek örnekten "düşüyor" iddiası dürüst değildir.
+/// - Bant genişliği ±3 puan: gürültü (şarj sonrası küçük sıçramalar)
+///   yön üretmez; bandın altındaki değişim "kararlı" sayılır.
+struct AuxiliaryBatteryTrend: Equatable {
+    enum Direction: Equatable {
+        case declining, stable, rising
+
+        var text: String {
+            switch self {
+            case .declining: return "düşüş eğilimi"
+            case .stable: return "kararlı"
+            case .rising: return "toparlanıyor"
+            }
+        }
+    }
+
+    /// Son `days` günün değerleri eskiden yeniye (bugün dahil); eksik gün nil.
+    let dailyValues: [Double?]
+    /// Bilinen ilk → bilinen son günün yönü; yeterli veri yoksa nil.
+    let direction: Direction?
+    /// Bilinen ilk ve son değer arasındaki net fark (puan); veri yoksa nil.
+    let change: Double?
+    /// Bilinen günler içinde en düşük/en yüksek yüzde; veri yoksa nil.
+    let minPercent: Int?
+    let maxPercent: Int?
+
+    static func make(history: AuxiliaryBatteryHistory, days: Int = 7,
+                     today: Date = Date(), calendar: Calendar = .current,
+                     changeBand: Double = 3) -> AuxiliaryBatteryTrend {
+        let values = history.numericValues(count: days, today: today, calendar: calendar)
+        let known = values.compactMap { $0 }
+        guard known.count >= 2, let first = known.first, let last = known.last else {
+            return AuxiliaryBatteryTrend(dailyValues: values, direction: nil,
+                                         change: nil, minPercent: nil, maxPercent: nil)
+        }
+        let change = last - first
+        let direction: Direction = change <= -changeBand ? .declining
+            : change >= changeBand ? .rising : .stable
+        return AuxiliaryBatteryTrend(
+            dailyValues: values,
+            direction: direction,
+            change: change,
+            minPercent: Int(known.min()!.rounded()),
+            maxPercent: Int(known.max()!.rounded()))
+    }
+
+    /// Ekranda tek satırlık özet; veri yoksa nil ("—" kalabalığı yerine).
+    func summaryText() -> String? {
+        guard let direction, let change else { return nil }
+        let sign = change >= 0 ? "+" : "−"
+        let magnitude = Int(abs(change).rounded())
+        var text = "\(sign)\(magnitude) puan, \(direction.text)"
+        if let minPercent, let maxPercent {
+            text += " · en düşük %\(minPercent) / en yüksek %\(maxPercent)"
+        }
+        return text
+    }
+}

@@ -631,7 +631,7 @@ struct DashboardView: View {
     private var healthTab: some View {
         VehicleHealthCard(
             auxiliaryBattery: telemetry?.auxiliaryBatteryPercent,
-            auxiliaryHistoryLine: auxiliaryHistoryLine,
+            auxiliaryTrend: auxiliaryTrend,
             tires: telemetry?.tires ?? [],
             insideTemperature: telemetry?.insideTemperatureC,
             brakeWarning: telemetry?.brakeWarning,
@@ -1989,10 +1989,9 @@ struct DashboardView: View {
         auxiliaryHistoryStore.save(auxiliaryHistory, key: auxiliaryHistoryKey)
     }
 
-    private var auxiliaryHistoryLine: String? {
-        let values = storedAuxiliaryHistory.displayValues(count: 3, today: Date())
-        guard values.contains(where: { $0 != "—" }) else { return nil }
-        return "Son 3 gün (12 V): " + values.joined(separator: " · ")
+    /// 12 V trendi: 7 günlük geçmişten yön çıkarımı (Core, testli).
+    private var auxiliaryTrend: AuxiliaryBatteryTrend {
+        AuxiliaryBatteryTrend.make(history: storedAuxiliaryHistory, today: Date())
     }
 
     private func approve(_ command: DashboardCommand) {

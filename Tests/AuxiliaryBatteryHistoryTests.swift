@@ -78,5 +78,51 @@ final class AuxiliaryBatteryHistoryTests: XCTestCase {
 
     private static func dayString(_ date: Date, calendar: Calendar) -> String {
         AuxiliaryBatteryHistory.dayKey(for: date, calendar: calendar)
+    }    /// Trend: bilinen günler arası net düşüş yön üretir; eksik günler nil kalır.
+    func testTrendDetectsDeclineAcrossKnownDays() {
+        var history = AuxiliaryBatteryHistory()
+        let today = Date(timeIntervalSince1970: 1_800_000_000)
+        let calendar = Calendar.current
+        for (offset, percent) in [80.0, 78.0, 72.0].enumerated() {
+            let day = calendar.date(byAdding: .day, value: -(2 - offset), to: today)!
+            XCTAssertTrue(history.record(percent: percent, on: day))
+        }
+        let trend = AuxiliaryBatteryTrend.make(history: history, today: today, calendar: calendar)
+        XCTAssertEqual(trend.direction, .declining)
+        XCTAssertEqual(trend.change ?? 0, -8, accuracy: 0.01)
+        XCTAssertEqual(trend.minPercent, 72)
+        XCTAssertEqual(trend.maxPercent, 80)
+        XCTAssertEqual(trend.summaryText(), "−8 puan, düşüş eğilimi · en düşük %72 / en yüksek %80")
     }
+
+    /// Bant içindeki küçük oynama "kararlı" der; tek bilinen gün trend üretmez.
+    func testTrendStableWithinBandAndUnknownWithSingleSample() {
+        var history = AuxiliaryBatteryHistory()
+        let today = Date(timeIntervalSince1970: 1_800_000_000)
+        let calendar = Calendar.current
+        XCTAssertTrue(history.record(percent: 80, on: calendar.date(byAdding: .day, value: -1, to: today)!))
+        XCTAssertTrue(history.record(percent: 82, on: today))
+        XCTAssertEqual(AuxiliaryBatteryTrend.make(history: history, today: today, calendar: calendar).direction,
+                       .stable)
+
+        var single = AuxiliaryBatteryHistory()
+        XCTAssertTrue(single.record(percent: 80, on: today))
+        let trend = AuxiliaryBatteryTrend.make(history: single, today: today, calendar: calendar)
+        XCTAssertNil(trend.direction)
+        XCTAssertNil(trend.summaryText())
+        XCTAssertEqual(trend.dailyValues.count, 7)
+    }
+
+    /// Toparlanma yönü ve "bilgi yok" günlerin nil korunumu.
+    func testTrendRisingAndMissingDaysStayNil() {
+        var history = AuxiliaryBatteryHistory()
+        let today = Date(timeIntervalSince1970: 1_800_000_000)
+        let calendar = Calendar.current
+        XCTAssertTrue(history.record(percent: 70, on: calendar.date(byAdding: .day, value: -3, to: today)!))
+        XCTAssertTrue(history.record(percent: 76, on: today)) // ara günler kayıtsız
+        let trend = AuxiliaryBatteryTrend.make(history: history, today: today, calendar: calendar)
+        XCTAssertEqual(trend.direction, .rising)
+        XCTAssertEqual(trend.dailyValues.filter { $0 == nil }.count, 5)
+    }
+
 }
