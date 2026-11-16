@@ -93,10 +93,24 @@ final class ProximityAutomationTests: XCTestCase {
         ))
     }
 
+    /// Cihaz kanıtı (2026-11-16): kapı önünde tek örnek −77 dBm'e düştüğünde
+    /// "uzaklaşma" üretilip dakikalar içinde 5 kilitleme akışı başladı.
+    /// Uzaklaşma kararı artık iki ardışık örnek ister; yaklaşma hızlı kalır.
+    func testDepartureRequiresStableSamplesEvenOnAggressiveProfile() {
+        let calibration = ProximityCalibration(nearSample: -65, farSample: -85)
+        var gate = ProximityGate(calibration: calibration, profile: .aggressive)
+        XCTAssertEqual(gate.update(rssi: -45), .approached) // yaklaşma: tek örnek yeter
+        XCTAssertNil(gate.update(rssi: -88)) // tek uzak örnek: karar yok
+        XCTAssertEqual(gate.update(rssi: -88), .departed)
+    }
+
     func testProfilesExposeDifferentLatencyAndFilteringPolicies() {
         XCTAssertEqual(ProximityProfile.balanced.requiredSamples, 2)
         XCTAssertEqual(ProximityProfile.fast.requiredSamples, 1)
         XCTAssertEqual(ProximityProfile.aggressive.requiredSamples, 1)
+        for profile in ProximityProfile.allCases {
+            XCTAssertEqual(profile.departureRequiredSamples, 2)
+        }
         XCTAssertEqual(ProximityProfile.fast.pollInterval, 1)
         XCTAssertEqual(ProximityProfile.balanced.pollInterval, 2)
 

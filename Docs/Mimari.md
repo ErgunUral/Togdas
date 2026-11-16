@@ -318,6 +318,14 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Yakınlık karar sağlığı (2026-11-16, 555 test):** 22:26–22:28 cihaz
+  kanıtı: RSSI −65…−80 zıplarken tek örnek "uzaklaşma" üretti, 5 kilitleme
+  akışı başladı; komutlar araca ulaştı (ack) ama kapı açıkken araç
+  kilitlemedi, doğrulama 6 sn'lik pencerede hiç imzalı durum görmedi.
+  Düzeltmeler: uzaklaşma kararı 2 ardışık örnek ister (yaklaşma hızlı
+  kalır); otomatik kilitlemeler arası 60 sn pencere (geofence dahil);
+  doğrulama penceresi 35 sn (bir tam imzalı durum dönemi); bildirim
+  metni kapı/bagaj açık bağlamını söyler.
 - **Bildirim penceresi (2026-11-16, 554 test):** zayıf sinyal döngüsünde
   otomatik komut başarısızlığı dakikalar içinde 5 bildirim üretmişti
   (cihaz kanıtı: 22:26–22:28). `NoticeThrottle`: aynı araç × eylem ×

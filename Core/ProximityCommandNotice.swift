@@ -53,14 +53,18 @@ enum ProximityCommandNotice {
         return nil
     }
 
-    /// Başarısız otomatik komut için bildirim taslağı.
-    static func failureDraft(kind: Kind, failure: Failure, vin: String) -> NotificationPoster.Draft {
+    /// Başarısız otomatik komut için bildirim taslağı. `doorOpenContext`
+    /// doğruysa (son telemetride kapı/bagaj açık) neden daha net söylenir.
+    static func failureDraft(kind: Kind, failure: Failure, vin: String,
+                             doorOpenContext: Bool = false) -> NotificationPoster.Draft {
         let title: String
         let body: String
         switch (kind, failure) {
         case (.lock, .notVerified):
             title = "Otomatik kilitleme doğrulanamadı"
-            body = "Kapılar açık olabilir. Komut yeniden gönderilmedi; uygulamadan kontrol edebilirsin."
+            body = doorOpenContext
+                ? "Araçta kapı/bagaj açıkken komut verildi; araç kilitlemeyi uygulamamış olabilir. Komut yeniden gönderilmedi; uygulamadan kontrol edebilirsin."
+                : "Kapılar açık olabilir. Komut yeniden gönderilmedi; uygulamadan kontrol edebilirsin."
         case (.lock, .notStarted):
             title = "Otomatik kilitleme başlatılamadı"
             body = "Uzaklaşma algılandı ancak kilitleme komutu gönderilemedi; uygulamadan kontrol edebilirsin."

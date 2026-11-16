@@ -45,6 +45,13 @@ enum ProximityProfile: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
+    /// Uzaklaşma (kilitleme) kararı için gereken ardışık örnek sayısı.
+    /// Kapı önünde RSSI ±10 dBm zıplarken tek örnek "uzaklaşma" üretti ve
+    /// otomasyon dakikalar içinde 5 kez kilitleme akışı başlattı (cihaz
+    /// kanıtı 2026-11-16). Yaklaşma hızlı kalsın; uzaklaşma kararında
+    /// ikinci örnek titremeyi süzer (≈1 sn ek gecikme).
+    var departureRequiredSamples: Int { 2 }
+
     var thresholdMargin: Int {
         switch self {
         case .balanced, .predictive, .kalman: return 3
@@ -149,7 +156,7 @@ struct ProximityGate: Equatable {
         if sample <= farThreshold {
             farCount += 1
             nearCount = 0
-            guard farCount >= profile.requiredSamples, presence != .far else { return nil }
+            guard farCount >= profile.departureRequiredSamples, presence != .far else { return nil }
             let previous = presence
             presence = .far
             if requiresFarBeforeApproach {

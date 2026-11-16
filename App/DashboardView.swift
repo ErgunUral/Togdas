@@ -1717,9 +1717,10 @@ struct DashboardView: View {
             }
             if !isLocked {
                 if let recent = AutomaticCommandLedger.shared.recent(action: "lock", vin: vehicle.vin,
-                                                                    within: 30, excluding: .proximity) {
-                    proximityStatus = "Uzaklaşma algılandı; son kilitleme \(recent.source.rawValue) kaynaklı, çift komut engellendi."
-                    ble.recordDiagnostic("proximity_lock_skipped · son kilitleme \(recent.source.rawValue) kaynaklı; çift komut engellendi")
+                                                                    within: 60) {
+                    let age = Int(Date().timeIntervalSince(recent.at))
+                    proximityStatus = "Son kilitleme \(age) sn önce denendi; pencere dolana dek tekrar denemiyor."
+                    ble.recordDiagnostic("proximity_lock_skipped · son kilitleme \(age) sn önce; 60 sn penceresi")
                     return
                 }
                 if proximityAutoOffEnabled {
@@ -1789,8 +1790,10 @@ struct DashboardView: View {
             return
         }
         noticeThrottle.record(key: throttleKey)
+        let doorOpen = (ble.telemetry?.openDoorCount ?? 0) > 0 || (ble.telemetry?.trunkAjar ?? 0) != 0
         NotificationPoster.post(
-            ProximityCommandNotice.failureDraft(kind: kind, failure: failure, vin: vehicle.vin),
+            ProximityCommandNotice.failureDraft(kind: kind, failure: failure, vin: vehicle.vin,
+                                                doorOpenContext: doorOpen),
             using: notificationPoster
         )
         ble.recordDiagnostic("proximity_command_notice · \(kind.actionText) · "

@@ -753,14 +753,21 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         advanceCommandReceipt(.acknowledged, detail: "Kilit durumu doğrulanıyor…")
         commandVerificationTask?.cancel()
         commandVerificationTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            // İmzalı araç durumu ~30 sn aralıklı gelir; 6 sn'lik pencere hiçbir
+            // yeni durum göremeden "doğrulanamadı" diyordu (cihaz kanıtı
+            // 2026-11-16). Pencere bir tam imzalı durum dönemini kapsar.
+            try? await Task.sleep(nanoseconds: 35_000_000_000)
             guard !Task.isCancelled, let self else { return }
             await MainActor.run {
                 guard self.pendingLockVerification == targetLocked else { return }
                 self.pendingLockVerification = nil
                 self.commandVerificationTask = nil
+                var detail = "Kilit değişikliği 35 sn içinde imzalı durumla doğrulanamadı."
+                if let telemetry, telemetry.openDoorCount > 0 || telemetry.trunkAjar != 0 {
+                    detail += " Araçta kapı/bagaj açıkken komut verildi; araç kilitlemeyi uygulamamış olabilir."
+                }
                 self.lastEvent = "Araç komutu onayladı ancak kilit değişikliği doğrulanamadı."
-                self.advanceCommandReceipt(.failed, detail: "Kilit değişikliği doğrulanamadı.")
+                self.advanceCommandReceipt(.failed, detail: detail)
                 self.recordDiagnostic("automatic_command_failed · kilit durumu komut sonrasında doğrulanamadı")
             }
         }
