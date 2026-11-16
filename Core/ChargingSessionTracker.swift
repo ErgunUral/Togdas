@@ -22,13 +22,40 @@ struct ChargingLastSession: Codable, Equatable {
     let lastPercent: Double?
 }
 
+/// Tamamlanmış bir şarj oturumunun geçmiş girdisi. Enerji telemetrisi
+/// olmadığı için yalnız yüzde, süre ve gözlemlenen hız taşır; kWh yok.
+struct ChargingHistoryEntry: Codable, Equatable {
+    let startedAt: TimeInterval
+    let endedAt: TimeInterval
+    /// Oturumdaki ilk yüzde örneği; telemetri hiç gelmediyse nil.
+    let startPercent: Double?
+    /// Oturum bitişindeki yüzde; bilinmiyorsa nil.
+    let endPercent: Double?
+    /// Oturum sonunda gözlemlenen doluluk hızı (%/dk); ölçülemediyse nil.
+    let ratePerMinute: Double?
+}
+
 struct ChargingSessionRecord: Codable, Equatable {
     var charging: Bool = false
     var startedAt: TimeInterval?
     var samples: [ChargingSample] = []
     var last: ChargingLastSession?
+    /// Tamamlanmış oturumların geçmişi (en yeni sonda); üst sınır tracker'da.
+    var history: [ChargingHistoryEntry] = []
 
     static let empty = ChargingSessionRecord()
+
+    init() {}
+
+    // Eski kayıtlarda "history" anahtarı yok; decodeIfPresent ile korunurlar.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        charging = try container.decodeIfPresent(Bool.self, forKey: .charging) ?? false
+        startedAt = try container.decodeIfPresent(TimeInterval.self, forKey: .startedAt)
+        samples = try container.decodeIfPresent([ChargingSample].self, forKey: .samples) ?? []
+        last = try container.decodeIfPresent(ChargingLastSession.self, forKey: .last)
+        history = try container.decodeIfPresent([ChargingHistoryEntry].self, forKey: .history) ?? []
+    }
 }
 
 /// Arayüze gitmek için üretilmiş tek anlık durum; hesaplama `liveView`'da.
@@ -59,7 +86,8 @@ enum ChargingSessionTracker {
     /// oturum bitişi (son oturum özetine dönüş).
     static func updated(_ record: ChargingSessionRecord, charging: Bool,
                         percent: Double?, at: Date,
-                        maxSamples: Int = 40) -> ChargingSessionRecord {
+                        maxSamples: Int = 40,
+                        maxHistory: Int = 20) -> ChargingSessionRecord {
         var result = record
         if charging {
             if !record.charging || record.startedAt == nil {
@@ -74,16 +102,36 @@ enum ChargingSessionTracker {
                 }
             }
         } else if record.charging {
-            result.last = ChargingLastSession(
+            let finished = ChargingLastSession(
                 startedAt: record.startedAt ?? at.timeIntervalSince1970,
                 endedAt: at.timeIntervalSince1970,
                 lastPercent: percent)
+            result.last = finished
+            // Geçmiş girdisi örnekler silinmeden önce üretilir. Canlı kartın
+            // 15 dakikalık penceresinden farklı olarak burada tüm oturumun
+            // eğimi kullanılır (canlı pencere kısa oturumları eler); ölçüm
+            // koşulları sağlanmazsa hız nil kalır, 0 gösterilmez.
+            let entry = ChargingHistoryEntry(
+                startedAt: finished.startedAt,
+                endedAt: finished.endedAt,
+                startPercent: record.samples.first?.percent,
+                endPercent: percent,
+                ratePerMinute: rate(in: record.samples, now: at,
+                                    window: historyWindow))
+            result.samples = []
+            result.history.append(entry)
+            if result.history.count > maxHistory {
+                result.history.removeFirst(result.history.count - maxHistory)
+            }
             result.charging = false
             result.startedAt = nil
-            result.samples = []
         }
         return result
     }
+
+    /// Geçmiş girdisindeki hız için örnek penceresi: bir oturumun tamamını
+    /// kapsayacak kadar geniş (canlı karttaki 15 dakikalık pencereden farklı).
+    static let historyWindow: TimeInterval = 7 * 24 * 3600
 
     /// Son `window` saniyedeki yüzde örneklerinin en küçük kareler eğimi,
     /// %/dk olarak. Ölçüm için en az iki örnek ve en az `minSpan` yayılım

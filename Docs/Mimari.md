@@ -318,6 +318,15 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Şarj geçmişi (2026-11-16, 562 test):** tamamlanan her şarj oturumu
+  `ChargingHistoryEntry` olarak kayda yazılır (en yeni sonda, en fazla 20):
+  başlangıç/bitiş, ilk/son yüzde, oturum sonunda gözlemlenen hız. Hız
+  geçmişte oturumun **tamamının** eğiminden gelir (canlı karttaki 15 dk
+  penceresinden farklı; kısa oturumlar böylece ölçülebilir). Eski kalıcı
+  kayıtlarda `history` anahtarı yoktur; `decodeIfPresent` ile kayıpsız
+  açılır. Şarj sekmesinde canlı kartın altında "Şarj geçmişi" kartı: son
+  8 oturum (tarih aralığı · süre · %başlangıç → %bitiş · hız), ölçülemeyen
+  değer "—". Enerji (kWh) telemetrisi olmadan enerji gösterilmez.
 - **Bağlantı sağlığı kartı (2026-11-16, 558 test):** `BleSessionQuality`
   verisi artık ekranda: Komutlar sayfasında "Bağlantı sağlığı · son
   oturumlar" bölümü — kayıtlı oturum sayısı + zayıf (ort. −85 dBm altı)

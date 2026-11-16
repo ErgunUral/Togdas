@@ -120,5 +120,65 @@ final class ChargingSessionTrackerTests: XCTestCase {
         store.clear(vin: "TESTVIN123")
         XCTAssertEqual(store.load(vin: "TESTVIN123"), .empty)
         defaults.removePersistentDomain(forName: suite)
+    }    /// Oturum bitişinde geçmiş girdisi üretilir: ilk/son yüzde ve oturum sonu
+    /// gözlemlenen hız saklanır; "last" davranışı korunur.
+    func testSessionEndAppendsHistoryEntry() {
+        var record = ChargingSessionRecord.empty
+        record = ChargingSessionTracker.updated(record, charging: true, percent: 70, at: start)
+        record = ChargingSessionTracker.updated(
+            record, charging: true, percent: 74, at: start.addingTimeInterval(600))
+        record = ChargingSessionTracker.updated(
+            record, charging: false, percent: 75, at: start.addingTimeInterval(1200))
+
+        XCTAssertEqual(record.history.count, 1)
+        let entry = record.history[0]
+        XCTAssertEqual(entry.startedAt, start.timeIntervalSince1970)
+        XCTAssertEqual(entry.endedAt, start.addingTimeInterval(1200).timeIntervalSince1970)
+        XCTAssertEqual(entry.startPercent ?? -1, 70, accuracy: 0.01)
+        XCTAssertEqual(entry.endPercent ?? -1, 75, accuracy: 0.01)
+        // Örnekler %70→%74, 10 dk yayılım: %0.4/dk
+        XCTAssertEqual(entry.ratePerMinute ?? -1, 0.4, accuracy: 0.05)
+        XCTAssertEqual(record.last?.lastPercent, 75)
     }
+
+    /// Yüzde telemetrisi hiç gelmemiş oturum: süre bilinir, yüzde ve hız "—".
+    func testHistoryEntryWithoutSamplesKeepsUnknownFields() {
+        var record = ChargingSessionRecord.empty
+        record = ChargingSessionTracker.updated(record, charging: true, percent: nil, at: start)
+        record = ChargingSessionTracker.updated(
+            record, charging: false, percent: nil, at: start.addingTimeInterval(600))
+
+        XCTAssertEqual(record.history.count, 1)
+        XCTAssertNil(record.history[0].startPercent)
+        XCTAssertNil(record.history[0].endPercent)
+        XCTAssertNil(record.history[0].ratePerMinute)
+    }
+
+    /// Geçmiş üst sınırı: en yeniler kalır, eskiler düşer.
+    func testHistoryCapsAtLimit() {
+        var record = ChargingSessionRecord.empty
+        for index in 0..<25 {
+            let at = start.addingTimeInterval(TimeInterval(index) * 3600)
+            record = ChargingSessionTracker.updated(record, charging: true, percent: 50, at: at)
+            record = ChargingSessionTracker.updated(
+                record, charging: false, percent: 60, at: at.addingTimeInterval(60))
+        }
+        XCTAssertEqual(record.history.count, 20)
+        XCTAssertEqual(record.history.last?.startedAt,
+                       start.addingTimeInterval(24 * 3600).timeIntervalSince1970)
+    }
+
+    /// Eski kalıcı kayıtta "history" anahtarı yok; çözümleme kaybı olmadan
+    /// boş geçmişle açılır (mevcut "last" korunur).
+    func testLegacyRecordWithoutHistoryDecodes() throws {
+        let legacy = """
+        {"charging":false,"last":{"startedAt":100,"endedAt":200,"lastPercent":71}}
+        """
+        let data = Data(legacy.utf8)
+        let record = try JSONDecoder().decode(ChargingSessionRecord.self, from: data)
+        XCTAssertFalse(record.charging)
+        XCTAssertEqual(record.last?.lastPercent, 71)
+        XCTAssertTrue(record.history.isEmpty)
+    }
+
 }

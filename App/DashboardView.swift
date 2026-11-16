@@ -603,6 +603,7 @@ struct DashboardView: View {
         VStack(spacing: 16) {
             chargingCard
             liveChargingCard
+            chargingHistoryCard
             chargingCalculator
             Button { showExperience = true } label: {
                 HStack(spacing: 10) {
@@ -2450,6 +2451,72 @@ struct DashboardView: View {
             .toggCardBackground()
             .id("liveChargingCard")
         }
+    }
+
+    /// Şarj geçmişi: tamamlanmış oturumların listesi. Enerji telemetrisi
+    /// olmadığı için yalnız süre, yüzde değişimi ve gözlemlenen hız gösterilir.
+    private var chargingHistoryCard: some View {
+        let entries = model.chargingHistory.suffix(8).reversed()
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(ToggTheme.teal.opacity(0.18)).frame(width: 38, height: 38)
+                    Image(systemName: "clock.arrow.circlepath")
+                        .foregroundStyle(ToggTheme.teal)
+                        .accessibilityHidden(true)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Şarj geçmişi")
+                        .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
+                    Text("\(model.chargingHistory.count) oturum kayıtlı")
+                        .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
+                }
+                Spacer()
+            }
+
+            if model.chargingHistory.isEmpty {
+                Text("Tamamlanan ilk oturum burada listelenir; şarj sırasında canlı gözlem üstteki kartta izlenir.")
+                    .font(ToggTheme.text(.body)).foregroundStyle(ToggTheme.muted)
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(Array(entries), id: \.startedAt) { entry in
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(chargingHistoryDate(entry))
+                                .font(ToggTheme.text(.body)).foregroundStyle(.white)
+                            Spacer()
+                            Text(chargingHistoryValues(entry))
+                                .font(ToggTheme.text(.caption)).foregroundStyle(ToggTheme.muted)
+                                .multilineTextAlignment(.trailing)
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+            }
+
+            Text("Enerji (kWh) telemetrisi gelmediği için yalnız süre, yüzde değişimi ve gözlemlenen hız gösterilir; ölçülemeyen değer — olur. Oturumlar yalnız uygulama açıkken ölçülür.")
+                .font(.caption2).foregroundStyle(ToggTheme.muted)
+        }
+        .padding(20)
+        .toggCardBackground()
+        .id("chargingHistoryCard")
+    }
+
+    private func chargingHistoryDate(_ entry: ChargingHistoryEntry) -> String {
+        let start = Date(timeIntervalSince1970: entry.startedAt)
+        let end = Date(timeIntervalSince1970: entry.endedAt)
+        return TurkishFormat.date(start, format: "dd.MM HH:mm") + " – "
+            + TurkishFormat.date(end, format: "HH:mm")
+    }
+
+    private func chargingHistoryValues(_ entry: ChargingHistoryEntry) -> String {
+        var parts: [String] = [liveDurationText(entry.endedAt - entry.startedAt)]
+        if let start = entry.startPercent, let end = entry.endPercent {
+            parts.append("%\(TurkishFormat.integer(start)) → %\(TurkishFormat.integer(end))")
+        }
+        if let rate = entry.ratePerMinute {
+            parts.append("%\(TurkishFormat.decimal(rate, digits: 2))/dk")
+        }
+        return parts.joined(separator: " · ")
     }
 
     private func liveRow(_ title: String, _ value: String) -> some View {

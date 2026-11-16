@@ -28,6 +28,8 @@ final class GarageModel: ObservableObject {
     private var lastWidgetReloadAt = Date.distantPast
     /// Canlı şarj gözlemi: yalnız uygulama açıkken ve telemetri gelirken ölçülür.
     @Published private(set) var chargingLive: ChargingLiveState?
+    /// Tamamlanmış şarj oturumlarının geçmişi (en yeni sonda, en fazla 20).
+    @Published private(set) var chargingHistory: [ChargingHistoryEntry] = []
     private var chargingRecord: ChargingSessionRecord = .empty
     private var chargingRecordVIN = ""
     private let chargingStore = ChargingSessionStore()
@@ -321,6 +323,7 @@ final class GarageModel: ObservableObject {
             percent: telemetry.batteryPercent, at: Date())
         chargingStore.save(chargingRecord, vin: vin)
         chargingLive = ChargingSessionTracker.liveView(record: chargingRecord, now: Date())
+        chargingHistory = chargingRecord.history
     }
 
     /// Seçili VIN değiştiğinde kök bulut durumu sıfır; eski aracın değerleri
@@ -330,6 +333,8 @@ final class GarageModel: ObservableObject {
         cloud.clear()
         chargingRecord = .empty
         chargingRecordVIN = selectedVin ?? ""
+        // Geçmiş hemen tazelenir; eski aracın oturumları yeni araca karışmasın.
+        chargingHistory = (selectedVin.map { chargingStore.load(vin: $0) } ?? .empty).history
         if let vin = selectedVin, let cached = cloudStore.snapshot(for: vin) {
             cloud.batteryPercent = cached.batteryPercent
             cloud.rangeKM = cached.rangeKM
