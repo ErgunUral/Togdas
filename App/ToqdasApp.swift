@@ -449,9 +449,9 @@ final class GarageModel: ObservableObject {
         }
         guard !request.isExpired,
               request.createdAt <= now + 1,
-              now - request.createdAt <= 15,
+              now - request.createdAt <= WatchCommandPolicy.maxLifetime,
               request.expiresAt >= request.createdAt,
-              request.expiresAt - request.createdAt <= 15 else {
+              request.expiresAt - request.createdAt <= WatchCommandPolicy.maxLifetime else {
             return reject("İstek zaman aşımına uğradı veya geçersiz; yeniden deneyin.")
         }
         guard request.vin == selectedVin else {

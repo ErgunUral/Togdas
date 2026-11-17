@@ -103,3 +103,14 @@ final class LockAckNarrationTests: XCTestCase {
         XCTAssertEqual(texts.note, "araç zaten açıktı")
     }
 }
+
+/// Saat isteğinin ömrü: canlı kanal kısa, arka plan (kuyruk) biraz uzun ama
+/// sınırlı — komut "eski niyet"le çalışmaz.
+final class WatchCommandPolicyTests: XCTestCase {
+    func testQueuedLifetimeIsLongerButBounded() {
+        XCTAssertEqual(WatchCommandPolicy.directLifetime, 15)
+        XCTAssertEqual(WatchCommandPolicy.queuedLifetime, 30)
+        XCTAssertEqual(WatchCommandPolicy.maxLifetime, WatchCommandPolicy.queuedLifetime)
+        XCTAssertLessThan(WatchCommandPolicy.maxLifetime, 60)
+    }
+}

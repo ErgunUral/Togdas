@@ -189,19 +189,36 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
             return
         }
         let session = WCSession.default
-        guard session.activationState == .activated, session.isReachable else {
+        guard session.activationState == .activated else {
             report(WatchCommandResult(id: "", status: "unavailable",
-                                      message: "iPhone'a ulaşılamıyor. Telefonu açıp tekrar deneyin.",
+                                      message: "Saat bağlantısı hazır değil; birkaç saniye sonra tekrar deneyin.",
                                       at: Date().timeIntervalSince1970))
             return
         }
         let now = Date().timeIntervalSince1970
+        // iPhone uygulaması arka plandayken canlı kanal yok; istek tek kez
+        // kuyruklu kanala bırakılır (retry yok). Süresi içinde ulaşmazsa
+        // iPhone dürüstçe "istek zaman aşımına uğradı" der.
+        let live = session.isReachable
+        let lifetime = live ? WatchCommandPolicy.directLifetime : WatchCommandPolicy.queuedLifetime
         let request = WatchCommandRequest(id: UUID().uuidString, action: action, vin: vin,
-                                          createdAt: now, expiresAt: now + 15)
+                                          createdAt: now, expiresAt: now + lifetime)
         guard let data = try? JSONEncoder().encode(request) else { return }
         status = request.isLock ? "Kilit isteği gönderiliyor…"
             : action.hasPrefix("proximity") ? "Otomasyon isteği gönderiliyor…"
             : "Açma isteği gönderiliyor…"
+        guard live else {
+            do {
+                try session.transferUserInfo(["type": "command", "payload": data])
+                status = "iPhone arka planda; istek iletildi. Sonuç birkaç saniye gecikebilir."
+                WatchDiagnostics.log("komut kuyruğa alındı (arka plan)")
+            } catch {
+                report(WatchCommandResult(id: request.id, status: "unavailable",
+                                          message: "İstek iletilemedi: \(error.localizedDescription)",
+                                          at: Date().timeIntervalSince1970))
+            }
+            return
+        }
         session.sendMessage(["type": "command", "payload": data]) { [weak self] reply in
             guard let self else { return }
             let result = (reply["payload"] as? Data)
@@ -302,11 +319,47 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
     /// uygulaması uyanır. Birden çok kuyruklu istek zararsızdır;
     /// yayımlama tarafındaki darboğaz tekrarlarını yutar.
     func session(_ session: WCSession, didReceiveUserInfo userInfo: [String : Any] = [:]) {
-        guard !isWatch,
-              userInfo["type"] as? String == "refresh" else { return }
-        DispatchQueue.main.async { [weak self] in
-            self?.refreshHandler?()
+        let type = userInfo["type"] as? String
+        let payload = userInfo["payload"] as? Data
+
+        // Saat: arka plan isteğinin sonucu kuyruklu kanaldan gelir.
+        if isWatch {
+            guard type == "result", let payload,
+                  let result = try? JSONDecoder().decode(WatchCommandResult.self, from: payload) else { return }
+            DispatchQueue.main.async { [weak self] in
+                WatchDiagnostics.log("komut sonucu (kuyruk): \(result.status)")
+                self?.report(result)
+            }
+            return
         }
+
+        if type == "refresh" {
+            DispatchQueue.main.async { [weak self] in
+                self?.refreshHandler?()
+            }
+            return
+        }
+
+        // iPhone arka planda uyandırıldı: istek kuyruklu kanaldan geldi.
+        guard type == "command", let payload,
+              let request = try? JSONDecoder().decode(WatchCommandRequest.self, from: payload) else { return }
+        guard let handler = commandHandler else {
+            replyInBackground(WatchCommandResult(id: request.id, status: "unavailable",
+                                                 message: "Telefon tarafı hazır değil.",
+                                                 at: Date().timeIntervalSince1970))
+            return
+        }
+        DispatchQueue.main.async { [weak self] in
+            handler(request) { result in
+                self?.replyInBackground(result)
+            }
+        }
+    }
+
+    /// Canlı kanal yokken sonuç: saat uygulaması uyandığında iletilir.
+    private func replyInBackground(_ result: WatchCommandResult) {
+        guard let data = try? JSONEncoder().encode(result) else { return }
+        try? WCSession.default.transferUserInfo(["type": "result", "payload": data])
     }
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {

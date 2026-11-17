@@ -87,3 +87,17 @@ enum LockAckNarration {
         )
     }
 }
+
+/// Saatten gelen komut isteğinin yaşam süresi.
+///
+/// - Canlı kanal (`sendMessage`): iPhone uygulaması ön planda; yanıt anında
+///   gelir, ömür kısa tutulur (15 sn).
+/// - Kuyruklu kanal (`transferUserInfo`): iPhone arka plandayken istek tek
+///   kez bırakılır; iletim birkaç saniye gecikebilir, bu yüzden ömür 30 sn.
+///   Kuyruk **retry değildir**: süresi dolan istek araç tarafında dürüstçe
+///   reddedilir, komut "eski niyet"le çalışmaz.
+enum WatchCommandPolicy {
+    static let directLifetime: TimeInterval = 15
+    static let queuedLifetime: TimeInterval = 30
+    static let maxLifetime: TimeInterval = queuedLifetime
+}

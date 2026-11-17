@@ -39,7 +39,9 @@ struct WatchGarageView: View {
     }
 
     private func canCommand(at now: Date) -> Bool {
-        link.reachable && snapshot?.ready == true && snapshot?.vin.isEmpty == false
+        // iPhone uygulaması arka plandayken `reachable` false olur; istek
+        // tek kez kuyruklu kanala bırakıldığı için düğme kapatılmaz.
+        snapshot?.ready == true && snapshot?.vin.isEmpty == false
             && telemetryFresh(at: now) && snapshot?.locked != nil
     }
 
@@ -187,7 +189,7 @@ struct WatchGarageView: View {
                     .padding(.top, 2)
 
                     Text(!link.reachable
-                        ? "Komut için iPhone uygulaması açık olmalı; son bilinen veri gösteriliyor."
+                        ? "iPhone arka planda; komut iletilir ama sonuç birkaç saniye gecikebilir."
                         : (link.lastResult?.message ?? "İstek iPhone üzerinden iletilir. Kilit onayı araç telemetrisinden gelir."))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
