@@ -152,9 +152,12 @@ final class GarageModel: ObservableObject {
                     self.ble.recordDiagnostic("geofence_unlock_skipped · son açma komutu \(recent.source.rawValue) kaynaklı; çift komut engellendi")
                     return
                 }
+                guard self.ble.unlock() else {
+                    self.ble.recordDiagnostic("geofence_unlock_failed · komut kapıda reddedildi")
+                    return
+                }
                 AutomaticCommandLedger.shared.note(source: .geofence, action: "unlock",
                                                    vin: self.selectedVin ?? "")
-                _ = self.ble.unlock()
             }
         }
         geofence.onExitHome = { [weak self] in
@@ -166,9 +169,12 @@ final class GarageModel: ObservableObject {
                     self.ble.recordDiagnostic("geofence_lock_skipped · son kilitleme komutu \(recent.source.rawValue) kaynaklı; çift komut engellendi")
                     return
                 }
+                guard self.ble.lock() else {
+                    self.ble.recordDiagnostic("geofence_lock_failed · komut kapıda reddedildi")
+                    return
+                }
                 AutomaticCommandLedger.shared.note(source: .geofence, action: "lock",
                                                    vin: self.selectedVin ?? "")
-                _ = self.ble.lock()
             }
         }
 
@@ -476,6 +482,10 @@ final class GarageModel: ObservableObject {
         guard accepted else {
             return reject(ble.lastEvent.isEmpty ? "Komut BLE katmanında reddedildi." : ble.lastEvent)
         }
+        if request.action == "lock" || request.action == "unlock" {
+            AutomaticCommandLedger.shared.note(source: .manual, action: request.action,
+                                               vin: selectedVin ?? ble.vin)
+        }
         // Saatten gönderilen komut da widget/saat "son komut" kaydına yazılır;
         // aksi halde doğrulama sonucu (imzalı telemetri) kayıtla eşleşmez ve
         // saatte "aracın kilitlendiğini görememe" olur. Etiketler widget
@@ -524,6 +534,14 @@ final class GarageModel: ObservableObject {
             )
         } else {
             facingError = nil
+            if action == .lock || action == .unlock {
+                AutomaticCommandLedger.shared.note(source: .manual,
+                                                   action: action == .lock ? "lock" : "unlock",
+                                                   vin: selectedVin ?? ble.vin)
+            }
+            VehicleCommandStatusStore.save(
+                VehicleCommandStatus(actionLabel: action.statusLabel, sentAt: Date(), verified: nil)
+            )
         }
     }
 

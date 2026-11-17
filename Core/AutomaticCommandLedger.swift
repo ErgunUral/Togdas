@@ -19,6 +19,10 @@ final class AutomaticCommandLedger {
         /// Uzaklaşınca kilitleme bileti (kullanıcı yanında kilit verdi, komut
         /// sinyal zayıfladığında gönderildi).
         case deferredLock
+        /// Kullanıcının elle verdiği komut (pano, komut ekranı, saat, kısayol).
+        /// Otomasyonlar bunu görür: elle kilitlenen araç için otomatik
+        /// kilitleme tekrar denenmez.
+        case manual
     }
 
     struct Entry: Equatable {

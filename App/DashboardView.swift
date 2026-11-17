@@ -174,6 +174,10 @@ struct DashboardView: View {
     /// uzak 6/6 uygulama). Bilet, tek komutu sinyal zayıfladığı an gönderir.
     @State private var deferredLockTicket: DeferredLockTicket?
     @State private var deferredLockStatus: String?
+    /// Bilet son tarihi diske yazılır; uygulama askıya alınsa da kaybolmaz.
+    private var deferredLockSettings: DeferredLockSettings {
+        DeferredLockSettings(store: UserDefaults.standard)
+    }
 
     // Önizleme durumları (henüz araca bağlı değil)
     @State private var climateOn = false
@@ -335,7 +339,10 @@ struct DashboardView: View {
             loadProximitySettings()
             loadCertificateProvenance()
         }
-        .task { showLastKnownCloudTelemetryIfNeeded() }
+        .task {
+            restoreDeferredLockTicketIfNeeded()
+            showLastKnownCloudTelemetryIfNeeded()
+        }
         .onAppear {
             // Saatten gelen otomasyon anahtarı panodaki geçiş mantığına
             // delegasyon: dönen değer kalibrasyon geçerliyse true.
@@ -1858,15 +1865,29 @@ struct DashboardView: View {
             deferredLockStatus = "Araç zaten kilitli; bilet kurulmadı."
             return
         }
-        deferredLockTicket = DeferredLockTicket()
+        let ticket = DeferredLockTicket()
+        deferredLockTicket = ticket
+        deferredLockSettings.setDeadline(ticket.deadline, vin: vehicle.vin)
         deferredLockStatus = "Bilet kuruldu; sinyal \(BleReconnectPolicy.weakSignalThreshold) dBm altına inince tek kilitleme komutu gönderilecek."
         ble.recordDiagnostic("deferred_lock_armed · uzaklaşınca kilitleme bileti kuruldu")
+    }
+
+    /// Diskteki bilet geri yüklenir: uygulama askıya alınsa da kullanıcının
+    /// kurduğu bilet sessizce kaybolmaz. Süresi dolmuş kayıt silinir.
+    @MainActor
+    private func restoreDeferredLockTicketIfNeeded() {
+        guard deferredLockTicket == nil else { return }
+        guard let restored = deferredLockSettings.restoredTicket(vin: vehicle.vin) else { return }
+        deferredLockTicket = restored
+        deferredLockStatus = "Bilet sürüyor; sinyal zayıflayınca tek kilitleme komutu gönderilecek."
+        ble.recordDiagnostic("deferred_lock_restored · kayıtlı bilet geri yüklendi")
     }
 
     @MainActor
     private func cancelDeferredLockTicket(reason: String) {
         guard deferredLockTicket != nil else { return }
         deferredLockTicket = nil
+        deferredLockSettings.setDeadline(nil, vin: vehicle.vin)
         deferredLockStatus = reason
         ble.recordDiagnostic("deferred_lock_cancelled · \(reason)")
     }
@@ -1891,10 +1912,12 @@ struct DashboardView: View {
             return
         case .cancel(let reason):
             deferredLockTicket = nil
+            deferredLockSettings.setDeadline(nil, vin: vehicle.vin)
             deferredLockStatus = reason
             ble.recordDiagnostic("deferred_lock_cancelled · \(reason)")
         case .send:
             deferredLockTicket = nil
+            deferredLockSettings.setDeadline(nil, vin: vehicle.vin)
             guard ble.lock() else {
                 deferredLockStatus = "Sinyal zayıfladı ancak kilitleme başlatılamadı: \(ble.lastEvent)"
                 ble.recordDiagnostic("deferred_lock_failed · komut başlatılamadı")
@@ -2027,15 +2050,36 @@ struct DashboardView: View {
 
     private func send(_ command: DashboardCommand) {
         switch command {
-        case .lock: ble.lock(); recordWidgetCommand("Kilitleme")
-        case .unlock: ble.unlock(); recordWidgetCommand("Kilit açma")
-        case .trunkOpen: ble.trunkOpen(); recordWidgetCommand("Bagaj açma")
-        case .trunkClose: ble.trunkClose(); recordWidgetCommand("Bagaj kapatma")
-        case .windowsOpen: ble.windowsOpen(); recordWidgetCommand("Cam açma")
-        case .windowsClose: ble.windowsClose(); recordWidgetCommand("Cam kapatma")
+        case .lock:
+            guard ble.lock() else { return }
+            noteManualCommand(action: "lock", label: "Kilitleme")
+        case .unlock:
+            guard ble.unlock() else { return }
+            noteManualCommand(action: "unlock", label: "Kilit açma")
+        case .trunkOpen:
+            guard ble.trunkOpen() else { return }
+            recordWidgetCommand("Bagaj açma")
+        case .trunkClose:
+            guard ble.trunkClose() else { return }
+            recordWidgetCommand("Bagaj kapatma")
+        case .windowsOpen:
+            guard ble.windowsOpen() else { return }
+            recordWidgetCommand("Cam açma")
+        case .windowsClose:
+            guard ble.windowsClose() else { return }
+            recordWidgetCommand("Cam kapatma")
         // Oto kilit BLE komutu değildir; approve() uygulama anahtarını çevirir.
         case .automaticLockOn, .automaticLockOff: break
         }
+    }
+
+    /// Elle verilen kilit/açma komutu da otomatik komut defterine yazılır:
+    /// otomasyonlar 60 sn içinde aynı eylemi tekrar göndermez. Kayıt yalnız
+    /// komut kapıdan geçtiyse yazılır — reddedilen komut "gönderildi" sayılmaz.
+    private func noteManualCommand(action: String, label: String) {
+        guard !vehicle.vin.isEmpty else { return }
+        AutomaticCommandLedger.shared.note(source: .manual, action: action, vin: vehicle.vin)
+        recordWidgetCommand(label)
     }
 
     /// Widget'a son komut yazımı: yalnız etiket ve zaman; VIN/token asla
@@ -2544,7 +2588,7 @@ struct DashboardView: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("deferredLock.arm")
                 }
-                Text("Araç, dijital anahtar yanındayken kilit komutunu uygulamıyor. Bilet, sinyal zayıfladığında tek kilitleme komutu gönderir (en çok 10 dk).")
+                Text("Araç, dijital anahtar yanındayken kilit komutunu uygulamıyor. Bilet, sinyal zayıfladığında tek kilitleme komutu gönderir (en çok 10 dk). Arka planda sinyal örneği ~1 dk gecikebilir.")
                     .font(ToggTheme.text(.micro))
                     .foregroundStyle(ToggTheme.muted)
                     .fixedSize(horizontal: false, vertical: true)

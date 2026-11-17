@@ -21,6 +21,17 @@ enum ShortcutAction: String, CaseIterable, Equatable {
         }
     }
 
+    /// Widget/saat "son komut" kaydındaki etiket adı (markVerified yön
+    /// eşleşmesi bu adlara bakar; kilit etiketleri "kilit" kökünü taşır).
+    var statusLabel: String {
+        switch self {
+        case .lock: return "Kilitleme"
+        case .unlock: return "Kilit açma"
+        case .trunkOpen: return "Bagaj açma"
+        case .trunkClose: return "Bagaj kapatma"
+        }
+    }
+
     /// BLE protokolündeki komut kodu (yalnızca teşhis ve politika için).
     var bleCode: UInt8 {
         switch self {

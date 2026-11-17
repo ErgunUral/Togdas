@@ -504,11 +504,31 @@ struct CommandView: View {
 
     private func send(_ command: PendingCommand) {
         switch command {
-        case .unlock: ble.unlock()
-        case .lock: ble.lock()
-        case .trunkOpen: ble.trunkOpen()
-        case .trunkClose: ble.trunkClose()
+        case .unlock:
+            guard ble.unlock() else { return }
+            record(action: "unlock", label: "Kilit açma")
+        case .lock:
+            guard ble.lock() else { return }
+            record(action: "lock", label: "Kilitleme")
+        case .trunkOpen:
+            guard ble.trunkOpen() else { return }
+            record(action: nil, label: "Bagaj açma")
+        case .trunkClose:
+            guard ble.trunkClose() else { return }
+            record(action: nil, label: "Bagaj kapatma")
         case .driveAuthorize: ble.driveAuthorize()
         }
+    }
+
+    /// Komut kapıdan geçtiyse kayda yazılır: otomasyonlar 60 sn içinde aynı
+    /// kilidi tekrar göndermez ve widget/saat "son komut" satırı güncellenir.
+    /// Reddedilen komut "gönderildi" diye yazılmaz.
+    private func record(action: String?, label: String) {
+        if let action, !vehicle.vin.isEmpty {
+            AutomaticCommandLedger.shared.note(source: .manual, action: action, vin: vehicle.vin)
+        }
+        VehicleCommandStatusStore.save(
+            VehicleCommandStatus(actionLabel: label, sentAt: Date(), verified: nil)
+        )
     }
 }

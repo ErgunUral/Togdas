@@ -55,6 +55,27 @@ final class AutomaticCommandLedgerTests: XCTestCase {
                                      now: now.addingTimeInterval(10))?.source, .geofence)
     }
 
+    func testManualLockBlocksAutomationForWindow() {
+        // Elle verilen komut da deftere yazılır: yakınlık/geofence 60 sn
+        // içinde aynı eylemi tekrar göndermemeli.
+        let now = Date()
+        ledger.note(source: .manual, action: "lock", vin: "V", at: now)
+        XCTAssertEqual(ledger.recent(action: "lock", vin: "V", within: 60,
+                                     excluding: .proximity, now: now.addingTimeInterval(5))?.source,
+                       .manual)
+        XCTAssertNil(ledger.recent(action: "lock", vin: "V", within: 60,
+                                   now: now.addingTimeInterval(61)))
+    }
+
+    func testDeferredLockIsVisibleToOtherSources() {
+        let now = Date()
+        ledger.note(source: .deferredLock, action: "lock", vin: "V", at: now)
+        XCTAssertEqual(ledger.recent(action: "lock", vin: "V", within: 60,
+                                     excluding: .proximity, now: now)?.source, .deferredLock)
+        XCTAssertEqual(ledger.recent(action: "lock", vin: "V", within: 60,
+                                     excluding: .geofence, now: now)?.source, .deferredLock)
+    }
+
     func testResetClearsAll() {
         let now = Date()
         ledger.note(source: .proximity, action: "lock", vin: "V", at: now)
