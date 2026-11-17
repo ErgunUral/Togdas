@@ -22,6 +22,8 @@ struct WatchGarageView: View {
     @State private var lastRecovering: Bool?
     @State private var previousReady: Bool?
     @State private var previousLocked: Bool?
+    @State private var lastSnapshotStamp: TimeInterval?
+    @State private var toneTestNote: String?
     private let watchPoster = SystemNotificationPoster()
 
     private var snapshot: WatchSnapshot? { link.snapshot }
@@ -206,6 +208,21 @@ struct WatchGarageView: View {
                             .multilineTextAlignment(.center)
                     }
 
+                    Button("Sesi dene") {
+                        toneTestNote = WatchChime.playConnected()
+                            ? "Ton çalındı. Duymadıysan: Ayarlar > Ses ve Dokunsal."
+                            : "Ton çalınamadı; ses oturumu açılamadı."
+                    }
+                    .buttonStyle(.bordered)
+                    .font(.caption2)
+
+                    if let toneTestNote {
+                        Text(toneTestNote)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+
                     Text("Bagaj komutu iPhone üzerinden iletilir; cam komutları kapalı.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -281,7 +298,17 @@ struct WatchGarageView: View {
     /// kalmasın. 90 sn sönümleme tekrarı önler; VIN yok.
     private func announceConnectionIfNeeded() {
         let ready = link.snapshot?.ready == true
+        let stamp = link.snapshot?.updatedAt
+        // Veri akışı kesilip geri geldiyse (60 sn boşluk) bu da "bağlandı"dır:
+        // kullanıcı saati açtığında veri sessizce akmaya başlamasın.
+        let resumed = stamp != nil && lastSnapshotStamp != nil
+            && (stamp! - lastSnapshotStamp!) >= 60
+        lastSnapshotStamp = stamp
         defer { previousReady = ready }
+        if resumed, ready, telemetryFresh(at: Date()) {
+            announceConnection(damping: 60)
+            return
+        }
         if let previous = previousReady {
             guard !previous, ready else { return }
         } else {
@@ -289,10 +316,16 @@ struct WatchGarageView: View {
             // gelen eski READY sessizce duyurulmaz.
             guard ready, telemetryFresh(at: Date()) else { return }
         }
+        announceConnection(damping: 90)
+    }
+
+    /// Duyuru sesi + haptik + (arka planda) yerel bildirim. Sönümleme
+    /// anahtarı tek: bağlantı flap'inde ses tekrarlamaz.
+    private func announceConnection(damping: TimeInterval) {
         let defaults = UserDefaults.standard
         let now = Date().timeIntervalSince1970
         let last = defaults.double(forKey: "toqdas.watch.connectAnnouncedAt")
-        guard now - last >= 90 else { return }
+        guard now - last >= damping else { return }
         defaults.set(now, forKey: "toqdas.watch.connectAnnouncedAt")
         WKInterfaceDevice.current().play(.success)
         if scenePhase == .active {
@@ -604,8 +637,9 @@ struct WatchGarageView: View {
 enum WatchChime {
     private static var player: AVAudioPlayer?
 
-    static func playConnected() {
-        guard let data = connectedToneData() else { return }
+    @discardableResult
+    static func playConnected() -> Bool {
+        guard let data = connectedToneData() else { return false }
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default)
@@ -614,8 +648,10 @@ enum WatchChime {
             audio.volume = 0.9
             audio.play()
             player = audio
+            return true
         } catch {
-            // Ses çalınamadı: haptik zaten verildi; kullanıcıya hata gösterilmez.
+            // Ses çalınamadı: haptik zaten verildi; çağıran dürüst metin gösterir.
+            return false
         }
     }
 
