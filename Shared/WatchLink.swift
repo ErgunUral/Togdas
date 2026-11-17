@@ -199,7 +199,9 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
         let request = WatchCommandRequest(id: UUID().uuidString, action: action, vin: vin,
                                           createdAt: now, expiresAt: now + 15)
         guard let data = try? JSONEncoder().encode(request) else { return }
-        status = request.isLock ? "Kilit isteği gönderiliyor…" : "Açma isteği gönderiliyor…"
+        status = request.isLock ? "Kilit isteği gönderiliyor…"
+            : action.hasPrefix("proximity") ? "Otomasyon isteği gönderiliyor…"
+            : "Açma isteği gönderiliyor…"
         session.sendMessage(["type": "command", "payload": data]) { [weak self] reply in
             guard let self else { return }
             let result = (reply["payload"] as? Data)

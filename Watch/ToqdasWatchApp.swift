@@ -17,6 +17,7 @@ struct WatchGarageView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var pendingCommand: String?
     @State private var showCommandConfirmation = false
+    @State private var pendingAutomation: WatchProximityAutomationAction?
 
     private var snapshot: WatchSnapshot? { link.snapshot }
 
@@ -127,11 +128,7 @@ struct WatchGarageView: View {
                         .tint(.orange)
                     }
 
-                    if snapshot?.proximityEnabled == true {
-                        Text("Yakınlık otomasyonu telefonda açık — saat yalnızca görüntüler")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+                    automationSection
 
                     VStack(spacing: 4) {
                         HStack(spacing: 6) {
@@ -189,6 +186,21 @@ struct WatchGarageView: View {
                 .padding(.bottom, 8)
             }
         }
+        .confirmationDialog("Yakınlık otomasyonu",
+                            isPresented: Binding(
+                                get: { pendingAutomation != nil },
+                                set: { if !$0 { pendingAutomation = nil } }),
+                            titleVisibility: .visible) {
+            Button(pendingAutomation == .enable ? "Aç" : "Kapat") {
+                if let automation = pendingAutomation {
+                    link.request(automation.action, vin: snapshot?.vin ?? "")
+                }
+                pendingAutomation = nil
+            }
+            Button("Vazgeç", role: .cancel) { pendingAutomation = nil }
+        } message: {
+            Text(pendingAutomation?.confirmationText ?? "")
+        }
         .confirmationDialog("Araç komutu gönderilsin mi?", isPresented: $showCommandConfirmation,
                             titleVisibility: .visible) {
             Button(confirmationTitle, role: .destructive) {
@@ -219,6 +231,50 @@ struct WatchGarageView: View {
         guard WatchSnapshot.isStale(updatedAt: snapshot?.updatedAt, after: 30) else { return }
         link.requestRefresh()
     }
+
+    /// Yakınlık otomasyonu anahtarı: araç komutu göndermez; iPhone'a
+    /// uygulama içi geçiş isteği iletir. Durum snapshot'tan gelir.
+    private var automationSection: some View {
+        let state = snapshot?.proximityEnabled
+        let canToggle = link.reachable && snapshot?.vin.isEmpty == false
+            && pendingAutomation == nil && !stateIsLoading
+        return VStack(spacing: 6) {
+            HStack {
+                Text("Yakınlık otomasyonu")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Text(state == true ? "Açık" : state == false ? "Kapalı" : "—")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(state == true ? Color.green : Color.secondary)
+            }
+            HStack(spacing: 8) {
+                Button {
+                    pendingAutomation = .enable
+                } label: {
+                    Label("Aç", systemImage: "location.north.circle")
+                        .font(.caption)
+                }
+                .disabled(!canToggle || state == true)
+                Button {
+                    pendingAutomation = .disable
+                } label: {
+                    Label("Kapat", systemImage: "location.slash")
+                        .font(.caption)
+                }
+                .disabled(!canToggle || state == false)
+            }
+            .buttonStyle(.bordered)
+            if !link.reachable {
+                Text("Aç/kapat için iPhone erişilebilir olmalı.")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    /// Uygulama anahtarı, araç komutlarının READY/telemetri şartına
+    /// tabi değildir; yalnız iPhone erişimi yeterlidir.
+    private var stateIsLoading: Bool { false }
 
     /// Komut yanıtına göre dokunsal geri bildirim. "forwarded" başarının
     /// kanıtı değildir; onay telemetriden gelir, bu nedenle bildirim/hata

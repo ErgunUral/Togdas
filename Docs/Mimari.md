@@ -318,6 +318,19 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Saatten yakınlık otomasyonu anahtarı (2026-11-17, 572 test):**
+  Saat uygulaması otomasyonu artık görüntülemekle kalmayıp açıp
+  kapatıyor. Kanal: `WatchLink` komut isteklerine `proximityOn`/
+  `proximityOff` eylemleri — aynı ömür (15 sn) + VIN eşleşme kontrolü;
+  **araç komutu değildir** → `canSendVehicleCommands` şartı istenmez.
+  iPhone: `ToqdasApp.proximityToggleHandler` panodaki
+  `setProximityEnabled`'e delegasyon; `setProximityEnabled` artık
+  `Bool` döner (kalibrasyon geçersizse açma reddedilir ve saat
+  "kalibrasyon kontrol edin" der). Saat: durum satırı + Aç/Kapat
+  düğmeleri, kendi onay diyaloğu ("araç komutu göndermez"), haptik ve
+  sonuç metni mevcut desenle. Core: `WatchProximityAutomationAction`
+  (parse/confirmation/result metinleri, 2 testli). Dürüstlük: açmak
+  hiçbir komut göndermez; "gönderilmedi" metinleri açık.
 - **Klima denetimi (2026-11-17, 570 test):** Uzaktan klima akışı
   gözden geçirildi; sağlamlıklar korundu (komut öncesi 90 sn tazelik
   sorgusu, tek uçuş kilidi, retry yok, 16–30 °C çift doğrulama, 240 sn

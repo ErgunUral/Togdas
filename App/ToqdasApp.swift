@@ -31,6 +31,10 @@ final class GarageModel: ObservableObject {
     /// Tamamlanmış şarj oturumlarının geçmişi (en yeni sonda, en fazla 20).
     @Published private(set) var chargingHistory: [ChargingHistoryEntry] = []
     /// Şarj hedefi (kullanıcı seçimi; nil = kapalı). Araca komut gönderilmez.
+    /// Yakınlık otomasyonu saatten geldiğinde panodaki mevcut geçiş
+    /// mantığına delegasyon (ProximityCycleGuard sıfırlaması dahil).
+    /// Dönen değer geçişin uygulandığını (kalibrasyon geçerli olduğunu) söyler.
+    var proximityToggleHandler: ((Bool) -> Bool)?
     @Published private(set) var chargingTarget: Int?
     private var chargingRecord: ChargingSessionRecord = .empty
     private var chargingRecordVIN = ""
@@ -433,6 +437,25 @@ final class GarageModel: ObservableObject {
         }
         guard request.vin == selectedVin else {
             return reject("Seçili araç eşleşmiyor.")
+        }
+        // Yakınlık otomasyonu araç komutu değildir: BLE şartı istenmez,
+        // yalnız VIN + istek ömrü (yukarıda) kontrol edilir.
+        if let automation = WatchProximityAutomationAction.parse(request.action) {
+            guard let toggle = proximityToggleHandler else {
+                return reply(WatchCommandResult(id: request.id, status: "unavailable",
+                                                message: "Pano hazır değil; uygulamayı açıp tekrar deneyin.",
+                                                at: now))
+            }
+            guard toggle(automation == .enable) else {
+                return reply(WatchCommandResult(id: request.id, status: "rejected",
+                                                message: "Otomasyon değiştirilemedi; uygulamada yakın/uzak kalibrasyonunu kontrol edin.",
+                                                at: now))
+            }
+            reply(WatchCommandResult(id: request.id, status: "forwarded",
+                                     message: automation.resultText,
+                                     at: now))
+            publishWatchSnapshot()
+            return
         }
         let labels: [String: String] = ["lock": "Kilit", "unlock": "Açma",
                                        "trunkOpen": "Bagaj açma", "trunkClose": "Bagaj kapama"]

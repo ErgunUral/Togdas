@@ -163,3 +163,39 @@ extension WatchSnapshot {
         return now.timeIntervalSince1970 - updatedAt > after
     }
 }
+
+
+/// Saatten gelen yakınlık otomasyonu anahtar isteği: **araç komutu
+/// değildir** — yaklaşma/uzaklaşma otomasyonunun uygulama içi anahtarı
+/// yönetilir. BLE READY/telemetri şartı istemez; açmak hiçbir komut
+/// göndermez, yalnız gelecekteki otomatik kararları etkinleştirir.
+/// Metinler VIN içermez (gizlilik invariant'ı).
+enum WatchProximityAutomationAction: Equatable {
+    case enable, disable
+
+    /// Saat kanalındaki eylem adından çözümleme; bilinmeyen eylem nil.
+    static func parse(_ raw: String) -> WatchProximityAutomationAction? {
+        switch raw {
+        case "proximityOn": return .enable
+        case "proximityOff": return .disable
+        default: return nil
+        }
+    }
+
+    /// Saat kanalındaki eylem adı.
+    var action: String { self == .enable ? "proximityOn" : "proximityOff" }
+
+    /// Saatte onay diyaloğunda gösterilecek metin.
+    var confirmationText: String {
+        self == .enable
+            ? "Yakınlık otomasyonu açılacak. Araç komutu göndermez; yaklaşma/uzaklaşma otomatik kararları etkinleşir."
+            : "Yakınlık otomasyonu kapatılacak. Devam eden otomatik komut akışı durdurulur; araca komut gönderilmez."
+    }
+
+    /// Uygulama sonrası saat kanalına dönen dürüst yanıt metni.
+    var resultText: String {
+        self == .enable
+            ? "Yakınlık otomasyonu açıldı; araç komutu gönderilmedi."
+            : "Yakınlık otomasyonu kapatıldı; araca komut gönderilmedi."
+    }
+}

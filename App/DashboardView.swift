@@ -331,6 +331,15 @@ struct DashboardView: View {
             loadCertificateProvenance()
         }
         .task { showLastKnownCloudTelemetryIfNeeded() }
+        .onAppear {
+            // Saatten gelen otomasyon anahtarı panodaki geçiş mantığına
+            // delegasyon: dönen değer kalibrasyon geçerliyse true.
+            // DashboardView bir struct: kopya aynı @State deposunu paylaşır,
+            // bu nedenle kapanış doğrudan metodu çağırabilir.
+            model.proximityToggleHandler = { enabled in
+                setProximityEnabled(enabled)
+            }
+        }
         }
         .onReceive(ble.$state) { state in
             print("[BLE] state -> \(state.description)")
@@ -1553,7 +1562,10 @@ struct DashboardView: View {
     }
 
     @MainActor
-    private func setProximityEnabled(_ enabled: Bool) {
+    /// Dönen değer: geçiş uygulandı mı (saat isteği için; kalibrasyon
+    /// geçersizse açma yapılmaz ve false döner).
+    @discardableResult
+    private func setProximityEnabled(_ enabled: Bool) -> Bool {
         if !enabled {
             proximityEnabled = false
             proximityGate = nil
@@ -1567,12 +1579,12 @@ struct DashboardView: View {
             proximitySettings.setAutoOffDeadline(nil, vin: vehicle.vin)
             preferences.setProximityEnabled(false, for: vehicle.vin)
             proximityStatus = "Kapalı"
-            return
+            return true
         }
         guard let calibration = proximityCalibration, calibration.isValid else {
             proximityEnabled = false
             proximityStatus = "Önce geçerli yakın/uzak ölçümü yapın."
-            return
+            return false
         }
         proximityEnabled = true
         preferences.setProximityEnabled(true, for: vehicle.vin)
@@ -1600,6 +1612,7 @@ struct DashboardView: View {
         } else if ble.state.isCertificate, !authBusy {
             Task { await authenticateBLE() }
         }
+        return true
     }
 
     @MainActor
