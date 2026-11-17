@@ -23,6 +23,12 @@ struct BleReconnectPolicy {
     /// araçtan uzaktayken 8 denemelik döngü radyoyu/pili boşa yoruyordu.
     static let weakDropLimit = 3
     static let weakCooldownDelay: TimeInterval = 60
+    /// Derin zayıflık: cihaz kanıtı (2026-11-17) ort. −93 dBm'de oturumlar
+    /// 14–59 sn'de düşerken döngü her dakika tekrarlanıyordu (gece boyu
+    /// radyo/pil yükü). Ardışık bu kadar zayıf kopmada aralık 120 sn'ye
+    /// çıkar; ön plan/yaklaşma anında toparlanır (sayaç sıfırlanır).
+    static let deepWeakDropLimit = 5
+    static let deepWeakCooldownDelay: TimeInterval = 120
 
     /// Kopma bildiriminde koordinatörün uygulayacağı tek eylem.
     enum Action: Equatable {
@@ -52,12 +58,14 @@ struct BleReconnectPolicy {
 
     /// Son ölçülen RSSI zayıfsa temel geri çekilme uzatılır (×2, üst sınır 30 sn);
     /// güçlü sinyal ya da bilinmeyen RSSI'da davranış birebir korunur.
-    /// Üst üste `weakDropLimit` zayıf kopma olduysa denemeler 60 sn'ye seyreltilir
-    /// (kullanıcı ön plana gelince sayaç sıfırlanır; bkz. `handleForeground`).
+    /// Üst üste `weakDropLimit` zayıf kopmada 60 sn, `deepWeakDropLimit`
+    /// kopmada 120 sn seyrelir (kullanıcı ön plana gelince sayaç sıfırlanır;
+    /// bkz. `handleForeground`).
     static func reconnectDelay(attempt: Int, lastRSSI: Int?,
                                consecutiveWeakDrops: Int = 0) -> TimeInterval {
         guard attempt > 0 else { return 0 }
         let base = backoffDelay(attempt: attempt)
+        if consecutiveWeakDrops >= deepWeakDropLimit { return deepWeakCooldownDelay }
         if consecutiveWeakDrops >= weakDropLimit { return weakCooldownDelay }
         guard let lastRSSI, lastRSSI < weakSignalThreshold else { return base }
         return min(base * weakSignalDelayFactor, weakMaxDelay)

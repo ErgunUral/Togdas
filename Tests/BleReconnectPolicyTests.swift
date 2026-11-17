@@ -167,5 +167,30 @@ final class BleReconnectPolicyTests: XCTestCase {
         let first = action(attempts: 2)
         let second = action(attempts: 2)
         XCTAssertEqual(first, second)
+    }    /// Derin zayıflık (5+ ardışık zayıf kopma) 120 sn'ye seyreltir; 3-4
+    /// kopma 60 sn'de kalır; ilk kopmalar ×2 geri çekilmeyi kullanır.
+    func testDeepWeakCooldownExtendsInterval() {
+        XCTAssertEqual(BleReconnectPolicy.reconnectDelay(
+            attempt: 2, lastRSSI: -92, consecutiveWeakDrops: 1), 6)
+        XCTAssertEqual(BleReconnectPolicy.reconnectDelay(
+            attempt: 3, lastRSSI: -92, consecutiveWeakDrops: 3), 60)
+        XCTAssertEqual(BleReconnectPolicy.reconnectDelay(
+            attempt: 3, lastRSSI: -92, consecutiveWeakDrops: 4), 60)
+        XCTAssertEqual(BleReconnectPolicy.reconnectDelay(
+            attempt: 4, lastRSSI: -92, consecutiveWeakDrops: 5), 120)
+        XCTAssertEqual(BleReconnectPolicy.reconnectDelay(
+            attempt: 5, lastRSSI: -92, consecutiveWeakDrops: 8), 120)
     }
+
+    /// Güçlü sinyalle kopma seyrelmeyi tetiklemez; bilinmeyen RSSI
+    /// davranışı birebir korur.
+    func testStrongOrUnknownRSSIKeepsBaseBackoff() {
+        XCTAssertEqual(BleReconnectPolicy.reconnectDelay(
+            attempt: 2, lastRSSI: -70, consecutiveWeakDrops: 0), 3)
+        XCTAssertEqual(BleReconnectPolicy.reconnectDelay(
+            attempt: 2, lastRSSI: -70, consecutiveWeakDrops: 6), 120)
+        XCTAssertEqual(BleReconnectPolicy.reconnectDelay(
+            attempt: 2, lastRSSI: nil, consecutiveWeakDrops: 0), 3)
+    }
+
 }

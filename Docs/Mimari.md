@@ -318,6 +318,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Zayıf sinyalde yeniden bağlanma yumuşatması (2026-11-17,
+  576 test):** Cihaz kanıtı (ort. −93 dBm, zayıf %100) döngünün her
+  dakika tekrarlandığını gösteriyordu; gece boyu radyo/pil yükü.
+  `BleReconnectPolicy`'e derin zayıflık kademesi eklendi: 3+ ardışık
+  zayıf kopmada 60 sn (mevcut), **5+ ardışıkta 120 sn**. Ön plana
+  gelme/kararlı bağlantı sayaçları sıfırladığından kullanıcı etkileşimi
+  ve yaklaşma anında toparlanma korunur. Komut akışına etkisi yok.
 - **Saat: şarj hedefi gözcüsü + kurtarma onayı + bağlantı sesi
   (2026-11-17, 574 test):** (1) `WatchSnapshot`'a `chargingActive`/
   `chargingTargetPercent`/`chargingStartedAt` eklendi (eski snapshot
