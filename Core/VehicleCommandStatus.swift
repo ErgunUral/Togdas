@@ -47,6 +47,13 @@ struct VehicleCommandStatus: Codable, Equatable {
     }
 }
 
+extension Notification.Name {
+    /// Komut durumu yazıldığında yayın yüzeylerini (widget, saat) tazeler.
+    /// Dağınık `publishWatchSnapshot()` çağrıları yerine tek tetik noktası.
+    static let vehicleCommandStatusDidChange =
+        Notification.Name("toqdas.commandStatus.didChange")
+}
+
 enum VehicleCommandStatusStore {
     /// Uygulama tarafı yazım noktası: komut gönderimi ve doğrulama bildirimi.
     /// `defaults` test enjeksiyonu içindir; üretim önündeki çağrılar app
@@ -56,7 +63,11 @@ enum VehicleCommandStatusStore {
         defaults: UserDefaults = UserDefaults(suiteName: VehicleCommandStatus.appGroup) ?? .standard
     ) {
         guard let data = try? JSONEncoder().encode(status) else { return }
+        // Aynı içerik yeniden yazılırsa yüzeyler boşuna yenilenmesin; ayrıca
+        // markVerified'ın "zaten dolu" durumu bildirim üretmez.
+        if defaults.data(forKey: VehicleCommandStatus.storageKey) == data { return }
         defaults.set(data, forKey: VehicleCommandStatus.storageKey)
+        NotificationCenter.default.post(name: .vehicleCommandStatusDidChange, object: nil)
     }
 
     /// Widget tarafı okuma noktası; kayıt yok/bozuk ise nil döner ve

@@ -409,11 +409,10 @@ struct DashboardView: View {
             }
             switch receipt.phase {
             case .verified:
+                // Yayın, depo değişikliğini dinleyen tek noktadan yapılır.
                 VehicleCommandStatusStore.markVerified(true, ifLabelMatches: matchesLock)
-                model.publishWatchSnapshot()
             case .failed:
                 VehicleCommandStatusStore.markVerified(false, ifLabelMatches: matchesLock)
-                model.publishWatchSnapshot()
             default:
                 break
             }
@@ -2097,8 +2096,8 @@ struct DashboardView: View {
         VehicleCommandStatusStore.save(
             VehicleCommandStatus(actionLabel: label, sentAt: Date(), verified: verified)
         )
-        // Saat de aynı sonucu görsün (24 saatten eski kayıt süzülür).
-        model.publishWatchSnapshot()
+        // Saat ve widget aynı sonucu görür: depo değişikliği tek yayın
+        // noktasını tetikler (çağıranların publish etmeyi unutması bitti).
     }
 
     /// Uygun yakınlık aralığını GATT örneklerinden otomatik algılar.

@@ -262,6 +262,17 @@ final class GarageModel: ObservableObject {
                 Task { @MainActor in self?.publishWatchSnapshot() }
             }
             .store(in: &watchCancellables)
+
+        // Komut durumu (widget/saat "son komut" satırı) tek noktadan yayılır:
+        // her çağıranın ayrıca publish etmesi beklenmez, unutulan çağrı
+        // yüzeyler arası senkron kayması üretiyordu.
+        NotificationCenter.default
+            .publisher(for: .vehicleCommandStatusDidChange)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.publishCommandStatusChange() }
+            }
+            .store(in: &watchCancellables)
     }
 
     func login() async {
@@ -543,6 +554,14 @@ final class GarageModel: ObservableObject {
                 VehicleCommandStatus(actionLabel: action.statusLabel, sentAt: Date(), verified: nil)
             )
         }
+    }
+
+    /// Komut durumu değiştiğinde tek yayın noktası: saat snapshot'ı ve widget
+    /// birlikte tazelenir. Widget "son komut" satırını doğrudan depodan okur;
+    /// bu yüzden yenileme zorlanır (60 sn tabanı `WidgetRefreshPolicy`de).
+    func publishCommandStatusChange() {
+        publishWatchSnapshot()
+        requestWidgetReload(contentChanged: true)
     }
 
     func publishWatchSnapshot() {

@@ -8,6 +8,32 @@ final class VehicleCommandStatusTests: XCTestCase {
         UserDefaults(suiteName: "test.toqdas.commandstatus.\(UUID().uuidString)")!
     }
 
+    func testSaveNotifiesSurfacesOncePerActualChange() {
+        let defaults = storeDefaults
+        var count = 0
+        let observer = NotificationCenter.default.addObserver(
+            forName: .vehicleCommandStatusDidChange, object: nil, queue: nil
+        ) { _ in count += 1 }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        let status = VehicleCommandStatus(
+            actionLabel: "Kilitleme", sentAt: Date(timeIntervalSince1970: 1_800_000_000), verified: nil
+        )
+        VehicleCommandStatusStore.save(status, defaults: defaults)
+        XCTAssertEqual(count, 1)
+
+        // Aynı içerik: yayın yok (widget/saat boşuna yenilenmez).
+        VehicleCommandStatusStore.save(status, defaults: defaults)
+        XCTAssertEqual(count, 1)
+
+        VehicleCommandStatusStore.markVerified(false, ifLabelMatches: { _ in true }, defaults: defaults)
+        XCTAssertEqual(count, 2)
+
+        // `verified` zaten dolu: markVerified yazmaz, yayın da yok.
+        VehicleCommandStatusStore.markVerified(true, ifLabelMatches: { _ in true }, defaults: defaults)
+        XCTAssertEqual(count, 2)
+    }
+
     func testDisplayTextVariants() {
         var status = VehicleCommandStatus(
             actionLabel: "Kilit açma",
