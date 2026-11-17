@@ -318,6 +318,21 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Saat "eski / süre bilinmiyor" yapışkanlığı düzeltmesi
+  (2026-11-17, 577 test):** Belirti: telefon bağlıyken saat "Kilit
+  verisi eski / iPhone'a ulaşılamıyor · son veri süre bilinmiyor"
+  gösteriyordu. Kök neden: bağlantı kurulunca önemli durum (ready)
+  anında gider ama telemetri henüz yoktur (`telemetryAge=nil`);
+  1-2 sn sonra telemetri gelince düzeltici güncelleme 30 sn
+  darboğaza takılır, sonra da gösterim değerleri sabitlenince
+  parmak izi değişmez → nil snapshot saatte yapışır. Düzeltmeler:
+  (1) `importantFingerprint`'e kilit durumu eklendi (nil→bilinen ve
+  true↔false geçişi anında gider); (2) saatte saat sapmasından
+  doğan küçük negatif yaş 0'a kelepçelendi ("süre bilinmiyor"
+  yazmıyor); (3) metinler dürüstleştirildi: reachable=false normal
+  arka plan davranışı olduğundan "ulaşılamıyor" yerine "iPhone
+  uygulaması arka planda · son veri X" ve "Komut için iPhone
+  uygulaması açık olmalı".
 - **Zayıf sinyalde yeniden bağlanma yumuşatması (2026-11-17,
   576 test):** Cihaz kanıtı (ort. −93 dBm, zayıf %100) döngünün her
   dakika tekrarlandığını gösteriyordu; gece boyu radyo/pil yükü.

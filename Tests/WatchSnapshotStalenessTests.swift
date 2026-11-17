@@ -71,4 +71,33 @@ final class WatchSnapshotStalenessTests: XCTestCase {
         XCTAssertNotEqual(base.displayFingerprint, withLastSeen.displayFingerprint)
     }
 
+    /// Kilit durumu "bilinmiyor → biliniyor" geçişi ÖNEMLİ sayılır: aksi
+    /// halde telemetri yokken giden snapshot saatte yapışır (30 sn
+    /// darboğaz + sabit değerler parmak izini dondurur) ve saat
+    /// "eski / süre bilinmiyor" gösterir; telefon bağlıyken bile.
+    func testLockKnownTransitionIsImportant() {
+        let unknown = WatchSnapshot(vin: "VIN123", vehicleName: "T10X", locked: nil,
+                                    doorCount: 0, openDoors: 0, trunkAjar: nil,
+                                    powerState: nil, ready: true, bleState: "ready",
+                                    updatedAt: 100, telemetryAge: nil,
+                                    batteryPercent: nil, rangeKM: nil,
+                                    outsideTemperatureC: nil)
+        let known = WatchSnapshot(vin: "VIN123", vehicleName: "T10X", locked: true,
+                                  doorCount: 4, openDoors: 0, trunkAjar: false,
+                                  powerState: 1, ready: true, bleState: "ready",
+                                  updatedAt: 102, telemetryAge: 0.5,
+                                  batteryPercent: nil, rangeKM: nil,
+                                  outsideTemperatureC: nil)
+        XCTAssertNotEqual(unknown.importantFingerprint, known.importantFingerprint)
+        // Kilit değeri değişimi (true↔false) da önemli: kilit/açık sonucu
+        // saatte anında görünmeli.
+        let unlocked = WatchSnapshot(vin: "VIN123", vehicleName: "T10X", locked: false,
+                                     doorCount: 4, openDoors: 4, trunkAjar: false,
+                                     powerState: 1, ready: true, bleState: "ready",
+                                     updatedAt: 104, telemetryAge: 0.5,
+                                     batteryPercent: nil, rangeKM: nil,
+                                     outsideTemperatureC: nil)
+        XCTAssertNotEqual(known.importantFingerprint, unlocked.importantFingerprint)
+    }
+
 }

@@ -179,6 +179,12 @@ extension WatchSnapshot {
         parts.append(bleState)
         parts.append(lastCommandText ?? "n")
         parts.append(recovering.map { String($0) } ?? "n")
+        // Kilit durumu "bilinmiyor → biliniyor" geçişi anında gitmeli.
+        // Aksi halde bağlantı kurulduğunda telemetri yokken giden snapshot
+        // (telemetryAge=nil) saatte yapışır: düzeltici güncelleme 30 sn
+        // darboğaza takılır, sonra da parmak izi değerler sabitlenince
+        // hiç değişmez → saat "eski / süre bilinmiyor" gösterir.
+        parts.append(locked.map { String($0) } ?? "unknown")
         return parts.joined(separator: "|")
     }
 }

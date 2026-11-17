@@ -26,8 +26,9 @@ struct WatchGarageView: View {
 
     private func telemetryAge(at now: Date) -> TimeInterval? {
         guard let snapshot, let age = snapshot.telemetryAge else { return nil }
-        let elapsed = now.timeIntervalSince1970 - snapshot.updatedAt
-        guard elapsed >= 0 else { return nil }
+        // Saat/telefon saat sapmasında küçük negatif fark veri geldiği an
+        // oluşur; "süre bilinmiyor" yazmak yerine 0'a kelepçelenir.
+        let elapsed = max(0, now.timeIntervalSince1970 - snapshot.updatedAt)
         return age + elapsed
     }
 
@@ -83,8 +84,10 @@ struct WatchGarageView: View {
     private func connectionText(at now: Date) -> String {
         if snapshot == nil { return "iPhone’dan veri bekleniyor" }
         if snapshot?.recovering == true { return "iPhone bağlantıyı yeniden kuruyor…" }
+        // reachable yalnız iPhone uygulaması ön plandayken true olur
+        // (platform davranışı); arka plan normaldir, alarm değil.
         if !link.reachable {
-            return "iPhone’a ulaşılamıyor · son veri \(dataAgeText(at: now))"
+            return "iPhone uygulaması arka planda · son veri \(dataAgeText(at: now))"
         }
         if snapshot?.ready != true { return "Dijital anahtar hazır değil" }
         if telemetryFresh(at: now) { return "Telemetri güncel" }
@@ -183,7 +186,7 @@ struct WatchGarageView: View {
                     .padding(.top, 2)
 
                     Text(!link.reachable
-                        ? "iPhone’a ulaşılamıyor; son bilinen veri gösteriliyor. Komutlar kapalı."
+                        ? "Komut için iPhone uygulaması açık olmalı; son bilinen veri gösteriliyor."
                         : (link.lastResult?.message ?? "İstek iPhone üzerinden iletilir. Kilit onayı araç telemetrisinden gelir."))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
