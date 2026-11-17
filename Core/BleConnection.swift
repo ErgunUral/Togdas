@@ -236,6 +236,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     func stop(keepTelemetry: Bool = false) {
         let interruptedLockVerification = pendingLockVerification
+        let interruptedCommand = pendingCommand
         wantsScan = false
         // Beklenmeyen kopmada niyet korunur: radyo geri gelince yeniden bağlanılır.
         if !keepTelemetry { shouldStayConnected = false }
@@ -268,6 +269,18 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
                 failureReason: .linkLost
             )
             recordDiagnostic("lock_verification_lost · bağlantı kapandı; kilit durumu doğrulanamadı")
+        }
+        if let interruptedCommand {
+            // Komut imzalanıp araca gitmeden oturum koptuysa kayıt sessizce
+            // kaybolmaz: saat/telefon "iletilmedi" görür. Retry yok (invariant).
+            recordCommandReceipt(
+                code: interruptedCommand.code,
+                action: interruptedCommand.action,
+                phase: .failed,
+                detail: "Bağlantı komut tamamlanmadan kapandı; komut araca iletilmedi.",
+                failureReason: .linkLost
+            )
+            recordDiagnostic("command_interrupted · bağlantı kapandı; \(interruptedCommand.action) araca iletilmedi")
         }
         lastEvent = keepTelemetry ? "Bağlantı yeniden kuruluyor…" : "Bağlantı durduruldu"
         channels = []

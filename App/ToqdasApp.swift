@@ -442,7 +442,9 @@ final class GarageModel: ObservableObject {
     private func handleWatchCommand(_ request: WatchCommandRequest,
                                     reply: @escaping (WatchCommandResult) -> Void) {
         let now = Date().timeIntervalSince1970
+        ble.recordDiagnostic("watch_command · \(request.action) isteği saatten alındı")
         func reject(_ message: String) {
+            ble.recordDiagnostic("watch_command_rejected · \(request.action): \(message)")
             reply(WatchCommandResult(id: request.id, status: "rejected", message: message, at: now))
         }
         guard !request.isExpired,
@@ -508,6 +510,7 @@ final class GarageModel: ObservableObject {
                                  sentAt: Date(),
                                  verified: nil)
         )
+        ble.recordDiagnostic("watch_command_forwarded · \(request.action) isteği BLE katmanına verildi")
         reply(WatchCommandResult(id: request.id, status: "forwarded",
                                  message: "\(label) isteği araca iletildi; taze telemetriyle doğrulama bekleniyor.",
                                  at: now))
