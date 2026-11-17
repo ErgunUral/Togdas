@@ -20,6 +20,7 @@ struct WatchGarageView: View {
     @State private var pendingAutomation: WatchProximityAutomationAction?
     @State private var lastRecovering: Bool?
     @State private var previousReady: Bool?
+    @State private var previousLocked: Bool?
     private let watchPoster = SystemNotificationPoster()
 
     private var snapshot: WatchSnapshot? { link.snapshot }
@@ -242,6 +243,7 @@ struct WatchGarageView: View {
         .onChange(of: link.snapshot?.updatedAt) { _ in
             checkChargingTargetOnWatch()
             announceConnectionIfNeeded()
+            announceLockChangeIfNeeded()
         }
         .onChange(of: link.snapshot?.recovering) { _ in
             confirmRecoveryIfNeeded()
@@ -281,6 +283,44 @@ struct WatchGarageView: View {
                 timeSensitive: false),
             using: watchPoster
         )
+    }
+
+    /// Kilit geçişi sesli bildirim (anahtarlık davranışı): kilit AÇILDIĞINDA
+    /// **çift bip** (0,5 sn arayla iki bildirim), KİLİTLENDİĞİNDE **tek
+    /// bip** (tek bildirim). watchOS özel bildirim sesini desteklemediği
+    /// için ayrım bildirim sayısıyla üretilir. Bildirim sesi yalnız saat
+    /// uygulaması arka plandayken duyulur (platform davranışı); ön plandaysa
+    /// haptik kalır. Metinler telemetri kilit durumunu anlatır (kapının
+    /// fiziksel açılması ayrı bir iddia taşımaz); VIN yok. Yön başına 15 sn
+    /// sönümleme bağlantı flap'inde tekrar sesi önler.
+    private func announceLockChangeIfNeeded() {
+        let locked = link.snapshot?.locked
+        defer { previousLocked = locked }
+        guard let previous = previousLocked, let locked, previous != locked else { return }
+        let defaults = UserDefaults.standard
+        let key = locked ? "toqdas.watch.lockAnnouncedAt" : "toqdas.watch.unlockAnnouncedAt"
+        let now = Date().timeIntervalSince1970
+        guard now - defaults.double(forKey: key) >= 15 else { return }
+        defaults.set(now, forKey: key)
+        WKInterfaceDevice.current().play(locked ? .success : .notification)
+        NotificationPoster.requestAuthorization(using: watchPoster)
+        let draft = NotificationPoster.Draft(
+            identifier: UUID().uuidString,
+            title: locked ? "Araç kilitlendi" : "Araç kilidi açıldı",
+            body: locked ? "Kilit durumu imzalı telemetriyle doğrulandı." : "Kilit durumu imzalı telemetriyle doğrulandı.",
+            timeSensitive: false,
+            sound: true)
+        if locked {
+            NotificationPoster.post(draft, using: watchPoster)
+        } else {
+            // Çift bip: ikinci bildirim 0,5 sn sonra (aynı default ses).
+            NotificationPoster.post(draft, using: watchPoster)
+            NotificationPoster.post(
+                draft,
+                using: watchPoster,
+                delay: 0.5
+            )
+        }
     }
 
     /// Şarj durumu satırı: yüzde, kullanıcı hedefi ve hedefe kalan.

@@ -93,5 +93,40 @@ final class NotificationPosterTests: XCTestCase {
         XCTAssertEqual(center.authCalls.count, 1)
         XCTAssertTrue(center.authCalls[0].options.contains(.alert))
         XCTAssertTrue(center.authCalls[0].options.contains(.sound))
+    }    /// Özel ses adı belirtilirse paket sesi kullanılır; default geçersiz kılınır.
+    func testNamedSoundOverridesDefault() {
+        let center = FakeCenter()
+        NotificationPoster.post(
+            NotificationPoster.Draft(
+                identifier: "named-sound",
+                title: "Araç kilitlendi",
+                body: "Gövde",
+                soundName: "kilit-tek.caf"),
+            using: center
+        )
+        XCTAssertEqual(center.requests.count, 1)
+        XCTAssertEqual(
+            center.requests[0].content.sound,
+            UNNotificationSound(named: UNNotificationSoundName(rawValue: "kilit-tek.caf")))
     }
+
+    /// Gecikme verilirse zamanlanmış tetikleyici kurulur (saatte çift bip
+    /// simülasyonu: 0,5 sn arayla ikinci bildirim).
+    func testDelayBuildsTimedTrigger() {
+        let center = FakeCenter()
+        NotificationPoster.post(
+            NotificationPoster.Draft(
+                identifier: "delayed",
+                title: "Araç kilidi açıldı",
+                body: "Gövde"),
+            using: center,
+            delay: 0.5
+        )
+        XCTAssertEqual(center.requests.count, 1)
+        let trigger = center.requests[0].trigger as? UNTimeIntervalNotificationTrigger
+        XCTAssertEqual(trigger?.timeInterval ?? -1, 0.5, accuracy: 0.001)
+        XCTAssertEqual(trigger?.repeats, false)
+    }
+
+
 }

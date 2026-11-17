@@ -48,6 +48,9 @@ enum NotificationPoster {
         /// 12 V kritik bandı gibi yoğun olmayan time-sensitive gösterim.
         var timeSensitive = false
         var sound = true
+        /// Uygulama paketine gömülü özel bildirim sesi (örn. saat kilit
+        /// geçişlerinde tek/çift bip). Belirtilirse default sesi geçersiz kılır.
+        var soundName: String?
     }
 
     /// Sessiz izin isteği (mevcut fire-and-forget davranışı).
@@ -56,25 +59,38 @@ enum NotificationPoster {
     }
 
     /// Bildirim gönderir; `onSuccess` yalnız sistem kabul ederse çağrılır
-    /// (kayıt yalnız başarılı gönderimde semantiği).
+    /// (kayıt yalnız başarılı gönderimde semantiği). `delay` verilirse
+    /// zamanlanmış bildirim olur (örn. saatte çift bip simülasyonu:
+    /// 0,5 sn arayla ikinci bildirim). watchOS özel bildirim sesini
+    /// desteklemez (`soundNamed` API_UNAVAILABLE) → default ses kullanılır.
     static func post(
         _ draft: Draft,
         using center: NotificationPosting,
+        delay: TimeInterval? = nil,
         onSuccess: (() -> Void)? = nil
     ) {
         let content = UNMutableNotificationContent()
         content.title = draft.title
         content.body = draft.body
-        if draft.sound {
+        #if os(watchOS)
+        content.sound = draft.sound ? .default : nil
+        #else
+        if let soundName = draft.soundName {
+            content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: soundName))
+        } else if draft.sound {
             content.sound = .default
         }
+        #endif
         if draft.timeSensitive {
             content.interruptionLevel = .timeSensitive
+        }
+        let trigger = delay.map {
+            UNTimeIntervalNotificationTrigger(timeInterval: $0, repeats: false)
         }
         let request = UNNotificationRequest(
             identifier: draft.identifier,
             content: content,
-            trigger: nil
+            trigger: trigger
         )
         center.add(request) { error in
             guard error == nil else { return }

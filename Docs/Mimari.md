@@ -318,6 +318,18 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Saat kilit geçişi sesleri (2026-11-17, 579 test):** Anahtarlık
+  davranışı: kilit AÇILDIĞINDA çift bildirim (0,5 sn arayla, çift bip
+  hissi), KİLİTLENDİĞİNDE tek bildirim (tek bip). watchOS özel
+  bildirim sesini desteklemez (`soundNamed` API_UNAVAILABLE — SDK
+  başlığıyla doğrulandı) → ayrım bildirim sayısıyla üretilir, default
+  ses. Saatte `previousLocked` geçiş izleme + yön başına 15 sn
+  sönümleme (`toqdas.watch.lockAnnouncedAt` /
+  `toqdas.watch.unlockAnnouncedAt`); ön planda haptik (.success /
+  .notification). `NotificationPoster.post`'a `delay` parametresi
+  eklendi (zamanlanmış tetikleyici); `Draft.soundName` iOS tarafında
+  saklı (watchOS guard'lı). Metinler: "Araç kilitlendi" / "Araç
+  kilidi açıldı" (telemetri kilit durumu; VIN yok).
 - **Saat "eski / süre bilinmiyor" yapışkanlığı düzeltmesi
   (2026-11-17, 577 test):** Belirti: telefon bağlıyken saat "Kilit
   verisi eski / iPhone'a ulaşılamıyor · son veri süre bilinmiyor"
