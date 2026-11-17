@@ -20,6 +20,9 @@ struct VehicleCommandStatus: Codable, Equatable {
     /// İmzalı telemetri doğrulaması: `true`/`false` kesin sonucu,
     /// `nil` doğrulamanın henüz yapılmadığını gösterir.
     let verified: Bool?
+    /// Doğrulanan komut hedef durumu zaten sağlıyorsa kısa not
+    /// ("araç zaten kilitliydi"). Eski kayıtlarda yok (nil).
+    var note: String? = nil
 
     static let appGroup = "group.com.toqdas.ios"
     static let storageKey = "toqdas.widget.commandstatus.v1"
@@ -43,7 +46,8 @@ struct VehicleCommandStatus: Codable, Equatable {
     var displayText: String? {
         let label = actionLabel.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !label.isEmpty else { return nil }
-        return "Son komut: \(label) · \(verificationText)"
+        let noteText = note.map { " · \($0)" } ?? ""
+        return "Son komut: \(label) · \(verificationText)\(noteText)"
     }
 }
 
@@ -86,16 +90,20 @@ enum VehicleCommandStatusStore {
     static func markVerified(
         _ verified: Bool,
         ifLabelMatches predicate: (String) -> Bool,
+        note: String? = nil,
         defaults: UserDefaults = UserDefaults(suiteName: VehicleCommandStatus.appGroup) ?? .standard
     ) {
-        guard let current = load(defaults: defaults),
-              current.verified == nil,
-              predicate(current.actionLabel) else { return }
+        guard let current = load(defaults: defaults), predicate(current.actionLabel) else { return }
+        // İlk kesin sonuç korunur; yalnız nota (zaten hedef durumdaydı) ek
+        // bilgi düşülebilir.
+        guard current.verified == nil || current.verified == verified else { return }
+        guard current.verified != verified || current.note != note else { return }
         save(
             VehicleCommandStatus(
                 actionLabel: current.actionLabel,
                 sentAt: current.sentAt,
-                verified: verified
+                verified: verified,
+                note: note
             ),
             defaults: defaults
         )

@@ -101,6 +101,9 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     private var waitingForCommandTime = false
     private var waitingForCommandNonce = false
     private var pendingLockVerification: Bool?
+    /// Komut gönderilirken araç zaten hedef durumda mıydı? Onay metni bunu
+    /// dürüstçe söyler ("araç zaten kilitliydi"), "değişti" izlenimi vermez.
+    private var lockStateAtSend: Bool?
     private var commandTimeoutTask: Task<Void, Never>?
     private var commandVerificationTask: Task<Void, Never>?
     private var certificateQueued = false
@@ -329,6 +332,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         waitingForCommandTime = false
         waitingForCommandNonce = false
         pendingLockVerification = nil
+        lockStateAtSend = nil
         commandTimeoutTask?.cancel()
         commandTimeoutTask = nil
         commandVerificationTask?.cancel()
@@ -609,6 +613,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             return false
         }
 
+        lockStateAtSend = telemetry?.isLocked
         pendingCommand = PendingCommand(code: code, action: action)
         pendingCommandNonce = nil
         pendingLockVerification = nil
@@ -640,7 +645,8 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         action: String,
         phase: BLECommandReceipt.Phase,
         detail: String?,
-        failureReason: BLECommandReceipt.FailureReason? = nil
+        failureReason: BLECommandReceipt.FailureReason? = nil,
+        note: String? = nil
     ) {
         let receipt = BLECommandReceipt(
             code: code,
@@ -648,7 +654,8 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             phase: phase,
             detail: detail,
             updatedAt: Date(),
-            failureReason: failureReason
+            failureReason: failureReason,
+            note: note
         )
         lastCommandReceipt = receipt
         commandHistory = BLECommandHistoryStore.append(receipt, to: commandHistory)
@@ -658,11 +665,13 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     private func advanceCommandReceipt(
         _ phase: BLECommandReceipt.Phase,
         detail: String? = nil,
-        failureReason: BLECommandReceipt.FailureReason? = nil
+        failureReason: BLECommandReceipt.FailureReason? = nil,
+        note: String? = nil
     ) {
         guard var receipt = lastCommandReceipt else { return }
         receipt.phase = phase
         receipt.detail = detail
+        if let note { receipt.note = note }
         if let failureReason {
             receipt.failureReason = failureReason
         } else if phase != .failed {
@@ -785,13 +794,24 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         if let telemetry,
            Date().timeIntervalSince(telemetry.receivedAt) < 15,
            telemetry.isLocked == targetLocked {
+            let narration = LockAckNarration.texts(
+                targetLocked: targetLocked,
+                wasAlreadyInTarget: lockStateAtSend == targetLocked
+            )
+            lockStateAtSend = nil
+            // Kayıt, sayaçtan önce yazılır: sayaç abonesi "doğrulandı"yı
+            // notsuz işaretlemesin (ilk kesin sonuç notu taşır).
+            lastEvent = narration.event
+            advanceCommandReceipt(.verified, detail: narration.detail, note: narration.note)
+            if targetLocked {
+                print("[BLE] lock state confirmed by fresh signed telemetry")
+                recordDiagnostic(narration.note == nil
+                    ? "Kilitli durum taze imzalı telemetriyle doğrulandı"
+                    : "lock_noop · araç zaten kilitliydi; komut durum değiştirmedi")
+            }
             if targetLocked {
                 lockConfirmationCount += 1
-                print("[BLE] lock state confirmed by fresh signed telemetry")
-                recordDiagnostic("Kilitli durum taze imzalı telemetriyle doğrulandı")
             }
-            lastEvent = "Araç komutu onayladı; kilit durumu hedef değerle eşleşiyor."
-            advanceCommandReceipt(.verified, detail: "Kilit durumu telemetriyle doğrulandı.")
             return
         }
         pendingLockVerification = targetLocked
@@ -1341,13 +1361,19 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             pendingLockVerification = nil
             commandVerificationTask?.cancel()
             commandVerificationTask = nil
+            let wasAlready = lockStateAtSend == target
+            lockStateAtSend = nil
+            lastEvent = target ? "Kapılar kilitli; araç durumuyla doğrulandı." : "Kapı kilitleri açık; araç durumuyla doğrulandı."
+            advanceCommandReceipt(
+                .verified,
+                detail: target ? "Kilitli durum doğrulandı." : "Açık durum doğrulandı.",
+                note: wasAlready ? (target ? "araç zaten kilitliydi" : "araç zaten açıktı") : nil
+            )
+            recordDiagnostic("lock_verified · kilit durumu imzalı telemetriyle doğrulandı: \(target ? "kilitli" : "açık")")
             if target {
                 lockConfirmationCount += 1
                 print("[BLE] lock state confirmed by fresh signed telemetry")
             }
-            lastEvent = target ? "Kapılar kilitli; araç durumuyla doğrulandı." : "Kapı kilitleri açık; araç durumuyla doğrulandı."
-            advanceCommandReceipt(.verified, detail: target ? "Kilitli durum doğrulandı." : "Açık durum doğrulandı.")
-            recordDiagnostic("lock_verified · kilit durumu imzalı telemetriyle doğrulandı: \(target ? "kilitli" : "açık")")
         }
     }
 

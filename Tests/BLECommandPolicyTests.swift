@@ -82,3 +82,24 @@ final class BLECommandPolicyTests: XCTestCase {
         )
     }
 }
+
+/// Onay metni dürüstlüğü: araç zaten hedef durumdaysa "kilitlendi" denmez.
+final class LockAckNarrationTests: XCTestCase {
+    func testAlreadyLockedDoesNotClaimChange() {
+        let texts = LockAckNarration.texts(targetLocked: true, wasAlreadyInTarget: true)
+        XCTAssertEqual(texts.event, "Araç zaten kilitliydi; komut onaylandı.")
+        XCTAssertEqual(texts.note, "araç zaten kilitliydi")
+        XCTAssertFalse(texts.event.contains("kilitle"))
+    }
+
+    func testFreshChangeKeepsPlainConfirmationWithoutNote() {
+        let texts = LockAckNarration.texts(targetLocked: true, wasAlreadyInTarget: false)
+        XCTAssertEqual(texts.event, "Araç komutu onayladı; kilit durumu hedef değerle eşleşiyor.")
+        XCTAssertNil(texts.note)
+    }
+
+    func testUnlockAlreadyOpenIsAlsoHonest() {
+        let texts = LockAckNarration.texts(targetLocked: false, wasAlreadyInTarget: true)
+        XCTAssertEqual(texts.note, "araç zaten açıktı")
+    }
+}

@@ -58,3 +58,32 @@ enum BLECommandPolicy {
         rejection(code: code, linkReady: linkReady, telemetry: telemetry, now: now)?.message
     }
 }
+
+/// Kilit onayı metinleri. Dürüstlük kuralı: araç **zaten** hedef durumdaysa
+/// "kilitlendi" denmez; komut onaylandı ama durumun değişmediği söylenir.
+/// (Sahada gözlenen vaka: araç kendi kendine kilitlenmişken gelen kilitle
+/// komutu ack alıyor, kullanıcı "kilitlemedi" sanıyordu.)
+enum LockAckNarration {
+    struct Texts: Equatable {
+        let event: String
+        let detail: String
+        let note: String?
+    }
+
+    static func texts(targetLocked: Bool, wasAlreadyInTarget: Bool) -> Texts {
+        if wasAlreadyInTarget {
+            return Texts(
+                event: targetLocked
+                    ? "Araç zaten kilitliydi; komut onaylandı."
+                    : "Araç zaten kilit açıktı; komut onaylandı.",
+                detail: "Araç zaten hedef durumdaydı; durum değişmedi.",
+                note: targetLocked ? "araç zaten kilitliydi" : "araç zaten açıktı"
+            )
+        }
+        return Texts(
+            event: "Araç komutu onayladı; kilit durumu hedef değerle eşleşiyor.",
+            detail: "Kilit durumu telemetriyle doğrulandı.",
+            note: nil
+        )
+    }
+}

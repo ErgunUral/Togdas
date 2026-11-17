@@ -72,6 +72,10 @@ struct BLECommandReceipt: Codable, Equatable, Identifiable {
     var updatedAt: Date
     /// Yalnız `.failed` aşamasında dolu; eski kayıtlarda yok (nil).
     var failureReason: FailureReason?
+    /// Doğrulanan komut hedef durumu **zaten** sağlıyorsa kısa not
+    /// ("araç zaten kilitliydi"); saat/widget "bir şey değişti" izlenimi
+    /// vermesin. Eski kayıtlarda yok (nil).
+    var note: String?
 
     init(
         id: UUID = UUID(),
@@ -80,7 +84,8 @@ struct BLECommandReceipt: Codable, Equatable, Identifiable {
         phase: Phase,
         detail: String?,
         updatedAt: Date,
-        failureReason: FailureReason? = nil
+        failureReason: FailureReason? = nil,
+        note: String? = nil
     ) {
         self.id = id
         self.code = code
@@ -89,6 +94,7 @@ struct BLECommandReceipt: Codable, Equatable, Identifiable {
         self.detail = detail
         self.updatedAt = updatedAt
         self.failureReason = failureReason
+        self.note = note
     }
 
     var summary: String {

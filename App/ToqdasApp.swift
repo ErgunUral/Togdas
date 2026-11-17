@@ -481,9 +481,10 @@ final class GarageModel: ObservableObject {
         guard let label = labels[request.action] else {
             return reject("Bagaj/cam komutları Watch'tan doğrulanana kadar kapalı.")
         }
-        guard ble.canSendVehicleCommands else {
-            return reject("READY ve 15 saniyeden yeni, kilit durumu bilinen imzalı telemetri gerekli.")
-        }
+        // Kapı kontrolü bilerek `sendCommand`a bırakıldı: oradaki tipli ret
+        // nedeni gerçek sebebi söyler (bağlantı yok / telemetri yok / eski /
+        // kilit durumu bilinmiyor). Buradaki tek metin, bağlantı koptuğunda
+        // "telemetri eski" diyerek yanıltıyordu.
         let accepted: Bool
         switch request.action {
         case "lock": accepted = ble.lock()
@@ -575,7 +576,8 @@ final class GarageModel: ObservableObject {
         let commandStatus = VehicleCommandStatusStore.load()
         let lastCommandText: String?
         if let status = commandStatus, !status.isStale {
-            lastCommandText = "\(status.actionLabel) · \(status.verificationText) · "
+            let noteText = status.note.map { " · \($0)" } ?? ""
+            lastCommandText = "\(status.actionLabel) · \(status.verificationText)\(noteText) · "
                 + TurkishFormat.date(status.sentAt, format: "HH:mm")
         } else {
             lastCommandText = nil

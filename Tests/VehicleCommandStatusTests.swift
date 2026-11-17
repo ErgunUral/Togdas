@@ -50,6 +50,32 @@ final class VehicleCommandStatusTests: XCTestCase {
         XCTAssertEqual(status.displayText, "Son komut: Kilitleme · doğrulanamadı")
     }
 
+    func testNoteIsShownOnlyWhenStateWasAlreadyInTarget() {
+        var status = VehicleCommandStatus(
+            actionLabel: "Kilitleme", sentAt: Date(), verified: true, note: "araç zaten kilitliydi"
+        )
+        XCTAssertEqual(status.displayText, "Son komut: Kilitleme · doğrulandı · araç zaten kilitliydi")
+
+        status = VehicleCommandStatus(actionLabel: "Kilitleme", sentAt: Date(), verified: true)
+        XCTAssertEqual(status.displayText, "Son komut: Kilitleme · doğrulandı")
+    }
+
+    func testMarkVerifiedCarriesNoteAndKeepsFirstResult() {
+        let defaults = storeDefaults
+        VehicleCommandStatusStore.save(
+            VehicleCommandStatus(actionLabel: "Kilitleme", sentAt: Date(), verified: nil),
+            defaults: defaults
+        )
+        VehicleCommandStatusStore.markVerified(
+            true, ifLabelMatches: { _ in true }, note: "araç zaten kilitliydi", defaults: defaults
+        )
+        XCTAssertEqual(VehicleCommandStatusStore.load(defaults: defaults)?.note, "araç zaten kilitliydi")
+
+        // İlk kesin sonuç değişmez: sonraki "doğrulanamadı" yazımı yok sayılır.
+        VehicleCommandStatusStore.markVerified(false, ifLabelMatches: { _ in true }, defaults: defaults)
+        XCTAssertEqual(VehicleCommandStatusStore.load(defaults: defaults)?.verified, true)
+    }
+
     func testEmptyLabelYieldsNilNotFakeText() {
         let status = VehicleCommandStatus(actionLabel: "   ", sentAt: Date(), verified: nil)
         XCTAssertNil(status.displayText)

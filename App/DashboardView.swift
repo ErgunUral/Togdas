@@ -410,7 +410,9 @@ struct DashboardView: View {
             switch receipt.phase {
             case .verified:
                 // Yayın, depo değişikliğini dinleyen tek noktadan yapılır.
-                VehicleCommandStatusStore.markVerified(true, ifLabelMatches: matchesLock)
+                VehicleCommandStatusStore.markVerified(
+                    true, ifLabelMatches: matchesLock, note: receipt.note
+                )
             case .failed:
                 VehicleCommandStatusStore.markVerified(false, ifLabelMatches: matchesLock)
             default:
