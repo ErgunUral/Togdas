@@ -1,5 +1,6 @@
 import SwiftUI
 import WatchKit
+import AVFoundation
 
 @main
 struct ToqdasWatchApp: App {
@@ -253,7 +254,12 @@ struct WatchGarageView: View {
         .onAppear {
             lastRecovering = link.snapshot?.recovering
         }
-        .onAppear { refreshIfStale() }
+        .onAppear {
+            // Bildirim izni açılışta istenir: arka plan sesi ilk olay anında
+            // değil, kullanıcı izni gördüğünde garantiye alınır.
+            NotificationPoster.requestAuthorization(using: watchPoster)
+            refreshIfStale()
+        }
         .onChange(of: scenePhase) { phase in
             if phase == .active { refreshIfStale() }
         }
@@ -262,20 +268,36 @@ struct WatchGarageView: View {
         }
     }
 
-    /// Bağlantı duyurusu: snapshot READY'ye geçtiğinde (false→true) saatte
-    /// haptik + sesli bildirim. Bildirim sesi yalnız saat uygulaması
-    /// arka plandayken duyulur (platform davranışı); ön plandaysa haptik
-    /// geri bildirim kalır. 90 sn sönümleme tekrar sesi önler; VIN yok.
+    /// Bağlantı duyurusu: araç verisi READY olduğunda saatte haptik + ses.
+    ///
+    /// Ses iki kanaldan gelir, çünkü ikisi farklı durumlarda duyulur:
+    /// - **Ön planda** (kullanıcı saate bakıyor): `WatchChime` doğrudan ton
+    ///   çalar. watchOS kendi uygulamasının bildirimini ön planda sessiz
+    ///   işler; "gerçekten bağlandı" geri bildirimi böyle duyulur.
+    /// - **Arka planda**: yerel bildirim (izin verildiyse) sesli teslim edilir.
+    ///
+    /// Duyuru hem READY'ye geçişte hem de saat ilk açıldığında veri taze ise
+    /// yapılır: kullanıcı saati açtığında "bağlı mı" sorusunun yanıtı sessiz
+    /// kalmasın. 90 sn sönümleme tekrarı önler; VIN yok.
     private func announceConnectionIfNeeded() {
         let ready = link.snapshot?.ready == true
         defer { previousReady = ready }
-        guard let previous = previousReady, !previous, ready else { return }
+        if let previous = previousReady {
+            guard !previous, ready else { return }
+        } else {
+            // İlk gözlem: yalnız taze veri "gerçekten bağlı" sayılır; cache'ten
+            // gelen eski READY sessizce duyurulmaz.
+            guard ready, telemetryFresh(at: Date()) else { return }
+        }
         let defaults = UserDefaults.standard
         let now = Date().timeIntervalSince1970
         let last = defaults.double(forKey: "toqdas.watch.connectAnnouncedAt")
         guard now - last >= 90 else { return }
         defaults.set(now, forKey: "toqdas.watch.connectAnnouncedAt")
         WKInterfaceDevice.current().play(.success)
+        if scenePhase == .active {
+            WatchChime.playConnected()
+        }
         NotificationPoster.requestAuthorization(using: watchPoster)
         NotificationPoster.post(
             NotificationPoster.Draft(
@@ -568,5 +590,82 @@ struct WatchGarageView: View {
     private func request(_ action: String) {
         guard let vin = snapshot?.vin, !vin.isEmpty else { return }
         link.request(action, vin: vin)
+    }
+}
+
+
+/// Saatte uygulama içi kısa ton (bağlantı onayı).
+///
+/// Neden gerekli: watchOS, uygulama ön plandayken kendi yerel bildirimini
+/// sessiz işler; kullanıcı "bağlandı" geri bildirimini duyamıyordu. Ton
+/// bellek içinde üretilen kısa bir WAV'dır (paket varlığı yok, telif yok),
+/// `AVAudioPlayer` ile çalınır ve yalnız uygulama etkinken çağrılır.
+/// Çalınamazsa sessiz düşer; haptik geri bildirim zaten verilmiş olur.
+enum WatchChime {
+    private static var player: AVAudioPlayer?
+
+    static func playConnected() {
+        guard let data = connectedToneData() else { return }
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default)
+            try session.setActive(true)
+            let audio = try AVAudioPlayer(data: data)
+            audio.volume = 0.9
+            audio.play()
+            player = audio
+        } catch {
+            // Ses çalınamadı: haptik zaten verildi; kullanıcıya hata gösterilmez.
+        }
+    }
+
+    /// İki notalı kısa onay tonu (880 Hz → 1175 Hz), 16-bit PCM mono WAV.
+    private static func connectedToneData() -> Data? {
+        let rate = 44_100
+        let segments: [(frequency: Double, seconds: Double)] = [
+            (880, 0.18), (0, 0.05), (1174.66, 0.26)
+        ]
+        var samples: [Int16] = []
+        for segment in segments {
+            let count = Int(segment.seconds * Double(rate))
+            guard count > 0 else { continue }
+            let attack = max(1, Int(0.01 * Double(rate)))
+            let release = max(1, Int(0.02 * Double(rate)))
+            for index in 0..<count {
+                guard segment.frequency > 0 else {
+                    samples.append(0)
+                    continue
+                }
+                let time = Double(index) / Double(rate)
+                let envelope = min(1.0, Double(index) / Double(attack))
+                    * min(1.0, Double(count - index) / Double(release))
+                let value = sin(2 * .pi * segment.frequency * time) * 0.35 * envelope
+                samples.append(Int16(max(-1, min(1, value)) * 32_767))
+            }
+        }
+        guard !samples.isEmpty else { return nil }
+
+        var data = Data()
+        let byteCount = UInt32(samples.count * 2)
+        func append(_ string: String) { data.append(contentsOf: Array(string.utf8)) }
+        func append32(_ value: UInt32) { withUnsafeBytes(of: value.littleEndian) { data.append(contentsOf: $0) } }
+        func append16(_ value: UInt16) { withUnsafeBytes(of: value.littleEndian) { data.append(contentsOf: $0) } }
+
+        append("RIFF")
+        append32(36 + byteCount)
+        append("WAVEfmt ")
+        append32(16)
+        append16(1)                      // PCM
+        append16(1)                      // mono
+        append32(UInt32(rate))
+        append32(UInt32(rate * 2))       // byte rate
+        append16(2)                      // block align
+        append16(16)                     // bits per sample
+        append("data")
+        append32(byteCount)
+        for sample in samples {
+            append16(UInt16(bitPattern: sample))
+        }
+        return data
     }
 }
