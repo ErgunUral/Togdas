@@ -264,7 +264,8 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
                 phase: .failed,
                 detail: interruptedLockVerification
                     ? "Bağlantı kapandı; kilitleme doğrulanamadı."
-                    : "Bağlantı kapandı; kilit açma doğrulanamadı."
+                    : "Bağlantı kapandı; kilit açma doğrulanamadı.",
+                failureReason: .linkLost
             )
             recordDiagnostic("lock_verification_lost · bağlantı kapandı; kilit durumu doğrulanamadı")
         }
@@ -568,7 +569,8 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         if let rejection = BLECommandPolicy.rejection(code: code, linkReady: state.isReady, telemetry: telemetry) {
             lastEvent = rejection.message
             if !hasActiveCommand {
-                recordCommandReceipt(code: code, action: action, phase: .failed, detail: rejection.message)
+                recordCommandReceipt(code: code, action: action, phase: .failed,
+                                     detail: rejection.message, failureReason: .gateRejected)
             }
             recordDiagnostic("command_gate_rejected · \(action): \(rejection.diagnosticCode)")
             return false
@@ -576,14 +578,16 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         guard commandChar != nil else {
             lastEvent = "Komut kanalı yok."
             if !hasActiveCommand {
-                recordCommandReceipt(code: code, action: action, phase: .failed, detail: "Komut kanalı yok.")
+                recordCommandReceipt(code: code, action: action, phase: .failed,
+                                     detail: "Komut kanalı yok.", failureReason: .gateRejected)
             }
             return false
         }
         guard phoneKey != nil else {
             lastEvent = "Telefon imza anahtarı yok."
             if !hasActiveCommand {
-                recordCommandReceipt(code: code, action: action, phase: .failed, detail: "Telefon imza anahtarı yok.")
+                recordCommandReceipt(code: code, action: action, phase: .failed,
+                                     detail: "Telefon imza anahtarı yok.", failureReason: .gateRejected)
             }
             return false
         }
@@ -613,7 +617,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         } else {
             pendingCommand = nil
             lastEvent = "Araç saati kanalı kullanılamıyor; komut gönderilmedi."
-            advanceCommandReceipt(.failed, detail: lastEvent)
+            advanceCommandReceipt(.failed, detail: lastEvent, failureReason: .gateRejected)
             return false
         }
     }
@@ -622,24 +626,36 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         code: UInt8,
         action: String,
         phase: BLECommandReceipt.Phase,
-        detail: String?
+        detail: String?,
+        failureReason: BLECommandReceipt.FailureReason? = nil
     ) {
         let receipt = BLECommandReceipt(
             code: code,
             action: action,
             phase: phase,
             detail: detail,
-            updatedAt: Date()
+            updatedAt: Date(),
+            failureReason: failureReason
         )
         lastCommandReceipt = receipt
         commandHistory = BLECommandHistoryStore.append(receipt, to: commandHistory)
         BLECommandHistoryStore.save(commandHistory)
     }
 
-    private func advanceCommandReceipt(_ phase: BLECommandReceipt.Phase, detail: String? = nil) {
+    private func advanceCommandReceipt(
+        _ phase: BLECommandReceipt.Phase,
+        detail: String? = nil,
+        failureReason: BLECommandReceipt.FailureReason? = nil
+    ) {
         guard var receipt = lastCommandReceipt else { return }
         receipt.phase = phase
         receipt.detail = detail
+        if let failureReason {
+            receipt.failureReason = failureReason
+        } else if phase != .failed {
+            // Doğrulandı/onaylandı geçişi önceki başarısızlık sınıfını temizler.
+            receipt.failureReason = nil
+        }
         receipt.updatedAt = Date()
         lastCommandReceipt = receipt
         commandHistory = BLECommandHistoryStore.update(receipt, in: commandHistory)
@@ -713,7 +729,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         waitingForCommandNonce = false
         lastEvent = error
         if hadPendingCommand {
-            advanceCommandReceipt(.failed, detail: error)
+            advanceCommandReceipt(.failed, detail: error, failureReason: .protocolTimeout)
         }
         recordDiagnostic("protocol_response_timeout · \(error)")
     }
@@ -785,7 +801,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
                     detail += " Araçta kapı/bagaj açıkken komut verildi; araç kilitlemeyi uygulamamış olabilir."
                 }
                 self.lastEvent = "Araç komutu onayladı ancak kilit değişikliği doğrulanamadı."
-                self.advanceCommandReceipt(.failed, detail: detail)
+                self.advanceCommandReceipt(.failed, detail: detail, failureReason: .notVerified)
                 self.recordDiagnostic("automatic_command_failed · kilit durumu komut sonrasında doğrulanamadı")
             }
         }

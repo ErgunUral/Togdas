@@ -81,6 +81,11 @@ struct CommandView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        if let reason = receipt.failureReason {
+                            Text(reason.explanation)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
                     }
                 }
                 if ble.pairingRequired, !ble.state.isReady {
@@ -123,6 +128,11 @@ struct CommandView: View {
                                 Text(detail)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
+                            }
+                            if let reason = receipt.failureReason {
+                                Text(reason.explanation)
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
                             }
                             Text(receipt.updatedAt.formatted(date: .omitted, time: .shortened))
                                 .font(.caption2)

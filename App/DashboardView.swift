@@ -1979,7 +1979,8 @@ struct DashboardView: View {
         let doorOpen = (ble.telemetry?.openDoorCount ?? 0) > 0 || (ble.telemetry?.trunkAjar ?? 0) != 0
         NotificationPoster.post(
             ProximityCommandNotice.failureDraft(kind: kind, failure: failure, vin: vehicle.vin,
-                                                doorOpenContext: doorOpen),
+                                                doorOpenContext: doorOpen,
+                                                reason: ble.lastCommandReceipt?.failureReason),
             using: notificationPoster
         )
         ble.recordDiagnostic("proximity_command_notice · \(kind.actionText) · "

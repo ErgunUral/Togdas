@@ -56,9 +56,10 @@ enum ProximityCommandNotice {
     /// Başarısız otomatik komut için bildirim taslağı. `doorOpenContext`
     /// doğruysa (son telemetride kapı/bagaj açık) neden daha net söylenir.
     static func failureDraft(kind: Kind, failure: Failure, vin: String,
-                             doorOpenContext: Bool = false) -> NotificationPoster.Draft {
+                             doorOpenContext: Bool = false,
+                             reason: BLECommandReceipt.FailureReason? = nil) -> NotificationPoster.Draft {
         let title: String
-        let body: String
+        var body: String
         switch (kind, failure) {
         case (.lock, .notVerified):
             title = "Otomatik kilitleme doğrulanamadı"
@@ -74,6 +75,12 @@ enum ProximityCommandNotice {
         case (.unlock, .notStarted):
             title = "Otomatik kilit açma başlatılamadı"
             body = "Yaklaşma algılandı ancak kilit açma komutu gönderilemedi; uygulamadan kontrol edebilirsin."
+        }
+        if let reason {
+            // Gözlenebilen ayrım bildirime taşınır: komut gitmedi mi, araç mı
+            // durum bildirmedi, bağlantı mı koptu. Araç ret gerekçesi
+            // göndermiyor; metin "reddetti" demez.
+            body += " " + reason.explanation
         }
         return NotificationPoster.Draft(
             identifier: "proximity-command-\(kind.identifierKey)-failed-\(vin)",

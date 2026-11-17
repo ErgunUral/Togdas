@@ -50,6 +50,31 @@ final class ProximityCommandNoticeTests: XCTestCase {
         }
     }
 
+    func testFailureDraftCarriesObservedReason() {
+        // Araç ret gerekçesi göndermiyor; bildirim yalnız gözlenen sınıfı ekler.
+        let draft = ProximityCommandNotice.failureDraft(
+            kind: .lock, failure: .notVerified, vin: "VIN123", reason: .notVerified
+        )
+        XCTAssertTrue(draft.body.contains("Araç komutu onayladı ancak imzalı durum hedef değeri göstermedi"))
+        XCTAssertFalse(draft.body.contains("reddetti"))
+    }
+
+    func testFailureDraftWithoutReasonStaysUnchanged() {
+        let plain = ProximityCommandNotice.failureDraft(kind: .lock, failure: .notVerified, vin: "VIN123")
+        let withNil = ProximityCommandNotice.failureDraft(
+            kind: .lock, failure: .notVerified, vin: "VIN123", reason: nil
+        )
+        XCTAssertEqual(plain.body, withNil.body)
+    }
+
+    func testLinkLostReasonIsDistinctFromNotVerified() {
+        let lost = ProximityCommandNotice.failureDraft(
+            kind: .lock, failure: .notVerified, vin: "VIN123", reason: .linkLost
+        )
+        XCTAssertTrue(lost.body.contains("Bağlantı doğrulama tamamlanmadan kapandı"))
+        XCTAssertTrue(lost.body.contains("sonuç bilinmiyor"))
+    }
+
     func testIdentifierIsStablePerKindAndVin() {
         let first = ProximityCommandNotice.failureDraft(kind: .lock, failure: .notVerified, vin: "A")
         let second = ProximityCommandNotice.failureDraft(kind: .lock, failure: .notStarted, vin: "A")
