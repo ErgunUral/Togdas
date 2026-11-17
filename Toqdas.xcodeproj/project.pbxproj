@@ -996,6 +996,7 @@
 				0458E095B333ACDFBC5ED61F /* ToqdasWatchApp.swift in Sources */,
 				9C0D1E2F3A4B5C6D7E8F9A0B /* AuxiliaryBatteryPolicy.swift in Sources */,
 				091D4C4330EAF0B4686D85AB /* VisualTone.swift in Sources */,
+				E01F02A03B04C05D06A70802 /* NotificationPoster.swift in Sources */,
 				4317E884109146BF8BB94813 /* VoiceCommand.swift in Sources */,
 				2BC29DA791506A09A071A7BB /* VoiceCommandParser.swift in Sources */,
 				576615B3E04219C9B996F314 /* VoiceCommandPolicy.swift in Sources */,

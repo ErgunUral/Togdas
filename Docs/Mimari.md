@@ -318,6 +318,19 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Saat: şarj hedefi gözcüsü + kurtarma onayı + bağlantı sesi
+  (2026-11-17, 574 test):** (1) `WatchSnapshot`'a `chargingActive`/
+  `chargingTargetPercent`/`chargingStartedAt` eklendi (eski snapshot
+  kayıpsız açılır). Saatte şarj banner'ı ("Şarj sürüyor · %x · hedef %80
+  · kalan %y"); hedefe ulaşıldığında saatte yerel bildirim + haptik —
+  oturum başına bir kez (dedupe anahtarı oturum başlangıcını içerir,
+  VIN yok; Core `ChargingTargetPolicy` ile aynı taban). (2) Sessiz
+  kurtarma bitip READY'ye geçince tek `.success` haptiği. (3) Bağlantı
+  duyurusu: READY'ye geçişte (false→true) sesli bildirim ("Araç
+  bağlandı") + haptik; 90 sn sönümleme; ses yalnız saat uygulaması
+  arka plandayken duyulur (platform davranışı — ön planda haptik kalır).
+  (4) `NotificationPoster` saat hedefine pbxproj'dan eklendi (watch
+  build'i bu dosya olmadan derlenemiyordu).
 - **Saat bağlantı metni katmanlaması + kuyruklu tazeleme (2026-11-17,
   574 test):** (1) "Kopma" algısı için metin netleşti: telefon uygulaması
   arka plandayken WCSession `reachable` false olur (platform davranışı);

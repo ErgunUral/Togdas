@@ -35,6 +35,12 @@ struct WatchSnapshot: Codable {
     /// Son BLE oturum kalitesinin tek satır özeti ("8 oturum · 2 zayıf ·
     /// ort −93 dBm"). Oturum kaydı yoksa nil.
     let sessionQualityText: String?
+    /// Canlı şarj gözlemi: aktif oturum + kullanıcı hedefi. Saat, hedefe
+    /// ulaşıldığında yerel bildirim/haptik üretir (oturum başına bir kez;
+    /// dedupe anahtarı oturum başlangıcını içerir, VIN içermez).
+    let chargingActive: Bool?
+    let chargingTargetPercent: Int?
+    let chargingStartedAt: TimeInterval?
 
     private enum CodingKeys: String, CodingKey {
         case vin, vehicleName, locked, doorCount, openDoors, trunkAjar, powerState
@@ -43,6 +49,7 @@ struct WatchSnapshot: Codable {
         case auxiliaryBatteryPercent, odometerKM, chargingState, proximityEnabled
         case recovering, lastCommandText
         case lastSeenText, sessionQualityText
+        case chargingActive, chargingTargetPercent, chargingStartedAt
     }
 
     init(vin: String, vehicleName: String, locked: Bool?, doorCount: Int, openDoors: Int,
@@ -52,7 +59,9 @@ struct WatchSnapshot: Codable {
          auxiliaryBatteryPercent: Double? = nil, odometerKM: Double? = nil,
          chargingState: String? = nil, proximityEnabled: Bool = false,
          recovering: Bool? = nil, lastCommandText: String? = nil,
-         lastSeenText: String? = nil, sessionQualityText: String? = nil) {
+         lastSeenText: String? = nil, sessionQualityText: String? = nil,
+         chargingActive: Bool? = nil, chargingTargetPercent: Int? = nil,
+         chargingStartedAt: TimeInterval? = nil) {
         self.vin = vin
         self.vehicleName = vehicleName
         self.locked = locked
@@ -75,6 +84,9 @@ struct WatchSnapshot: Codable {
         self.lastCommandText = lastCommandText
         self.lastSeenText = lastSeenText
         self.sessionQualityText = sessionQualityText
+        self.chargingActive = chargingActive
+        self.chargingTargetPercent = chargingTargetPercent
+        self.chargingStartedAt = chargingStartedAt
     }
 
     init(from decoder: Decoder) throws {        let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -100,6 +112,9 @@ struct WatchSnapshot: Codable {
         lastCommandText = try c.decodeIfPresent(String.self, forKey: .lastCommandText)
         lastSeenText = try c.decodeIfPresent(String.self, forKey: .lastSeenText)
         sessionQualityText = try c.decodeIfPresent(String.self, forKey: .sessionQualityText)
+        chargingActive = try c.decodeIfPresent(Bool.self, forKey: .chargingActive)
+        chargingTargetPercent = try c.decodeIfPresent(Int.self, forKey: .chargingTargetPercent)
+        chargingStartedAt = try c.decodeIfPresent(TimeInterval.self, forKey: .chargingStartedAt)
     }
 }
 
@@ -151,6 +166,8 @@ extension WatchSnapshot {
         parts.append(lastCommandText ?? "n")
         parts.append(lastSeenText ?? "n")
         parts.append(sessionQualityText ?? "n")
+        parts.append(chargingActive.map { String($0) } ?? "n")
+        parts.append(chargingTargetPercent.map { String($0) } ?? "n")
         return parts.joined(separator: "|")
     }
 

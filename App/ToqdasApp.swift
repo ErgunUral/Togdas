@@ -553,7 +553,10 @@ final class GarageModel: ObservableObject {
             recovering: link.silentRecovery,
             lastCommandText: lastCommandText,
             lastSeenText: watchLastSeenText(vin: vin),
-            sessionQualityText: watchSessionQualityText()
+            sessionQualityText: watchSessionQualityText(),
+            chargingActive: chargingLive?.charging,
+            chargingTargetPercent: chargingTarget,
+            chargingStartedAt: chargingLive?.startedAt
         ))
         refreshCloudIfStale()
     }

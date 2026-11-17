@@ -18,6 +18,9 @@ struct WatchGarageView: View {
     @State private var pendingCommand: String?
     @State private var showCommandConfirmation = false
     @State private var pendingAutomation: WatchProximityAutomationAction?
+    @State private var lastRecovering: Bool?
+    @State private var previousReady: Bool?
+    private let watchPoster = SystemNotificationPoster()
 
     private var snapshot: WatchSnapshot? { link.snapshot }
 
@@ -233,6 +236,16 @@ struct WatchGarageView: View {
             guard let result = link.lastResult else { return }
             Self.playHaptic(for: result)
         }
+        .onChange(of: link.snapshot?.updatedAt) { _ in
+            checkChargingTargetOnWatch()
+            announceConnectionIfNeeded()
+        }
+        .onChange(of: link.snapshot?.recovering) { _ in
+            confirmRecoveryIfNeeded()
+        }
+        .onAppear {
+            lastRecovering = link.snapshot?.recovering
+        }
         .onAppear { refreshIfStale() }
         .onChange(of: scenePhase) { phase in
             if phase == .active { refreshIfStale() }
@@ -240,6 +253,82 @@ struct WatchGarageView: View {
         .onChange(of: link.reachable) { reachable in
             if reachable { refreshIfStale() }
         }
+    }
+
+    /// Bağlantı duyurusu: snapshot READY'ye geçtiğinde (false→true) saatte
+    /// haptik + sesli bildirim. Bildirim sesi yalnız saat uygulaması
+    /// arka plandayken duyulur (platform davranışı); ön plandaysa haptik
+    /// geri bildirim kalır. 90 sn sönümleme tekrar sesi önler; VIN yok.
+    private func announceConnectionIfNeeded() {
+        let ready = link.snapshot?.ready == true
+        defer { previousReady = ready }
+        guard let previous = previousReady, !previous, ready else { return }
+        let defaults = UserDefaults.standard
+        let now = Date().timeIntervalSince1970
+        let last = defaults.double(forKey: "toqdas.watch.connectAnnouncedAt")
+        guard now - last >= 90 else { return }
+        defaults.set(now, forKey: "toqdas.watch.connectAnnouncedAt")
+        WKInterfaceDevice.current().play(.success)
+        NotificationPoster.requestAuthorization(using: watchPoster)
+        NotificationPoster.post(
+            NotificationPoster.Draft(
+                identifier: UUID().uuidString,
+                title: "Araç bağlandı",
+                body: "Kilit verisi akıyor; saat uygulamasından komut verebilirsin.",
+                timeSensitive: false),
+            using: watchPoster
+        )
+    }
+
+    /// Şarj durumu satırı: yüzde, kullanıcı hedefi ve hedefe kalan.
+    /// Eksik değer yazılmaz (0 uydurulmaz).
+    private func chargingLine(at now: Date) -> String {
+        guard let snapshot else { return "Şarj sürüyor" }
+        var parts: [String] = []
+        if let percent = snapshot.batteryPercent {
+            parts.append("%\(Int(percent.rounded()))")
+        }
+        if let target = snapshot.chargingTargetPercent, let percent = snapshot.batteryPercent {
+            let remaining = max(0, target - Int(percent.rounded()))
+            parts.append("hedef %\(target) · kalan %\(remaining)")
+        }
+        return parts.isEmpty ? "Şarj sürüyor" : "Şarj sürüyor · \(parts.joined(separator: " · "))"
+    }
+
+    /// Saat tarafı hedef gözcüsü: hedefe ulaşıldığında saatte yerel
+    /// bildirim + haptik. Oturum başına bir kez: dedupe anahtarı oturum
+    /// başlangıcını içerir, VIN içermez. Eksik yüzde asla "ulaşıldı"
+    /// üretmez (Core politikasıyla aynı taban).
+    private func checkChargingTargetOnWatch() {
+        guard let snapshot else { return }
+        guard snapshot.chargingActive == true,
+              let target = snapshot.chargingTargetPercent,
+              let startedAt = snapshot.chargingStartedAt,
+              let percent = snapshot.batteryPercent,
+              ChargingTargetPolicy.reached(target: target, percent: percent) else { return }
+        let key = "toqdas.chargingtarget.watch.\(Int(startedAt)).\(target)"
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: key) == false else { return }
+        defaults.set(true, forKey: key)
+        WKInterfaceDevice.current().play(.notification)
+        NotificationPoster.post(
+            NotificationPoster.Draft(
+                identifier: UUID().uuidString,
+                title: "Şarj hedefi (%\(target)) aşıldı",
+                body: "Akü %\(Int(percent.rounded())). Araç şarjı uygulamadan durdurmaz.",
+                timeSensitive: false),
+            using: watchPoster
+        )
+    }
+
+    /// Sessiz kurtarma bittiğinde tek onay haptiği: "yeniden kuruyor"
+    /// durumundan READY'ye geçiş kullanıcıya sessizce bildirilir.
+    private func confirmRecoveryIfNeeded() {
+        let recovering = link.snapshot?.recovering ?? false
+        if lastRecovering == true, recovering == false, link.snapshot?.ready == true {
+            WKInterfaceDevice.current().play(.success)
+        }
+        lastRecovering = recovering
     }
 
     /// Saat açıldığında veri 30 saniyeden eskiyse iPhone'dan tazeleme ister.
