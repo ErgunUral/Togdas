@@ -169,6 +169,11 @@ struct DashboardView: View {
     @State private var pendingAutomaticCommandKind: ProximityCommandNotice.Kind?
     @State private var pendingAutomaticCommandAt: Date?
     @State private var lastLockSoundCount: Int?
+    /// Uzaklaşınca kilitleme bileti: araç, dijital anahtar güçlü sinyaldeyken
+    /// kilit komutunu onaylayıp uygulamıyor (ölçüm 2026-11-17: yakın 7/7 red,
+    /// uzak 6/6 uygulama). Bilet, tek komutu sinyal zayıfladığı an gönderir.
+    @State private var deferredLockTicket: DeferredLockTicket?
+    @State private var deferredLockStatus: String?
 
     // Önizleme durumları (henüz araca bağlı değil)
     @State private var climateOn = false
@@ -353,6 +358,7 @@ struct DashboardView: View {
             }
             feedProximityCalibrationSuggestion(value)
             processProximityRSSI(value)
+            processDeferredLockTicket(value)
         }
         .onReceive(ble.$lastEvent) { event in
             guard proximityEnabled,
@@ -1840,6 +1846,71 @@ struct DashboardView: View {
         }
     }
 
+    // MARK: - Uzaklaşınca kilitleme bileti
+
+    @MainActor
+    private func armDeferredLockTicket() {
+        guard ble.state.isReady else {
+            showCommands = true
+            return
+        }
+        if ble.telemetry?.isLocked == true {
+            deferredLockStatus = "Araç zaten kilitli; bilet kurulmadı."
+            return
+        }
+        deferredLockTicket = DeferredLockTicket()
+        deferredLockStatus = "Bilet kuruldu; sinyal \(BleReconnectPolicy.weakSignalThreshold) dBm altına inince tek kilitleme komutu gönderilecek."
+        ble.recordDiagnostic("deferred_lock_armed · uzaklaşınca kilitleme bileti kuruldu")
+    }
+
+    @MainActor
+    private func cancelDeferredLockTicket(reason: String) {
+        guard deferredLockTicket != nil else { return }
+        deferredLockTicket = nil
+        deferredLockStatus = reason
+        ble.recordDiagnostic("deferred_lock_cancelled · \(reason)")
+    }
+
+    /// Her GATT RSSI örneğinde beslenir. Komut yalnız bilet kurulduysa,
+    /// sinyal zayıfsa, telemetri tazeyse ve araç açıksa gider; kayıt tek.
+    @MainActor
+    private func processDeferredLockTicket(_ rssi: Int) {
+        guard let ticket = deferredLockTicket else { return }
+        let telemetryAge = ble.telemetry.map { Date().timeIntervalSince($0.receivedAt) }
+        let recentLock = AutomaticCommandLedger.shared.recent(
+            action: "lock", vin: vehicle.vin, within: 60
+        ) != nil
+        switch ticket.decide(
+            rssi: rssi,
+            now: Date(),
+            isLocked: ble.telemetry?.isLocked,
+            telemetryAge: telemetryAge,
+            recentLock: recentLock
+        ) {
+        case .wait:
+            return
+        case .cancel(let reason):
+            deferredLockTicket = nil
+            deferredLockStatus = reason
+            ble.recordDiagnostic("deferred_lock_cancelled · \(reason)")
+        case .send:
+            deferredLockTicket = nil
+            guard ble.lock() else {
+                deferredLockStatus = "Sinyal zayıfladı ancak kilitleme başlatılamadı: \(ble.lastEvent)"
+                ble.recordDiagnostic("deferred_lock_failed · komut başlatılamadı")
+                return
+            }
+            AutomaticCommandLedger.shared.note(
+                source: .deferredLock, action: "lock", vin: vehicle.vin
+            )
+            pendingAutomaticCommandKind = .lock
+            pendingAutomaticCommandAt = Date()
+            recordWidgetCommand("Kilitleme (uzaklaşma bileti)")
+            deferredLockStatus = "Sinyal zayıfladı (\(rssi) dBm); kilitleme gönderildi, doğrulama bekleniyor."
+            ble.recordDiagnostic("deferred_lock_sent · sinyal \(rssi) dBm; tek kilitleme komutu gönderildi")
+        }
+    }
+
     // MARK: - Otomatik komut bildirimi
 
     /// Otomatik (yakınlık) komutun doğrulama sonucu. Yalnız 60 sn içindeki
@@ -2448,6 +2519,60 @@ struct DashboardView: View {
                         showCommands = true
                     }
                 }
+            }
+
+            deferredLockRow
+        }
+    }
+
+    /// "Uzaklaşınca kilitle" bileti: araç yanında kilit uygulanmadığında
+    /// kullanıcı bileti kurar; sinyal zayıfladığı an tek komut gider.
+    @ViewBuilder
+    private var deferredLockRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if deferredLockTicket == nil {
+                HStack(spacing: 10) {
+                    Button {
+                        armDeferredLockTicket()
+                    } label: {
+                        Label("Uzaklaşınca kilitle", systemImage: "figure.walk.departure")
+                            .font(ToggTheme.text(.caption, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity, minHeight: 38)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(ToggTheme.surfaceVariant))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("deferredLock.arm")
+                }
+                Text("Araç, dijital anahtar yanındayken kilit komutunu uygulamıyor. Bilet, sinyal zayıfladığında tek kilitleme komutu gönderir (en çok 10 dk).")
+                    .font(ToggTheme.text(.micro))
+                    .foregroundStyle(ToggTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                HStack(spacing: 10) {
+                    Label("Uzaklaşma bekleniyor", systemImage: "figure.walk.departure")
+                        .font(ToggTheme.text(.caption, weight: .semibold))
+                        .foregroundStyle(ToggTheme.teal)
+                    Spacer()
+                    Button {
+                        cancelDeferredLockTicket(reason: "Bilet iptal edildi; kilitleme gönderilmedi.")
+                    } label: {
+                        Text("İptal")
+                            .font(ToggTheme.text(.caption, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .frame(minHeight: 32)
+                            .background(RoundedRectangle(cornerRadius: 10).fill(ToggTheme.surfaceVariant))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("deferredLock.cancel")
+                }
+            }
+            if let status = deferredLockStatus {
+                Text(status)
+                    .font(ToggTheme.text(.micro))
+                    .foregroundStyle(ToggTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

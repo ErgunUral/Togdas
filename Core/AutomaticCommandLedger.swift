@@ -16,6 +16,9 @@ final class AutomaticCommandLedger {
     enum Source: String {
         case proximity
         case geofence
+        /// Uzaklaşınca kilitleme bileti (kullanıcı yanında kilit verdi, komut
+        /// sinyal zayıfladığında gönderildi).
+        case deferredLock
     }
 
     struct Entry: Equatable {

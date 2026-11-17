@@ -821,7 +821,23 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   A/B/C sınıflandırması ve ilk 10 öncelikli boşluk. Yöntem: statik tarama
   + 35 UI testinin simülatör koşuları. Uygulama ve testler değişmedi.
 
-## 9. İlkeler
+- **Uzaklaşınca kilitleme bileti (2026-11-17, 588 test):** Kök neden
+  kanıtlandı: araç, dijital anahtar (telefon) **güçlü sinyaldeyken**
+  kilit komutunu onaylıyor (ack) ama uygulamıyor. Ölçüm (aynı gün,
+  araç başı): yakın RSSI −57…−84 aralığında **7/7 kilit reddi**
+  (`automatic_command_failed · kilit durumu komut sonrasında
+  doğrulanamadı`), uzak −88…−97 aralığında **6/6 uygulama** (imzalı
+  telemetriyle doğrulandı). Protokol tarafı temiz: kilit(1)/aç(2)
+  paketleri birebir aynı yapı, tek fark kod byte'ı; açma yakında da
+  uygulanıyor → ayrım aracın kendi güvenlik kararı. Alternatif çözüm
+  `Core/DeferredLockTicket`: kullanıcı panodaki "Uzaklaşınca kilitle"
+  düğmesiyle bilet kurar; RSSI ≤ `BleReconnectPolicy.weakSignalThreshold`
+  (−85), telemetri ≤15 sn taze ve `isLocked == false` olduğunda **tek**
+  `ble.lock()` gönderilir; 10 dk üst sınır, `isLocked == true`/süre
+  dolumu/60 sn içinde başka kaynak kilidi → iptal. `AutomaticCommandLedger`
+  kaynağına `deferredLock` eklendi (çift komut koruması). Karar saf ve
+  testli (9 yeni test).
+
 
 - Sıfırdan rewrite yok; strangler pattern benzeri kademeli geçiş.
 - Bir seferde tek sınır: önce BLE, sonra DI, sonra UI.
