@@ -143,6 +143,11 @@ struct WatchGarageView: View {
                             metric(auxBatteryText, systemImage: "bolt.batteryblock", tint: auxTint)
                             metric(odometerText, systemImage: "speedometer")
                         }
+                        HStack(spacing: 6) {
+                            metric(snapshot?.lastSeenText ?? "—", systemImage: "eye")
+                            metric(snapshot?.sessionQualityText ?? "—",
+                                   systemImage: "antenna.radiowaves.left.and.right")
+                        }
                     }
                     .padding(.top, 2)
 

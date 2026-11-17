@@ -28,6 +28,13 @@ struct WatchSnapshot: Codable {
     /// kayıt iPhone tarafında süzülür (widget kuralı). VIN/içerik ayrıntısı
     /// yazılmaz; yalnız etiket + doğrulama durumu + saat.
     let lastCommandText: String?
+    /// "Son görülme": BLE/bulut iletişiminin en yenisinin göreceli metni
+    /// ("3 dakika önce · BLE"). Telefon tarafında `LastSeenSummary` ile
+    /// üretilir; hiç iletişim yoksa nil (saat "—" gösterir, 0 yazmaz).
+    let lastSeenText: String?
+    /// Son BLE oturum kalitesinin tek satır özeti ("8 oturum · 2 zayıf ·
+    /// ort −93 dBm"). Oturum kaydı yoksa nil.
+    let sessionQualityText: String?
 
     private enum CodingKeys: String, CodingKey {
         case vin, vehicleName, locked, doorCount, openDoors, trunkAjar, powerState
@@ -35,6 +42,7 @@ struct WatchSnapshot: Codable {
         case batteryPercent, rangeKM, outsideTemperatureC
         case auxiliaryBatteryPercent, odometerKM, chargingState, proximityEnabled
         case recovering, lastCommandText
+        case lastSeenText, sessionQualityText
     }
 
     init(vin: String, vehicleName: String, locked: Bool?, doorCount: Int, openDoors: Int,
@@ -43,7 +51,8 @@ struct WatchSnapshot: Codable {
          batteryPercent: Double?, rangeKM: Double?, outsideTemperatureC: Double?,
          auxiliaryBatteryPercent: Double? = nil, odometerKM: Double? = nil,
          chargingState: String? = nil, proximityEnabled: Bool = false,
-         recovering: Bool? = nil, lastCommandText: String? = nil) {
+         recovering: Bool? = nil, lastCommandText: String? = nil,
+         lastSeenText: String? = nil, sessionQualityText: String? = nil) {
         self.vin = vin
         self.vehicleName = vehicleName
         self.locked = locked
@@ -64,6 +73,8 @@ struct WatchSnapshot: Codable {
         self.proximityEnabled = proximityEnabled
         self.recovering = recovering
         self.lastCommandText = lastCommandText
+        self.lastSeenText = lastSeenText
+        self.sessionQualityText = sessionQualityText
     }
 
     init(from decoder: Decoder) throws {        let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -87,6 +98,8 @@ struct WatchSnapshot: Codable {
         proximityEnabled = try c.decodeIfPresent(Bool.self, forKey: .proximityEnabled) ?? false
         recovering = try c.decodeIfPresent(Bool.self, forKey: .recovering)
         lastCommandText = try c.decodeIfPresent(String.self, forKey: .lastCommandText)
+        lastSeenText = try c.decodeIfPresent(String.self, forKey: .lastSeenText)
+        sessionQualityText = try c.decodeIfPresent(String.self, forKey: .sessionQualityText)
     }
 }
 
@@ -136,6 +149,8 @@ extension WatchSnapshot {
         parts.append(String(proximityEnabled))
         parts.append(recovering.map { String($0) } ?? "n")
         parts.append(lastCommandText ?? "n")
+        parts.append(lastSeenText ?? "n")
+        parts.append(sessionQualityText ?? "n")
         return parts.joined(separator: "|")
     }
 

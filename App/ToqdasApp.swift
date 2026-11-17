@@ -551,9 +551,32 @@ final class GarageModel: ObservableObject {
             chargingState: cloud.chargingState,
             proximityEnabled: preferences.proximityEnabled(for: vin),
             recovering: link.silentRecovery,
-            lastCommandText: lastCommandText
+            lastCommandText: lastCommandText,
+            lastSeenText: watchLastSeenText(vin: vin),
+            sessionQualityText: watchSessionQualityText()
         ))
         refreshCloudIfStale()
+    }
+
+    /// "Son görülme": BLE telemetrisi ile son bilinen bulut anlık
+    /// görüntüsünün en yenisinin göreceli metni. Hiç veri yoksa nil
+    /// (saat "—" gösterir; asla "0 dakika önce" yazılmaz).
+    private func watchLastSeenText(vin: String) -> String? {
+        let cloudAt = cloudStore.snapshot(for: vin)?.updatedAt
+        guard let lastSeen = LastSeenSummary.make(ble: ble.telemetry?.receivedAt,
+                                                  cloud: cloudAt) else { return nil }
+        return "\(lastSeen.relativeText) · \(lastSeen.sourceText)"
+    }
+
+    /// Son BLE oturum kalitesinin saatte tek satır özeti ("8 oturum ·
+    /// 2 zayıf · ort −93 dBm"). Kayıt yoksa nil; ortalama RSSI yoksa
+    /// "—" kalır (0 yazılmaz).
+    private func watchSessionQualityText() -> String? {
+        let summary = BleSessionQualitySummary.make(sessions: BleSessionQualityStore().load())
+        guard summary.count > 0 else { return nil }
+        var parts = ["\(summary.count) oturum", "\(summary.weakSessions) zayıf"]
+        parts.append(summary.averageRSSI.map { "ort \(Int($0.rounded())) dBm" } ?? "ort — dBm")
+        return parts.joined(separator: " · ")
     }
 
     /// Saat darboğazı: değer değişmedikçe/minimum aralık dolmadan

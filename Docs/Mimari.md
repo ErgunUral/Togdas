@@ -318,6 +318,15 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Saatte "Son görülme" + oturum kalitesi (2026-11-17, 574 test):**
+  Saat metrik ızgarasına iki satır eklendi: "Son görülme" (`3 dakika
+  önce · BLE` — BLE telemetrisi ile son bilinen bulut anlık görüntüsünün
+  en yenisi, `LastSeenSummary`) ve oturum kalitesi özeti (`8 oturum ·
+  2 zayıf · ort −93 dBm` — `BleSessionQualitySummary`). Telefon
+  `publishWatchSnapshot`'ta üretir; `WatchSnapshot`'a `lastSeenText`/
+  `sessionQualityText` alanları eklendi (eski snapshot'lar
+  `decodeIfPresent` ile kayıpsız açılır; alanlar display fingerprint'te).
+  Hiç veri yoksa saat "—" gösterir; asla "0 dakika önce" yazılmaz.
 - **Saatten yakınlık otomasyonu anahtarı (2026-11-17, 572 test):**
   Saat uygulaması otomasyonu artık görüntülemekle kalmayıp açıp
   kapatıyor. Kanal: `WatchLink` komut isteklerine `proximityOn`/
