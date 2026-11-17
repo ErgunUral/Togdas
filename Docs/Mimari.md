@@ -318,6 +318,17 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Kilit doğrulamasının saate görünürlüğü (2026-11-17, 579
+  test):** Belirti: "aracın kilitlendiğini görmüyorum" — kanıtta
+  komutlar başarıyla gidiyordu ama sonucu saat yansımamıyordu. Üç
+  kopukluk kapatıldı: (1) saatten gönderilen kilit/aç komutu artık
+  widget/saat "son komut" kaydına da yazılıyor (önceden yalnız
+  panodan gönderim yazıyordu); (2) imzalı telemetri doğrulaması
+  (`lastCommandReceipt` .verified) saat snapshot'ına anında gidiyor;
+  (3) doğrulanamayan komut (.failed — bağlantı komuttan sonra koptu
+  dahil) "doğrulanamadı" etiketiyle kayda yazılıyor; sessiz kaybolma
+  yok. Yön eşleşmesi: "Kilidi aç" → "Kilit açma", "Kilitle"/cam
+  akışı → "Kilitleme".
 - **Saat kilit geçişi sesleri (2026-11-17, 579 test):** Anahtarlık
   davranışı: kilit AÇILDIĞINDA çift bildirim (0,5 sn arayla, çift bip
   hissi), KİLİTLENDİĞİNDE tek bildirim (tek bip). watchOS özel

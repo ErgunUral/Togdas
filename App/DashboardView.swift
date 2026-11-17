@@ -381,6 +381,30 @@ struct DashboardView: View {
                 startProximityAutoOffTimer()
             }
         }
+        .onReceive(ble.$lastCommandReceipt) { receipt in
+            guard let receipt else { return }
+            // Komutun imzalı telemetri sonucu widget + saat kaydına yazılır.
+            // Bağlantı komuttan hemen sonra kopsa bile saat "doğrulanamadı"
+            // görür; sessiz kaybolma yok. Yön eşleşmesi: "Kilidi aç" →
+            // "Kilit açma"; "Kilitle"/cam akışı → "Kilitleme".
+            let action = receipt.action.lowercased()
+            let matchesLock: (String) -> Bool = { label in
+                let l = label.lowercased()
+                if action.contains("kilidi aç") { return l.contains("kilit aç") }
+                if action.contains("kilit") { return l.contains("kilit") && !l.contains("aç") }
+                return false
+            }
+            switch receipt.phase {
+            case .verified:
+                VehicleCommandStatusStore.markVerified(true, ifLabelMatches: matchesLock)
+                model.publishWatchSnapshot()
+            case .failed:
+                VehicleCommandStatusStore.markVerified(false, ifLabelMatches: matchesLock)
+                model.publishWatchSnapshot()
+            default:
+                break
+            }
+        }
         #if DEBUG
         .onAppear {
             if ProcessInfo.processInfo.arguments.contains("-openDriveExperience") {

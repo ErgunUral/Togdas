@@ -476,6 +476,17 @@ final class GarageModel: ObservableObject {
         guard accepted else {
             return reject(ble.lastEvent.isEmpty ? "Komut BLE katmanında reddedildi." : ble.lastEvent)
         }
+        // Saatten gönderilen komut da widget/saat "son komut" kaydına yazılır;
+        // aksi halde doğrulama sonucu (imzalı telemetri) kayıtla eşleşmez ve
+        // saatte "aracın kilitlendiğini görememe" olur. Etiketler widget
+        // kaydındaki adlarla aynı: markVerified yön eşleşmesi bunlara bakar.
+        let storeLabels: [String: String] = ["lock": "Kilitleme", "unlock": "Kilit açma",
+                                             "trunkOpen": "Bagaj açma", "trunkClose": "Bagaj kapatma"]
+        VehicleCommandStatusStore.save(
+            VehicleCommandStatus(actionLabel: storeLabels[request.action] ?? label,
+                                 sentAt: Date(),
+                                 verified: nil)
+        )
         reply(WatchCommandResult(id: request.id, status: "forwarded",
                                  message: "\(label) isteği araca iletildi; taze telemetriyle doğrulama bekleniyor.",
                                  at: now))
