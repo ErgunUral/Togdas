@@ -233,8 +233,17 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
             return
         }
         guard session.isReachable else {
-            status = "iPhone uykuda ya da ulaşılamıyor; veri yenilenemiyor."
-            WatchDiagnostics.log("yenileme reddedildi · telefon erişilemiyor")
+            // Tazeleme isteği zararsız/idempotenttir: canlı bağlantı yoksa
+            // kuyruklu kanal kullanılır; telefon uygulaması uyandığında
+            // teslim edilir. KOMUTLAR kuyruksuz kalır (invariant korunur).
+            do {
+                try session.transferUserInfo(["type": "refresh"])
+                status = "Tazeleme istendi; iPhone uygulaması uyandığında veri gelir."
+                WatchDiagnostics.log("yenileme kuyruklandı (transferUserInfo)")
+            } catch {
+                status = "Veri yenilenemiyor: \(error.localizedDescription)"
+                WatchDiagnostics.log("yenileme kuyruklama başarısız")
+            }
             return
         }
         status = "Güncel veri isteniyor…"
@@ -285,6 +294,18 @@ final class WatchLink: NSObject, ObservableObject, WCSessionDelegate {
             }
         } else {
             status = "Telefondan alınan son araç listesi"
+        }
+    }
+
+    /// Kuyruklu tazeleme isteği (saat canlı bağlantı bulamadığında).
+    /// Komut kanalından farklıdır: teslim saatleri umursamaz, telefon
+    /// uygulaması uyanır. Birden çok kuyruklu istek zararsızdır;
+    /// yayımlama tarafındaki darboğaz tekrarlarını yutar.
+    func session(_ session: WCSession, didReceiveUserInfo userInfo: [String : Any] = [:]) {
+        guard !isWatch,
+              userInfo["type"] as? String == "refresh" else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.refreshHandler?()
         }
     }
 

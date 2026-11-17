@@ -318,6 +318,19 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
     arası kalıcı (`toqdas.pairing.repair.<vin>`); `Core/ReconnectBudget`:
     deneme/zayıf/eşleştirme sayaçları tek değer tipi.
   - `Core/BlePhaseLog`: son 20 faz geçişi (`toqdas.ble.phase.v1`).
+- **Saat bağlantı metni katmanlaması + kuyruklu tazeleme (2026-11-17,
+  574 test):** (1) "Kopma" algısı için metin netleşti: telefon uygulaması
+  arka plandayken WCSession `reachable` false olur (platform davranışı);
+  saat artık "iPhone uygulaması arka planda; açınca tazelenir" der.
+  (2) Tazeleme isteği canlı bağlantı yoksa `transferUserInfo` ile
+  **kuyruklu** gönderilir — telefon uygulaması uyandığında teslim
+  edilir (`didReceiveUserInfo` işleyicisi + `refreshHandler`).
+  KOMUTLAR kuyruksuz kalır (eski komut asla iletilmez invariant'ı
+  korunur). (3) Gösterim tazeliği komut eşiğinden ayrıldı: komut 15 sn
+  (değişmedi), gösterimde 15–45 sn "bekleniyor" der (imzalı telemetri
+  ~30 sn dönemli; sağlıklı bağlantıda "eski" flap yapmaz), 45 sn üstü
+  "eski". `displayStale` + `lockText`/`lockSymbol`/`connectionText`
+  katmanları saate uygulandı.
 - **Saatte "Son görülme" + oturum kalitesi (2026-11-17, 574 test):**
   Saat metrik ızgarasına iki satır eklendi: "Son görülme" (`3 dakika
   önce · BLE` — BLE telemetrisi ile son bilinen bulut anlık görüntüsünün

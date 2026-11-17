@@ -38,8 +38,18 @@ struct WatchGarageView: View {
             && telemetryFresh(at: now) && snapshot?.locked != nil
     }
 
+    /// Gösterim tazeliği: komut eşiği (15 sn) ile karıştırılmamalıdır.
+    /// İmzalı telemetri ~30 sn aralıklı gelir; 15–45 sn arası normal dönem
+    /// arasıdır ve "eski" değil "bekleniyor" der (sağlıklı bağlantıda
+    /// flap yapmaz). 45 sn üstü gerçekten bayat sayılır.
+    private func displayStale(at now: Date) -> Bool {
+        guard let age = telemetryAge(at: now) else { return true }
+        return age >= 45
+    }
+
     private func lockText(at now: Date) -> String {
-        guard telemetryFresh(at: now) else { return "Kilit verisi eski" }
+        if displayStale(at: now) { return "Kilit verisi eski" }
+        if !telemetryFresh(at: now) { return "Kilit durumu bekleniyor" }
         switch snapshot?.locked {
         case true: return "Kilitli"
         case false: return "Kilit açık"
@@ -48,7 +58,7 @@ struct WatchGarageView: View {
     }
 
     private func lockSymbol(at now: Date) -> String {
-        guard telemetryFresh(at: now) else { return "questionmark.circle" }
+        guard !displayStale(at: now) else { return "questionmark.circle" }
         switch snapshot?.locked {
         case true: return "lock.fill"
         case false: return "lock.open.fill"
@@ -74,7 +84,11 @@ struct WatchGarageView: View {
             return "iPhone’a ulaşılamıyor · son veri \(dataAgeText(at: now))"
         }
         if snapshot?.ready != true { return "Dijital anahtar hazır değil" }
-        return telemetryFresh(at: now) ? "Telemetri güncel" : "İmzalı telemetri eski (\(dataAgeText(at: now)))"
+        if telemetryFresh(at: now) { return "Telemetri güncel" }
+        if let age = telemetryAge(at: now), age < 45 {
+            return "İmzalı telemetri bekleniyor (\(Int(age)) sn önce)"
+        }
+        return "İmzalı telemetri eski (\(dataAgeText(at: now)))"
     }
 
     private func dataAgeText(at now: Date) -> String {
