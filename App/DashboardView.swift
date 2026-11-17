@@ -1761,9 +1761,13 @@ struct DashboardView: View {
             ble.recordDiagnostic("Yakınlık eylemi atlandı: araç kilit telemetrisi güncel değil")
             return
         }
-        guard state.powerState == 2 else {
-            proximityStatus = "Araç bekleme durumunda değil; otomatik komut gönderilmedi."
-            ble.recordDiagnostic("Yakınlık eylemi atlandı: araç bekleme durumunda değil")
+        // Güç durumu: yalnız aksesuar/hazır (3/4) otomasyonu durdurur. Park
+        // hâlinde araç 0/1 bildiriyor ve kilit bu durumda uygulanıyor
+        // (2026-11-17 kanıtı); eski `powerState == 2` şartı otomasyonu en sık
+        // senaryoda sessizce durduruyordu.
+        if let reason = ProximityPowerGate.blockReason(powerState: state.powerState) {
+            proximityStatus = reason
+            ble.recordDiagnostic("Yakınlık eylemi atlandı: power=\(state.powerState) (aksesuar/hazır)")
             return
         }
 
@@ -1897,6 +1901,10 @@ struct DashboardView: View {
     @MainActor
     private func processDeferredLockTicket(_ rssi: Int) {
         guard let ticket = deferredLockTicket else { return }
+        if let reason = ProximityPowerGate.blockReason(powerState: ble.telemetry?.powerState) {
+            cancelDeferredLockTicket(reason: reason)
+            return
+        }
         let telemetryAge = ble.telemetry.map { Date().timeIntervalSince($0.receivedAt) }
         let recentLock = AutomaticCommandLedger.shared.recent(
             action: "lock", vin: vehicle.vin, within: 60

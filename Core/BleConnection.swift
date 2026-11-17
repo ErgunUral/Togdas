@@ -235,6 +235,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     }
 
     func stop(keepTelemetry: Bool = false) {
+        let interruptedLockVerification = pendingLockVerification
         wantsScan = false
         // Beklenmeyen kopmada niyet korunur: radyo geri gelince yeniden bağlanılır.
         if !keepTelemetry { shouldStayConnected = false }
@@ -254,6 +255,19 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         transport.stop()
         resetSession()
         state = .disconnected
+        // Kilit doğrulaması beklerken bağlantı kapandıysa sonuç sessizce
+        // kaybolmasın: "doğrulanamadı" olarak kapatılır, widget/saat görür.
+        if let interruptedLockVerification {
+            recordCommandReceipt(
+                code: interruptedLockVerification ? 1 : 2,
+                action: interruptedLockVerification ? "Kilitle" : "Kilidi aç",
+                phase: .failed,
+                detail: interruptedLockVerification
+                    ? "Bağlantı kapandı; kilitleme doğrulanamadı."
+                    : "Bağlantı kapandı; kilit açma doğrulanamadı."
+            )
+            recordDiagnostic("lock_verification_lost · bağlantı kapandı; kilit durumu doğrulanamadı")
+        }
         lastEvent = keepTelemetry ? "Bağlantı yeniden kuruluyor…" : "Bağlantı durduruldu"
         channels = []
         // Beklenmeyen kopmada son telemetri korunur: pano boşalıp "koptu"
@@ -547,7 +561,10 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     @discardableResult
     private func sendCommand(code: UInt8, action: String) -> Bool {
-        let hasActiveCommand = pendingCommand != nil || pendingLockVerification != nil
+        // Doğrulama bekleyen kilit yeni komutu bloke etmez: doğrulama yalnız
+        // telemetri gözlemidir, komut tek uçuşu `pendingCommand`dır. Yeni
+        // komut başlarken eski gözlem zaten temizlenir.
+        let hasActiveCommand = pendingCommand != nil
         if let rejection = BLECommandPolicy.rejection(code: code, linkReady: state.isReady, telemetry: telemetry) {
             lastEvent = rejection.message
             if !hasActiveCommand {
@@ -753,16 +770,17 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         advanceCommandReceipt(.acknowledged, detail: "Kilit durumu doğrulanıyor…")
         commandVerificationTask?.cancel()
         commandVerificationTask = Task { [weak self] in
-            // İmzalı araç durumu ~30 sn aralıklı gelir; 6 sn'lik pencere hiçbir
-            // yeni durum göremeden "doğrulanamadı" diyordu (cihaz kanıtı
-            // 2026-11-16). Pencere bir tam imzalı durum dönemini kapsar.
-            try? await Task.sleep(nanoseconds: 35_000_000_000)
+            // Pencere `LockVerificationPolicy`den gelir: imzalı araç durumu
+            // 1–180 sn aralıklı gelir (medyan ~60 sn). Eski 35 sn pencere
+            // medyanın altındaydı; araç uygulamış olsa bile sonraki paket geç
+            // geldiğinde "doğrulanamadı" yazılabiliyordu.
+            try? await Task.sleep(nanoseconds: UInt64(LockVerificationPolicy.window * 1_000_000_000))
             guard !Task.isCancelled, let self else { return }
             await MainActor.run {
                 guard self.pendingLockVerification == targetLocked else { return }
                 self.pendingLockVerification = nil
                 self.commandVerificationTask = nil
-                var detail = "Kilit değişikliği 35 sn içinde imzalı durumla doğrulanamadı."
+                var detail = LockVerificationPolicy.timeoutDetail()
                 if let telemetry, telemetry.openDoorCount > 0 || telemetry.trunkAjar != 0 {
                     detail += " Araçta kapı/bagaj açıkken komut verildi; araç kilitlemeyi uygulamamış olabilir."
                 }
