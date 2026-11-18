@@ -1,20 +1,40 @@
 import SwiftUI
 
 enum ToggThemeStyle: String, CaseIterable, Identifiable, Hashable {
+    /// Kurumsal kimlik: tek vurgu rengi, nötr yüzeyler.
+    case corporate
+    /// Erişilebilirlik: yüksek kontrast (WCAG AA üstü).
+    case contrast
+    /// Eski paletler (göç için korunur; seçicide görünmez).
     case togg, ocean, graphite
 
     var id: String { rawValue }
 
+    /// Seçicide yalnız kurumsal iki palet görünür.
+    static var selectable: [ToggThemeStyle] { [.corporate, .contrast] }
+
     var title: String {
         switch self {
+        case .corporate: return "Kurumsal"
+        case .contrast: return "Yüksek Kontrast"
         case .togg: return "Togg Gece"
         case .ocean: return "Okyanus"
         case .graphite: return "Grafit / Amber"
         }
     }
 
+    var subtitle: String? {
+        switch self {
+        case .corporate: return "Tek vurgu rengi, nötr yüzeyler"
+        case .contrast: return "Daha yüksek kontrast"
+        default: return nil
+        }
+    }
+
     var backgroundColor: Color {
         switch self {
+        case .corporate: return Color(hex: 0x0A0F14)
+        case .contrast: return Color(hex: 0x000000)
         case .togg: return Color(hex: 0x0B121E)
         case .ocean: return Color(hex: 0x071725)
         case .graphite: return Color(hex: 0x111416)
@@ -23,6 +43,8 @@ enum ToggThemeStyle: String, CaseIterable, Identifiable, Hashable {
 
     var surfaceColor: Color {
         switch self {
+        case .corporate: return Color(hex: 0x121A21)
+        case .contrast: return Color(hex: 0x0F0F0F)
         case .togg: return Color(hex: 0x131C2E)
         case .ocean: return Color(hex: 0x102638)
         case .graphite: return Color(hex: 0x1B2023)
@@ -31,6 +53,8 @@ enum ToggThemeStyle: String, CaseIterable, Identifiable, Hashable {
 
     var surfaceVariantColor: Color {
         switch self {
+        case .corporate: return Color(hex: 0x1A242D)
+        case .contrast: return Color(hex: 0x1C1C1C)
         case .togg: return Color(hex: 0x1C273C)
         case .ocean: return Color(hex: 0x18384D)
         case .graphite: return Color(hex: 0x282F33)
@@ -39,6 +63,8 @@ enum ToggThemeStyle: String, CaseIterable, Identifiable, Hashable {
 
     var outlineColor: Color {
         switch self {
+        case .corporate: return Color(hex: 0x2A3844)
+        case .contrast: return Color(hex: 0x6E6E6E)
         case .togg: return Color(hex: 0x2E3D58)
         case .ocean: return Color(hex: 0x2C536A)
         case .graphite: return Color(hex: 0x41494D)
@@ -47,6 +73,8 @@ enum ToggThemeStyle: String, CaseIterable, Identifiable, Hashable {
 
     var accentColor: Color {
         switch self {
+        case .corporate: return Color(hex: 0x00D2C8)
+        case .contrast: return Color(hex: 0x00F0E6)
         case .togg: return Color(hex: 0x00D2C8)
         case .ocean: return Color(hex: 0x42D5F5)
         case .graphite: return Color(hex: 0xFFB547)
@@ -55,6 +83,8 @@ enum ToggThemeStyle: String, CaseIterable, Identifiable, Hashable {
 
     var accentContainerColor: Color {
         switch self {
+        case .corporate: return Color(hex: 0x0B3B3A)
+        case .contrast: return Color(hex: 0x00332F)
         case .togg: return Color(hex: 0x004F4D)
         case .ocean: return Color(hex: 0x124A5B)
         case .graphite: return Color(hex: 0x5B3E16)
@@ -62,33 +92,42 @@ enum ToggThemeStyle: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
+/// Tema paletleri koyu tutulur; kartlardaki beyaz metinlerin kontrastı korunur.
+/// Pano yerleşimi: F1'de "yoğunluk + öncelik" modeline göç edecek.
+/// Eski ham değerler korunur (kayıtlı tercih sessizce sıfırlanmasın).
 enum DashboardLayoutStyle: String, CaseIterable, Identifiable, Hashable {
     case classic, minimal, sport, technical
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .classic: return "Klasik"
-        case .minimal: return "Minimal"
-        case .sport: return "Sportif"
-        case .technical: return "Teknik"        }
+        case .classic: return "Dengeli"
+        case .minimal: return "Sade"
+        case .sport: return "Kontrol önde"
+        case .technical: return "Teknik önde"
+        }
     }
 
     var subtitle: String {
         switch self {
-        case .classic: return "Tüm kartlar"
-        case .minimal: return "Özet ve hızlı erişim"
-        case .sport: return "Kontroller önde"
-        case .technical: return "Tanı ve telemetri önde"        }
+        case .classic: return "Özet + kontroller"
+        case .minimal: return "Yalnız özet"
+        case .sport: return "Hızlı eylemler üstte"
+        case .technical: return "Telemetri üstte"
+        }
     }
 }
 
-/// Tema paletleri koyu tutulur; kartlardaki beyaz metinlerin kontrastı korunur.
 enum ToggTheme {
+    /// Eski palet seçimleri (togg/ocean/graphite) kurumsal kimliğe **göç
+    /// eder**; kayıt silinmez, böylece geri dönüş yolu kapanmaz.
     private static var selected: ToggThemeStyle {
         guard let raw = UserDefaults.standard.string(forKey: StorageKeys.theme),
-              let style = ToggThemeStyle(rawValue: raw) else { return .togg }
-        return style
+              let style = ToggThemeStyle(rawValue: raw) else { return .corporate }
+        switch style {
+        case .corporate, .contrast: return style
+        case .togg, .ocean, .graphite: return .corporate
+        }
     }
 
     static var background: Color { selected.backgroundColor }
@@ -106,7 +145,8 @@ enum ToggTheme {
     static let yellow = Color(hex: 0xFFD600)
     static var muted: Color {
         switch selected {
-        case .togg: return Color(hex: 0x9AA7BD)
+        case .corporate, .togg: return Color(hex: 0x9AA7BD)
+        case .contrast: return Color(hex: 0xC8C8C8)
         case .ocean: return Color(hex: 0x9AB7C9)
         case .graphite: return Color(hex: 0xB1B9BC)
         }

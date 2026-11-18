@@ -63,6 +63,8 @@
 		3E573134388F2997403C7038 /* Core/ShortcutLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E6553C89E34442D30915FB /* Core/ShortcutLink.swift */; };
 		404ABC4D3DD42DABB1BE60AC /* LockConfirmationSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CA21BA085F722911635017 /* LockConfirmationSound.swift */; };
 		4A7B9C0D1E2F33445566778A /* QuickStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7B9C0D1E2F33445566778B /* QuickStartView.swift */; };
+		41A2B3C4D5E6F708192A3B4E /* DesignPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41A2B3C4D5E6F708192A3B4F /* DesignPreviewView.swift */; };
+		41A2B3C4D5E6F708192A3B4C /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41A2B3C4D5E6F708192A3B4D /* DesignSystem.swift */; };
 		417996F78A66EC40C130758D /* BLECommandHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */; };
 		4317E884109146BF8BB94813 /* VoiceCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E3943ADA53E9864A4A558C3 /* VoiceCommand.swift */; };
 		49808D4581BF8AB41A118BD0 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916E3FFCE5A36274CE3483A4 /* BLEProtocol.swift */; };
@@ -371,6 +373,8 @@
 		61B0937BFEE69314B58DD6FD /* BluetoothDiscovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothDiscovery.swift; path = Shared/BluetoothDiscovery.swift; sourceTree = "<group>"; };
 		65CA21BA085F722911635017 /* LockConfirmationSound.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LockConfirmationSound.swift; path = App/LockConfirmationSound.swift; sourceTree = "<group>"; };
 		4A7B9C0D1E2F33445566778B /* QuickStartView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = QuickStartView.swift; path = App/QuickStartView.swift; sourceTree = "<group>"; };
+		41A2B3C4D5E6F708192A3B4F /* DesignPreviewView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DesignPreviewView.swift; path = App/DesignPreviewView.swift; sourceTree = "<group>"; };
+		41A2B3C4D5E6F708192A3B4D /* DesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DesignSystem.swift; path = App/DesignSystem.swift; sourceTree = "<group>"; };
 		68D5366CFC2C2BABF91AF7DC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = App/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		6D9E0F1A2B3C4D5E6F0A1B2C /* BleRestorePlan.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleRestorePlan.swift; path = Core/BleRestorePlan.swift; sourceTree = "<group>"; };
 		6E7F8A9B0C1D2E3F4A5B6C7D /* StorageKeys.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = StorageKeys.swift; path = App/StorageKeys.swift; sourceTree = "<group>"; };
@@ -580,6 +584,8 @@
 				0B29D2BCA49ABA1DEE358044 /* DriveExperienceView.swift */,
 				65CA21BA085F722911635017 /* LockConfirmationSound.swift */,
 				4A7B9C0D1E2F33445566778B /* QuickStartView.swift */,
+				41A2B3C4D5E6F708192A3B4F /* DesignPreviewView.swift */,
+				41A2B3C4D5E6F708192A3B4D /* DesignSystem.swift */,
 				ED85292C3B4DC74E070D4819 /* LoginCoordinator.swift */,
 				17BD712EE0834958833A382D /* ProximityDetectionMonitor.swift */,
 				C39F9C8F8DE63FDCFB5C37C9 /* ServiceView.swift */,
@@ -1078,6 +1084,8 @@
 				A062ABF4EB2E6AF301B46D0C /* DriveExperienceView.swift in Sources */,
 				404ABC4D3DD42DABB1BE60AC /* LockConfirmationSound.swift in Sources */,
 				4A7B9C0D1E2F33445566778A /* QuickStartView.swift in Sources */,
+				41A2B3C4D5E6F708192A3B4E /* DesignPreviewView.swift in Sources */,
+				41A2B3C4D5E6F708192A3B4C /* DesignSystem.swift in Sources */,
 				4DD16715A4D136BCF499E5AB /* LoginCoordinator.swift in Sources */,
 				BFFC90F44D1902601A16ADD4 /* ProximityDetectionMonitor.swift in Sources */,
 				1C6DA13A06FA16344F363701 /* ServiceView.swift in Sources */,

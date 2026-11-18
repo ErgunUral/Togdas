@@ -25,6 +25,7 @@ struct DashboardHeader: View {
     let onOpenDetail: () -> Void
     let onOpenDiscovery: () -> Void
     let onOpenScenarioGuide: () -> Void
+    let onOpenDesignPreview: () -> Void
     let onLogout: () -> Void
     @Binding var themeName: String
     @Binding var layoutName: String
@@ -140,13 +141,14 @@ struct DashboardHeader: View {
                         }
                         Button("Araç detayı", systemImage: "info.circle") { onOpenDetail() }
                         Button("Senaryolar rehberi", systemImage: "book") { onOpenScenarioGuide() }
+                        Button("Tasarım önizleme", systemImage: "square.grid.2x2") { onOpenDesignPreview() }
                         Button("Servis kartı", systemImage: "wrench.and.screwdriver") { onOpenService() }
                         Button("Seyahatname", systemImage: "chart.xyaxis.line") { onOpenExperience() }
                         Button("Bildirimler & destek", systemImage: "bell.badge") { onOpenAccount() }
                         Button("Bluetooth komutları", systemImage: "key.horizontal") { onOpenCommands() }
                         Button("Bluetooth taraması", systemImage: "dot.radiowaves.left.and.right") { onOpenDiscovery() }
                         Picker("Renk teması", selection: $themeName) {
-                            ForEach(ToggThemeStyle.allCases) { style in
+                            ForEach(ToggThemeStyle.selectable) { style in
                                 Text(style.title).tag(style.rawValue)
                             }
                         }

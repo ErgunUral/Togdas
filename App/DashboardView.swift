@@ -78,6 +78,7 @@ struct DashboardView: View {
     @State private var geofenceNotice: String?
     @State private var showCommands = false
     @State private var showQuickStart = false
+    @State private var showDesignPreview = false
     @State private var showDetail = false
     @State private var showDiscovery = false
     @State private var showService = false
@@ -218,6 +219,7 @@ struct DashboardView: View {
                 scenarioGuideSection = nil
                 showScenarioGuide = true
             },
+            onOpenDesignPreview: { showDesignPreview = true },
             onLogout: { model.logout() },
             themeName: $themeName,
             layoutName: $layoutName
@@ -583,6 +585,9 @@ struct DashboardView: View {
                     telemetryFresh: updatedAt.map { Date().timeIntervalSince($0) < 300 }
                 )
             )
+        }
+        .sheet(isPresented: $showDesignPreview) {
+            DesignPreviewView()
         }
         .sheet(isPresented: $showQuickStart) {
             QuickStartView()

@@ -217,6 +217,16 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 
 ## 8. İlerleme
 
+- **Arayüz yenilemesi F0 — kurumsal tasarım sistemi (2026-11-18):**
+  `App/DesignSystem.swift` (spacing 4/8/12/16/24/32, radius 12/16/20,
+  elevation, `StatusPill`/`DSStatus` tek durum dili, `StatusHero`,
+  `PriorityCard`, `ActionTile` 2 sütun ≥56pt, `MetricCell`, `DataRow`,
+  `SectionHeader`, `EmptyState`, `SkeletonRow`, `ToastBanner`, `SheetShell`,
+  Reduce Motion uyumlu `dsAppear`) + `App/DesignPreviewView.swift`
+  (menü → "Tasarım önizleme"; veri okumaz, komut göndermez). Palet göçü:
+  3 dağınık palet (Togg Gece/Okyanus/Grafit) → **Kurumsal** ve
+  **Yüksek Kontrast**; eski `StorageKeys.theme` değerleri kurumsala
+  eşlenir (kayıt silinmez). Seçici yalnız iki paleti gösterir.
 - **Saat ses/bildirim katmanı (2026-11-18, 630 test):** Ses kararları
   `ToqdasWatchApp` içine dağılmıştı (3 olay, 3 magic `UserDefaults`
   anahtarı, tek ton) ve **kilit duyurusu tazelik kontrolü yapmıyordu** —
