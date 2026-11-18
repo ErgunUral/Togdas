@@ -58,7 +58,7 @@ struct PremiumControlsSection: View {
                 .buttonStyle(.plain)
                 .accessibilityHint("Park hâlinde açık cam bırakmak risklidir; komut onay sorulduktan sonra gönderilir.")
 
-                Text("Cam konumu imzalı telemetride yok: komutun araca ulaştığını görürüz, camın gerçekten kapandığını doğrulayamayız. Açık cam bırakmak yağmur ve hırsızlık riski taşır. \"Kilitle\" sonrası camlar otomatik kapatılmaya çalışılır.")
+                Text("Cam konumu imzalı telemetride yok: komutun araca ulaştığını görürüz, camın gerçekten kapandığını doğrulayamayız. Tek dokunuş birkaç kısa komut gönderir; cam kademeli kapanır, tam kapanmazsa yeniden dokunun. \"Kilitle\" sonrası camlar otomatik kapatılmaya çalışılır. Açık cam bırakmak yağmur ve hırsızlık riski taşır.")
                     .font(ToggTheme.text(.micro))
                     .foregroundStyle(DSColor.muted)
                     .fixedSize(horizontal: false, vertical: true)

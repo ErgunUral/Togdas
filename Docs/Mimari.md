@@ -271,6 +271,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   (kilit sonrası) bu kapıdan muaf. "Cam saha profili" yalnız doğrulanmış T10X +
   yazılım sürümünde seçilebiliyor. Sonuç: kodlar doğru, araç ACK veriyor ama
   uygulamıyor; destek araç yazılımına/yetkilendirmeye bağlı görünüyor.
+  **Saha bulgusu (18.11, akşam):** Tek "Yan camları kapat" camı yalnız kısa bir
+  adım oynatıyor; komut tekrarlandıkça cam tamamen kapanıyor. Yani araç kodu
+  "basılı tut" gibi işliyor. Çözüm: tek dokunuşta sınırlı **darbe dizisi**
+  (8 komut, 1,2 sn arayla) gönderilir; kullanıcı yeni komut verirse dizi iptal
+  edilir. Darbeler makbuz üretmez; "Son komut" ilk kullanıcı komutunda kalır.
+  Cam konumu hâlâ doğrulanamaz.
 - **Cam açma ikincil (2026-11-18):** Protokolde cam açma var (kod 6,
   17.11 21:09:11'de bir kez ACK). Park hâlinde açık cam bırakmak yağmur ve
   hırsızlık riski taşıdığı için **"Yan camları kapat" birincil** (dolu accent,

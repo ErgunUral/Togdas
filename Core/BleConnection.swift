@@ -115,6 +115,13 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     private var lockStateAtSend: Bool?
     private var commandTimeoutTask: Task<Void, Never>?
     private var commandVerificationTask: Task<Void, Never>?
+    /// Cam komutu araçta kısa bir hareket darbesi üretiyor (18.11 gözlemi:
+    /// tek "kapat" camı birkaç cm oynatıyor, tekrarlayınca tamamen kapanıyor).
+    /// Tek dokunuşta sınırlı sayıda darbe gönderilir; kullanıcı komutu gelirse
+    /// dizi iptal edilir.
+    private var windowPulseTask: Task<Void, Never>?
+    private static let windowPulseCount = 8
+    private static let windowPulseInterval: TimeInterval = 1.2
     private var certificateQueued = false
     private var certificateWritesFinished = false
     private var certificateFrames: [Data] = []
@@ -366,6 +373,8 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         commandTimeoutTask = nil
         commandVerificationTask?.cancel()
         commandVerificationTask = nil
+        windowPulseTask?.cancel()
+        windowPulseTask = nil
         trustedCarKey = nil
         expectedCarKey = nil
         certificateQueued = false
@@ -597,8 +606,12 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     @discardableResult func unlock() -> Bool { sendCommand(code: 2, action: "Kilidi aç") }
     @discardableResult func trunkOpen() -> Bool { sendCommand(code: 4, action: "Bagajı aç") }
     @discardableResult func trunkClose() -> Bool { sendCommand(code: 5, action: "Bagajı kapat") }
-    @discardableResult func windowsOpen() -> Bool { sendCommand(code: 6, action: "Yan camları aç") }
-    @discardableResult func windowsClose() -> Bool { sendCommand(code: 7, action: "Yan camları kapat") }
+    @discardableResult func windowsOpen() -> Bool {
+        pulseWindows(code: 6, action: "Yan camları aç", isAuto: false)
+    }
+    @discardableResult func windowsClose() -> Bool {
+        pulseWindows(code: 7, action: "Yan camları kapat", isAuto: false)
+    }
     @discardableResult func driveAuthorize() -> Bool { sendCommand(code: 14, action: "Sürüş yetkilendir") }
 
     @discardableResult
@@ -606,7 +619,12 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         // Yeni komut, önceki kopmadan kalan "sonucu bilinmeyen kilit"
         // niyetini geçersiz kılar: artık yeni komutun sonucu konuşulur.
         // Otomatik yan komut bu niyeti iptal etmez.
-        if !isAuto { unverifiedLockIntent = nil }
+        if !isAuto {
+            unverifiedLockIntent = nil
+            // Kullanıcı yeni bir komut verdiyse yarım kalan cam darbe dizisi durur.
+            windowPulseTask?.cancel()
+            windowPulseTask = nil
+        }
         // Doğrulama bekleyen kilit yeni komutu bloke etmez: doğrulama yalnız
         // telemetri gözlemidir, komut tek uçuşu `pendingCommand`dır. Yeni
         // komut başlarken eski gözlem zaten temizlenir.
@@ -885,10 +903,39 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     /// çevrildi (önce cam) çünkü o zincir kilidi tamamen engelliyordu.
     private func closeWindowsAfterLockAck(_ command: PendingCommand) {
         guard command.code == 1, !command.isAuto else { return }
-        let sent = sendCommand(code: 7, action: "Camları kapat", isAuto: true)
+        let sent = pulseWindows(code: 7, action: "Camları kapat", isAuto: true)
         recordDiagnostic(sent
-            ? "auto_windows_close · kilit onayı sonrası cam kapatma gönderildi"
+            ? "auto_windows_close · kilit onayı sonrası cam kapatma dizisi başladı"
             : "auto_windows_close_skipped · kilit onayı sonrası cam kapatma gönderilemedi")
+    }
+
+    /// Cam komutunu sınırlı bir **darbe dizisi** olarak gönderir.
+    ///
+    /// Araç, tek cam komutunu "basılı tut" gibi işliyor: cam yalnız kısa bir
+    /// mesafe hareket ediyor (18.11 saha gözlemi: tek dokunuş kısa kısa
+    /// oynatıyor, tekrar tekrar basınca cam tamamen kapanıyor). Bu yüzden tek
+    /// dokunuş, arka planda sınırlı sayıda (8) darbe gönderir. Darbeler
+    /// makbuz üretmez: "Son komut" ilk kullanıcı komutunda kalır, camın
+    /// fiziksel sonucu yine doğrulanamaz (konum telemetride yok).
+    @discardableResult
+    private func pulseWindows(code: UInt8, action: String, isAuto: Bool) -> Bool {
+        windowPulseTask?.cancel()
+        guard sendCommand(code: code, action: action, isAuto: isAuto) else { return false }
+        let total = Self.windowPulseCount
+        windowPulseTask = Task { [weak self] in
+            for index in 1..<total {
+                try? await Task.sleep(nanoseconds: UInt64(Self.windowPulseInterval * 1_000_000_000))
+                if Task.isCancelled { return }
+                guard let self else { return }
+                guard self.state.isReady, self.pendingCommand == nil else {
+                    self.recordDiagnostic("window_pulse_skipped · \(index + 1)/\(total) · bağlantı/komut meşgul")
+                    continue
+                }
+                _ = self.sendCommand(code: code, action: action, isAuto: true)
+                self.recordDiagnostic("window_pulse · \(index + 1)/\(total) · kod \(code)")
+            }
+        }
+        return true
     }
 
     // MARK: - Yazma kuyruğu

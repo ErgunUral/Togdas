@@ -56,8 +56,8 @@ enum DashboardCommand: String, Identifiable {
         case .unlock: return "Kapı kilitleri açılacak."
         case .trunkOpen: return "Arka bagaj açılacak."
         case .trunkClose: return "Arka bagaj kapatılacak."
-        case .windowsOpen: return "Yan cam açma komutu gönderilecek. Park hâlinde açık cam bırakmayın (yağmur/hırsızlık riski). Cam konumu doğrulanamaz; çevrede engel olmadığından emin olun."
-        case .windowsClose: return "Yan cam kapatma komutu gönderilecek. Cam konumu ayrıca doğrulanamayabilir; çevrede engel olmadığından emin olun."
+        case .windowsOpen: return "Yan camlar kademeli açılacak. Park hâlinde açık cam bırakmayın (yağmur/hırsızlık riski). Cam konumu doğrulanamaz; çevrede engel olmadığından emin olun."
+        case .windowsClose: return "Yan camlar kademeli kapatılacak. Tam kapanmazsa yeniden dokunun; cam konumu doğrulanamaz."
         case .automaticLockOn: return "Yakınlık otomasyonu etkinleştirilecek. Bu onay araç komutu göndermez; yaklaşma/uzaklaşma otomasyonu yönetilir."
         case .automaticLockOff: return "Yakınlık otomasyonu kapatılacak; araca komut gönderilmez."
         }
