@@ -52,7 +52,7 @@ enum DashboardCommand: String, Identifiable {
 
     var detail: String {
         switch self {
-        case .lock: return "Kapı kilitleme komutu gönderilecek. Camlar bu komuta dahil değildir; açık cam varsa ayrıca 'Yan camları kapat' kullanın."
+        case .lock: return "Kapılar kilitlenecek; kilit onaylanınca camlar kapatılmaya çalışılacak. Cam konumu doğrulanamaz, açık cam kalmış olabilir."
         case .unlock: return "Kapı kilitleri açılacak."
         case .trunkOpen: return "Arka bagaj açılacak."
         case .trunkClose: return "Arka bagaj kapatılacak."
@@ -602,7 +602,7 @@ struct DashboardView: View {
             Button("Etkinleştir", role: .destructive) { setProximityEnabled(true) }
             Button("Vazgeç", role: .cancel) { }
         } message: {
-            Text("Uygulama ekrandayken yeni yaklaşma algılanırsa kilit açılır. Uzaklaşınca, tüm kapılar kapalı ve araç beklemedeyse kilitleme komutu gönderilir. Camlar kapatılmaz: pencere açıklığı telemetride yok ve cam komutu kilidi geciktiriyordu. Arka planda araç komutu gönderilmez.")
+            Text("Uygulama ekrandayken yeni yaklaşma algılanırsa kilit açılır. Uzaklaşınca, tüm kapılar kapalı ve araç beklemedeyse kilitleme komutu gönderilir; kilit onaylanınca camlar da kapatılmaya çalışılır. Cam konumu telemetride yok, bu yüzden sonuç doğrulanamaz. Arka planda araç komutu gönderilmez.")
         }
         .sheet(isPresented: $showVoice) {
             VoiceSheet(voice: voice) { text in
@@ -2372,7 +2372,7 @@ struct DashboardView: View {
                     pendingAutomaticCommandKind = .lock
                     pendingAutomaticCommandAt = Date()
                     recordWidgetCommand("Kilitleme (yakınlık)")
-                    proximityStatus = "Uzaklaşma algılandı; kilitleme komutu gönderildi. Camlar otomatik kapatılmaz."
+                    proximityStatus = "Uzaklaşma algılandı; kilitleme komutu gönderildi; camlar kapatılmaya çalışılıyor."
                     ble.recordDiagnostic("Yakınlık otomasyonu kilitleme komutunu başlattı")
                 } else {
                     pendingAutoLockTask?.cancel()

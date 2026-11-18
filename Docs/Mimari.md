@@ -247,9 +247,13 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   kapatma adımına zincirlenmesinin kilidi engellediğini gösterdi
   (17.11 22:08 · kod 7 `linkLost`; kilit hiç gönderilmedi; 21:55'te aynı akış
   cam onayı alınca kilit doğrulandı). Artık **"Kilitle" yalnız kod 1**
-  gönderir; cam kapatma ayrı ve açık bir eylemdir. Yakınlık otomasyonu da
-  camları kapatmaz. Cam konumu imzalı telemetride **yok**; uygulama yalnız
-  aracın komut onayını görür, camın fiziksel olarak kapandığını doğrulayamaz.
+  gönderir. Kilit onayı alındıktan sonra cam kapatma **otomatik ve
+  best-effort** denenir (18.11 kararı: "kilitle = komple kapanma" beklentisi):
+  otomatik komut makbuz üretmez, bu yüzden "Son komut" kilitten kopmaz ve cam
+  adımının kopması kilit kaydını kirletmez; kilit doğrulaması da kesilmez.
+  Yakınlık otomasyonu aynı akışı kullanır. Cam konumu imzalı telemetride
+  **yok**; uygulama yalnız aracın komut onayını görür, camın fiziksel olarak
+  kapandığını doğrulayamaz.
 - **Cam açma ikincil (2026-11-18):** Protokolde cam açma var (kod 6,
   17.11 21:09:11'de bir kez ACK). Park hâlinde açık cam bırakmak yağmur ve
   hırsızlık riski taşıdığı için **"Yan camları kapat" birincil** (dolu accent,

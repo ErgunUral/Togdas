@@ -65,6 +65,10 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     private struct PendingCommand {
         let code: UInt8
         let action: String
+        /// Otomatik yan komut (kilit sonrası cam kapatma). Kullanıcı niyeti
+        /// gibi kayıt/gösterim üretmez: "Son komut" kilit olarak kalır,
+        /// başarısızlığı da kilit kaydını kirletmez.
+        var isAuto: Bool = false
     }
 
     private var connectedAt: Date?
@@ -277,28 +281,39 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
                 failureReason: .linkLost
             )
             recordDiagnostic("lock_verification_lost · bağlantı kapandı; kilit durumu doğrulanamadı")
+            // Kopma doğrulama beklerken olduysa komut araca gitmişti; sonraki
+            // imzalı telemetri hedefi gösterirse kayıt gecikmeli doğrulanır.
+            if let receipt = lastCommandReceipt {
+                unverifiedLockIntent = (
+                    target: interruptedLockVerification,
+                    receiptID: receipt.id,
+                    sentAt: Date()
+                )
+            }
         }
         if let interruptedCommand {
             // Komut araca gitmiş olabilir: kopma yalnız ack'i yutmuş olabilir.
             // Bu yüzden "iletilmedi" denmez; sonuç "doğrulanamadı" olarak
             // işaretlenir ve sonraki imzalı telemetri hedefi gösterirse kayıt
             // gecikmeli olarak doğrulanır. Retry yok (invariant).
-            recordCommandReceipt(
-                code: interruptedCommand.code,
-                action: interruptedCommand.action,
-                phase: .failed,
-                detail: "Bağlantı komut tamamlanmadan kapandı; komutun araca ulaştığı doğrulanamadı.",
-                failureReason: .linkLost
-            )
-            recordDiagnostic("command_interrupted · bağlantı kapandı; \(interruptedCommand.action) sonucu bilinmiyor")
-            if interruptedCommand.code == 1 || interruptedCommand.code == 2,
-               let receipt = lastCommandReceipt {
-                unverifiedLockIntent = (
-                    target: interruptedCommand.code == 1,
-                    receiptID: receipt.id,
-                    sentAt: Date()
+            if !interruptedCommand.isAuto {
+                recordCommandReceipt(
+                    code: interruptedCommand.code,
+                    action: interruptedCommand.action,
+                    phase: .failed,
+                    detail: "Bağlantı komut tamamlanmadan kapandı; komutun araca ulaştığı doğrulanamadı.",
+                    failureReason: .linkLost
                 )
+                if interruptedCommand.code == 1 || interruptedCommand.code == 2,
+                   let receipt = lastCommandReceipt {
+                    unverifiedLockIntent = (
+                        target: interruptedCommand.code == 1,
+                        receiptID: receipt.id,
+                        sentAt: Date()
+                    )
+                }
             }
+            recordDiagnostic("command_interrupted · bağlantı kapandı; \(interruptedCommand.action) sonucu bilinmiyor")
         }
         lastEvent = keepTelemetry ? "Bağlantı yeniden kuruluyor…" : "Bağlantı durduruldu"
         channels = []
@@ -587,17 +602,18 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     @discardableResult func driveAuthorize() -> Bool { sendCommand(code: 14, action: "Sürüş yetkilendir") }
 
     @discardableResult
-    private func sendCommand(code: UInt8, action: String) -> Bool {
+    private func sendCommand(code: UInt8, action: String, isAuto: Bool = false) -> Bool {
         // Yeni komut, önceki kopmadan kalan "sonucu bilinmeyen kilit"
         // niyetini geçersiz kılar: artık yeni komutun sonucu konuşulur.
-        unverifiedLockIntent = nil
+        // Otomatik yan komut bu niyeti iptal etmez.
+        if !isAuto { unverifiedLockIntent = nil }
         // Doğrulama bekleyen kilit yeni komutu bloke etmez: doğrulama yalnız
         // telemetri gözlemidir, komut tek uçuşu `pendingCommand`dır. Yeni
         // komut başlarken eski gözlem zaten temizlenir.
         let hasActiveCommand = pendingCommand != nil
         if let rejection = BLECommandPolicy.rejection(code: code, linkReady: state.isReady, telemetry: telemetry) {
             lastEvent = rejection.message
-            if !hasActiveCommand {
+            if !isAuto && !hasActiveCommand {
                 recordCommandReceipt(code: code, action: action, phase: .failed,
                                      detail: rejection.message, failureReason: .gateRejected)
             }
@@ -606,7 +622,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         }
         guard commandChar != nil else {
             lastEvent = "Komut kanalı yok."
-            if !hasActiveCommand {
+            if !isAuto && !hasActiveCommand {
                 recordCommandReceipt(code: code, action: action, phase: .failed,
                                      detail: "Komut kanalı yok.", failureReason: .gateRejected)
             }
@@ -614,7 +630,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         }
         guard phoneKey != nil else {
             lastEvent = "Telefon imza anahtarı yok."
-            if !hasActiveCommand {
+            if !isAuto && !hasActiveCommand {
                 recordCommandReceipt(code: code, action: action, phase: .failed,
                                      detail: "Telefon imza anahtarı yok.", failureReason: .gateRejected)
             }
@@ -625,15 +641,22 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             return false
         }
 
-        lockStateAtSend = telemetry?.isLocked
-        pendingCommand = PendingCommand(code: code, action: action)
+        if code == 1 || code == 2 { lockStateAtSend = telemetry?.isLocked }
+        pendingCommand = PendingCommand(code: code, action: action, isAuto: isAuto)
         pendingCommandNonce = nil
-        pendingLockVerification = nil
+        if !isAuto {
+            // Kullanıcı komutu, bekleyen kilit doğrulamasını devralır; otomatik
+            // cam kapatma ise kilit doğrulamasını kesmez (kilidin sonucu hâlâ
+            // telemetriden beklenir).
+            pendingLockVerification = nil
+            commandVerificationTask?.cancel()
+            commandVerificationTask = nil
+        }
         commandTimeoutTask?.cancel()
-        commandVerificationTask?.cancel()
-        commandVerificationTask = nil
         lastEvent = "Araç saati ve tek kullanımlık komut sorusu alınıyor"
-        recordCommandReceipt(code: code, action: action, phase: .queued, detail: lastEvent)
+        if !isAuto {
+            recordCommandReceipt(code: code, action: action, phase: .queued, detail: lastEvent)
+        }
 
         if let readAt = carTimeReadAt,
            Date().timeIntervalSince(readAt) < 30 {
@@ -647,7 +670,9 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         } else {
             pendingCommand = nil
             lastEvent = "Araç saati kanalı kullanılamıyor; komut gönderilmedi."
-            advanceCommandReceipt(.failed, detail: lastEvent, failureReason: .gateRejected)
+            if !isAuto {
+                advanceCommandReceipt(.failed, detail: lastEvent, failureReason: .gateRejected)
+            }
             return false
         }
     }
@@ -701,7 +726,9 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         waitingForCommandTime = false
         waitingForCommandNonce = true
         lastEvent = "Araçtan tek kullanımlık komut sorusu isteniyor"
-        advanceCommandReceipt(.queued, detail: lastEvent)
+        if pendingCommand?.isAuto != true {
+            advanceCommandReceipt(.queued, detail: lastEvent)
+        }
         print("[BLE] command nonce request 1300000001000000")
         enqueue(BLEProtocol.commandNonce, to: commandChar)
         recordDiagnostic("nonce_requested · tek kullanımlık komut sorusu")
@@ -731,7 +758,9 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             print("[BLE] signed command action=\(pendingCommand.action) code=\(pendingCommand.code) len=\(packet.count)")
             recordDiagnostic("nonce_packet_prepared · imzalı komut gönderildi: \(pendingCommand.action)")
             lastEvent = "İmzalı \(pendingCommand.action.lowercased()) komutu gönderiliyor"
-            advanceCommandReceipt(.sent, detail: "Araç yanıtı bekleniyor.")
+            if !pendingCommand.isAuto {
+                advanceCommandReceipt(.sent, detail: "Araç yanıtı bekleniyor.")
+            }
             enqueue(packet, to: commandChar)
             armCommandTimeout(8, "Araç komut yanıtı göndermedi.")
         } catch {
@@ -754,6 +783,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     private func finishPendingCommand(error: String) {
         let hadPendingCommand = pendingCommand != nil
+        let wasAuto = pendingCommand?.isAuto == true
         let message = error
         commandTimeoutTask?.cancel()
         commandTimeoutTask = nil
@@ -762,7 +792,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         waitingForCommandTime = false
         waitingForCommandNonce = false
         lastEvent = message
-        if hadPendingCommand {
+        if hadPendingCommand && !wasAuto {
             advanceCommandReceipt(.failed, detail: message, failureReason: .protocolTimeout)
         }
         recordDiagnostic("protocol_response_timeout · \(message)")
@@ -785,13 +815,21 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         guard let targetLocked else {
             if command.code == 6 || command.code == 7 {
                 lastEvent = "\(command.action) komutu araç tarafından alındı; cam konumu ayrıca doğrulanmalı."
-                advanceCommandReceipt(.acknowledged, detail: "Cam konumu ayrıca doğrulanmalı.")
+                if !command.isAuto {
+                    advanceCommandReceipt(.acknowledged, detail: "Cam konumu ayrıca doğrulanmalı.")
+                }
             } else {
                 lastEvent = "\(command.action) komutu araç tarafından alındı."
-                advanceCommandReceipt(.acknowledged, detail: "Araç komutu aldı.")
+                if !command.isAuto {
+                    advanceCommandReceipt(.acknowledged, detail: "Araç komutu aldı.")
+                }
             }
             return
         }
+        // "Kilitle" niyeti: kilit onayı alındıktan sonra camlar denenir.
+        // Doğrulama yolu ne olursa olsun (anında doğrulandı ya da beklemede)
+        // çalışır; otomatik komut kilit makbuzunu değiştirmez.
+        defer { closeWindowsAfterLockAck(command) }
         if let telemetry,
            Date().timeIntervalSince(telemetry.receivedAt) < 15,
            telemetry.isLocked == targetLocked {
@@ -839,6 +877,18 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
                 self.recordDiagnostic("automatic_command_failed · kilit durumu komut sonrasında doğrulanamadı")
             }
         }
+    }
+
+    /// "Kilitle" niyeti: kilit onayı alındıktan sonra camlar **best-effort**
+    /// kapatılır. Otomatik komut makbuz üretmediği için "Son komut" kilitten
+    /// kopmaz ve cam adımının kopması kilit kaydını kirletmez. Sıra tersine
+    /// çevrildi (önce cam) çünkü o zincir kilidi tamamen engelliyordu.
+    private func closeWindowsAfterLockAck(_ command: PendingCommand) {
+        guard command.code == 1, !command.isAuto else { return }
+        let sent = sendCommand(code: 7, action: "Camları kapat", isAuto: true)
+        recordDiagnostic(sent
+            ? "auto_windows_close · kilit onayı sonrası cam kapatma gönderildi"
+            : "auto_windows_close_skipped · kilit onayı sonrası cam kapatma gönderilemedi")
     }
 
     // MARK: - Yazma kuyruğu
