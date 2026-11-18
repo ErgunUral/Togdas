@@ -256,6 +256,14 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   onay ister), **"Yan camları aç" ikincil** (düz satır, "Onay ister"); açma
   onay metni riski söyler. Cam konumu doğrulanamadığı notu ikisinin altında
   tek yerde durur.
+- **Kopmada "iletilmedi" iddiası kaldırıldı (2026-11-18):** Saat günlüğü +
+  telefon kaydı: 18.11 16:54:04'te "Kilitle" gönderildi, 16:54:06'da bağlantı
+  koptu (kayıt: "komut araca iletilmedi"), 16:56:14'te imzalı telemetri
+  **kilitli** dedi. Yani kopma ack'i yutmuş olabilir; komut ulaşmış olabilir.
+  Artık kopmada metin "komutun araca ulaştığı doğrulanamadı" der ve
+  `LockVerificationPolicy.window` (90 sn) içinde gelen imzalı telemetri hedefi
+  gösterirse aynı kayıt **"doğrulandı · gecikmeli"** olur (not: bağlantı komut
+  sırasında koptu). Yeni komut bu niyeti iptal eder; retry yok.
 - **Arayüz F7 — durum yokken "Hızlı kontroller" (2026-11-18, 649 + 43):**
   Dört karo da "Bilinmiyor" iken bölüm ölü görünüyordu. Artık kilit/bagaj/
   sürüş/iklim değerlerinden **hiçbiri** yoksa dört karo yerine tek eylem

@@ -100,6 +100,12 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     private var waitingForCommandTime = false
     private var waitingForCommandNonce = false
     private var pendingLockVerification: Bool?
+    /// Kopma yüzünden sonucu bilinmeyen kilit niyeti: komut ack'i kayboldu,
+    /// kayıt "başarısız" yazıldı. Sonraki imzalı telemetri hedefi gösterirse
+    /// aynı kayıt "doğrulandı · gecikmeli" olur (ölçüm: 18.11 16:54'te kilit
+    /// komutu kopmada kayboldu ama 2 dk sonra telemetri kilitliydi).
+    /// `LockVerificationPolicy.window` boyunca yaşar; yeni komut onu iptal eder.
+    private var unverifiedLockIntent: (target: Bool, receiptID: UUID, sentAt: Date)?
     /// Komut gönderilirken araç zaten hedef durumda mıydı? Onay metni bunu
     /// dürüstçe söyler ("araç zaten kilitliydi"), "değişti" izlenimi vermez.
     private var lockStateAtSend: Bool?
@@ -273,16 +279,26 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             recordDiagnostic("lock_verification_lost · bağlantı kapandı; kilit durumu doğrulanamadı")
         }
         if let interruptedCommand {
-            // Komut imzalanıp araca gitmeden oturum koptuysa kayıt sessizce
-            // kaybolmaz: saat/telefon "iletilmedi" görür. Retry yok (invariant).
+            // Komut araca gitmiş olabilir: kopma yalnız ack'i yutmuş olabilir.
+            // Bu yüzden "iletilmedi" denmez; sonuç "doğrulanamadı" olarak
+            // işaretlenir ve sonraki imzalı telemetri hedefi gösterirse kayıt
+            // gecikmeli olarak doğrulanır. Retry yok (invariant).
             recordCommandReceipt(
                 code: interruptedCommand.code,
                 action: interruptedCommand.action,
                 phase: .failed,
-                detail: "Bağlantı komut tamamlanmadan kapandı; komut araca iletilmedi.",
+                detail: "Bağlantı komut tamamlanmadan kapandı; komutun araca ulaştığı doğrulanamadı.",
                 failureReason: .linkLost
             )
-            recordDiagnostic("command_interrupted · bağlantı kapandı; \(interruptedCommand.action) araca iletilmedi")
+            recordDiagnostic("command_interrupted · bağlantı kapandı; \(interruptedCommand.action) sonucu bilinmiyor")
+            if interruptedCommand.code == 1 || interruptedCommand.code == 2,
+               let receipt = lastCommandReceipt {
+                unverifiedLockIntent = (
+                    target: interruptedCommand.code == 1,
+                    receiptID: receipt.id,
+                    sentAt: Date()
+                )
+            }
         }
         lastEvent = keepTelemetry ? "Bağlantı yeniden kuruluyor…" : "Bağlantı durduruldu"
         channels = []
@@ -572,6 +588,9 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     @discardableResult
     private func sendCommand(code: UInt8, action: String) -> Bool {
+        // Yeni komut, önceki kopmadan kalan "sonucu bilinmeyen kilit"
+        // niyetini geçersiz kılar: artık yeni komutun sonucu konuşulur.
+        unverifiedLockIntent = nil
         // Doğrulama bekleyen kilit yeni komutu bloke etmez: doğrulama yalnız
         // telemetri gözlemidir, komut tek uçuşu `pendingCommand`dır. Yeni
         // komut başlarken eski gözlem zaten temizlenir.
@@ -1355,6 +1374,26 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
             if target {
                 lockConfirmationCount += 1
                 print("[BLE] lock state confirmed by fresh signed telemetry")
+            }
+        } else if let intent = unverifiedLockIntent,
+                  Date().timeIntervalSince(intent.sentAt) <= LockVerificationPolicy.window,
+                  updatedTelemetry.isLocked == intent.target {
+            // Komut kopmada kaybolmuştu (ack gelmedi) ama araç uygulamış:
+            // kayıt sonradan dürüstçe "doğrulandı · gecikmeli" olur.
+            unverifiedLockIntent = nil
+            if lastCommandReceipt?.id == intent.receiptID {
+                lastEvent = intent.target
+                    ? "Kapılar kilitli; kopmadan sonra gelen araç durumuyla doğrulandı."
+                    : "Kapı kilitleri açık; kopmadan sonra gelen araç durumuyla doğrulandı."
+                advanceCommandReceipt(
+                    .verified,
+                    detail: intent.target ? "Kilitli durum doğrulandı (gecikmeli)." : "Açık durum doğrulandı (gecikmeli).",
+                    note: "bağlantı komut sırasında koptu"
+                )
+                recordDiagnostic("lock_verified_late · komut kopmada kayboldu ama telemetri hedefi doğruladı: \(intent.target ? "kilitli" : "açık")")
+                if intent.target {
+                    lockConfirmationCount += 1
+                }
             }
         }
     }
