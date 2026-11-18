@@ -254,6 +254,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   Yakınlık otomasyonu aynı akışı kullanır. Cam konumu imzalı telemetride
   **yok**; uygulama yalnız aracın komut onayını görür, camın fiziksel olarak
   kapandığını doğrulayamaz.
+  **Araç başı doğrulama (18.11 18:13):** "Kilidi aç" ve "Kilitle" fiziksel
+  olarak başarılı; makbuzlar imzalı telemetriyle **doğrulandı**. Kilit
+  onayından 1 sn sonra otomatik "Camları kapat" gönderildi ve araç aldı
+  (18:13:58); camların fiziksel hareketi kullanıcı gözlemi bekliyor.
+  18:10:41'de aynı otomatik adım gönderildi, 3 sn sonra bağlantı koptu:
+  kilit kaydı kirlenmedi, tanıya `command_interrupted` düştü.
 - **Cam açma ikincil (2026-11-18):** Protokolde cam açma var (kod 6,
   17.11 21:09:11'de bir kez ACK). Park hâlinde açık cam bırakmak yağmur ve
   hırsızlık riski taşıdığı için **"Yan camları kapat" birincil** (dolu accent,
