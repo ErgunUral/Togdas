@@ -50,5 +50,16 @@ final class ToqdasAccessibilityTests: ToqdasUITestCase {
             XCTAssertTrue(tab.isHittable)
         }
         XCTAssertTrue(dashboard.batteryPercent.exists)
+
+        // Yeni durum şeritleri büyük yazıda da var olmalı (kırpma denetimi
+        // ayrı: ToqdasAccessibilityAuditTests).
+        dashboard.selectTab("Enerji")
+        XCTAssertTrue(app.staticTexts["ENERJİ"].waitForExistence(timeout: 5),
+                      "Enerji durum şeridi büyük yazıda yok")
+        XCTAssertTrue(app.staticTexts["Veriyi yenile"].exists)
+
+        dashboard.selectTab("Bakım")
+        XCTAssertTrue(app.staticTexts["BAKIM"].waitForExistence(timeout: 5),
+                      "Bakım durum şeridi büyük yazıda yok")
     }
 }

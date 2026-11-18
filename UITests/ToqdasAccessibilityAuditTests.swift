@@ -26,7 +26,7 @@ final class ToqdasAccessibilityAuditTests: ToqdasUITestCase {
         guard #available(iOS 17.0, *) else { throw XCTSkip("performAccessibilityAudit iOS 17+") }
         try app.performAccessibilityAudit(for: auditTypes) { issue in
             // Öğesi olmayan bulgular eylem verilemez (Xcode gürültüsü).
-            issue.element == nil
+            return issue.element == nil
         }
     }
 

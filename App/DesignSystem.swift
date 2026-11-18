@@ -475,7 +475,9 @@ struct EmptyState: View {
                         .font(ToggTheme.text(.caption, weight: .bold))
                         .foregroundStyle(DSColor.accent)
                         .buttonStyle(.plain)
-                        .padding(.top, 2)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .accessibilityIdentifier("emptyState.action")
                 }
             }
         }
@@ -533,6 +535,8 @@ struct SheetShell<Content: View>: View {
     let title: String
     var subtitle: String?
     var footnote: String?
+    /// Verilirse sağ üstte "Kapat" düğmesi çıkar (VoiceOver ve UI testleri).
+    var onClose: (() -> Void)?
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -559,6 +563,16 @@ struct SheetShell<Content: View>: View {
             .background(DSColor.background.ignoresSafeArea())
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if let onClose {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Kapat", action: onClose)
+                            .font(ToggTheme.text(.caption, weight: .bold))
+                            .foregroundStyle(DSColor.accent)
+                            .accessibilityIdentifier("sheet.close")
+                    }
+                }
+            }
         }
     }
 }

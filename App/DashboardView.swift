@@ -928,6 +928,8 @@ struct DashboardView: View {
                     Text(showAllControls ? "Gizle" : "Klima, cam, yakınlık, güvenlik")
                         .font(ToggTheme.text(.micro))
                         .foregroundStyle(DSColor.muted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                     Image(systemName: showAllControls ? "chevron.up" : "chevron.down")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(DSColor.muted)
@@ -939,16 +941,20 @@ struct DashboardView: View {
             .accessibilityIdentifier("vehicle.allControls")
 
             if showAllControls {
-                VStack(spacing: DSSpace.md) {
-                    climateCardBlock
-                    deferredLockRow
-                    PremiumControlsSection(onWindowCommand: requestWindowCommand)
-                    proximityCard
-                    geofenceCard
-                    lastSeenCard
-                    bleCard
-                }
+                controlsContent
             }
+        }
+    }
+
+    private var controlsContent: some View {
+        VStack(spacing: DSSpace.md) {
+            climateCardBlock
+            deferredLockRow
+            PremiumControlsSection(onWindowCommand: requestWindowCommand)
+            proximityCard
+            geofenceCard
+            lastSeenCard
+            bleCard
         }
     }
 
@@ -1048,6 +1054,7 @@ struct DashboardView: View {
                         .foregroundStyle(DSColor.muted)
                 }
                 .padding(DSSpace.sm)
+                .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                 .dsCard()
             }
             .buttonStyle(.plain)
@@ -1185,6 +1192,7 @@ struct DashboardView: View {
                         .foregroundStyle(DSColor.muted)
                 }
                 .padding(DSSpace.sm)
+                .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                 .dsCard()
             }
             .buttonStyle(.plain)
