@@ -85,6 +85,9 @@ struct DashboardView: View {
     @State private var showQuickStart = false
     @State private var showDesignPreview = false
     @State private var showAllControls = false
+    /// Son **imzalı** kilit/bagaj/sürüş özeti (diskten). BLE oturumu
+    /// kapandığında ekran "hiç yok" yerine "son bilinen + yaş" gösterir.
+    @State private var stateSnapshot: VehicleStateSnapshot?
     @State private var showOnboarding = false
     @AppStorage("toqdas.onboarding.seen.v1") private var onboardingSeen = false
     @State private var showDetail = false
@@ -404,6 +407,11 @@ struct DashboardView: View {
                 startProximityAutoOffTimer()
             }
         }
+        .onReceive(ble.$telemetry) { telemetry in
+            guard let telemetry else { return }
+            VehicleStateSnapshotStore.save(telemetry, vin: vehicle.vin)
+            stateSnapshot = VehicleStateSnapshotStore.load(vin: vehicle.vin)
+        }
         .onReceive(ble.$lastCommandReceipt) { receipt in
             guard let receipt else { return }
             // Komutun imzalı telemetri sonucu widget + saat kaydına yazılır.
@@ -435,6 +443,17 @@ struct DashboardView: View {
             if !ToggThemeStyle.selectable.contains(where: { $0.rawValue == themeName }) {
                 themeName = ToggThemeStyle.corporate.rawValue
             }
+            stateSnapshot = VehicleStateSnapshotStore.load(vin: vehicle.vin)
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-seedStateSnapshot"),
+               stateSnapshot == nil {
+                let seeded = BleTelemetry(locked: 1, doors: [0, 0, 0, 0], trunkAjar: 0,
+                                          powerState: 3, counter: 1,
+                                          receivedAt: Date().addingTimeInterval(-7_200))
+                VehicleStateSnapshotStore.save(seeded, vin: vehicle.vin)
+                stateSnapshot = VehicleStateSnapshotStore.load(vin: vehicle.vin)
+            }
+            #endif
             // İlk açılış tanıtımı: bir kez; UI testlerinde atlanır.
             let args = ProcessInfo.processInfo.arguments
             if !onboardingSeen,
@@ -694,12 +713,30 @@ struct DashboardView: View {
         return .stale
     }
 
+    /// Etkin durum: canlı imzalı telemetri → diskteki son bilinen → bilinmiyor.
+    private var effectiveLocked: Bool? { ble.telemetry?.isLocked ?? stateSnapshot?.isLocked }
+    private var effectiveTrunkAjar: Bool? {
+        ble.telemetry.map { $0.trunkAjar == 1 } ?? stateSnapshot?.isTrunkAjar
+    }
+    private var effectivePowerState: Int? { ble.telemetry?.powerState ?? stateSnapshot?.powerState }
+
     private var lockValueText: String {
-        switch ble.telemetry?.isLocked {
+        switch effectiveLocked {
         case true: return "Kilitli"
         case false: return "Kilit açık"
         default: return "Kilit bilinmiyor"
         }
+    }
+
+    private var heroFooter: String {
+        if ble.state.isReady {
+            return "Komut onayı uygulandı anlamına gelmez; sonuç imzalı telemetriden doğrulanır."
+        }
+        if let snapshot = stateSnapshot {
+            let age = LastSeenSummary.relative(snapshot.observedAt, Date())
+            return "Kilit/bagaj yalnız BLE oturumunda okunur. Gösterilen değer \(age) alınan imzalı telemetriden."
+        }
+        return "Komutlar için dijital anahtar ve taze imzalı durum gerekir."
     }
 
     private var auxiliaryValueText: String {
@@ -730,9 +767,7 @@ struct DashboardView: View {
                 HeroMetric(label: "12 V", value: auxiliaryValueText,
                            icon: "bolt.batteryblock", tint: auxiliaryTint)
             ],
-            footer: ble.state.isReady
-                ? "Komut onayı uygulandı anlamına gelmez; sonuç imzalı telemetriden doğrulanır."
-                : "Komutlar için dijital anahtar ve taze imzalı durum gerekir.",
+            footer: heroFooter,
             primaryTitle: ble.state.isReady ? "Veriyi yenile" : "Araç servisine bağlan",
             primaryIcon: ble.state.isReady ? "arrow.clockwise" : "antenna.radiowaves.left.and.right",
             primaryAction: {
@@ -2850,10 +2885,10 @@ struct DashboardView: View {
     // MARK: - Hızlı kontroller
 
     private var lockTileSubtitle: String {
-        switch ble.telemetry?.isLocked {
-        case true: return "Kilitli"
-        case false: return "Kilit açık"
-        default: return "Kilit bilinmiyor"
+        switch effectiveLocked {
+        case true: return ble.telemetry != nil ? "Kilitli" : (stateSnapshot?.lockText() ?? "Kilitli")
+        case false: return ble.telemetry != nil ? "Kilit açık" : (stateSnapshot?.lockText() ?? "Kilit açık")
+        default: return "Bilinmiyor"
         }
     }
 
@@ -2865,14 +2900,16 @@ struct DashboardView: View {
     }
 
     private var trunkTileSubtitle: String {
-        guard let trunk = ble.telemetry?.trunkAjar else { return "Bilinmiyor" }
-        return trunk == 1 ? "Açık" : "Kapalı"
+        guard let ajar = effectiveTrunkAjar else { return "Bilinmiyor" }
+        if ble.telemetry == nil, let text = stateSnapshot?.trunkText() { return text }
+        return ajar ? "Açık" : "Kapalı"
     }
 
     /// "Hazır" yalnız imzalı telemetriden (`powerState == 4`).
     private var driveTileSubtitle: String {
-        guard ble.telemetry != nil else { return "Bilinmiyor" }
-        return ble.telemetry?.powerState == 4 ? "Hazır" : "Hazır değil"
+        guard let power = effectivePowerState else { return "Bilinmiyor" }
+        if ble.telemetry == nil, let text = stateSnapshot?.driveText() { return text }
+        return power == 4 ? "Hazır" : "Hazır değil"
     }
 
     private var quickActions: some View {
@@ -2884,8 +2921,8 @@ struct DashboardView: View {
                 ActionTile(
                     title: "Kapılar",
                     subtitle: lockTileSubtitle,
-                    icon: ble.telemetry?.isLocked == false ? "lock.open.fill" : "lock.fill",
-                    active: ble.telemetry?.isLocked == false,
+                    icon: effectiveLocked == false ? "lock.open.fill" : "lock.fill",
+                    active: effectiveLocked == false,
                     tint: DSColor.warning
                 ) {
                     if ble.state.isReady, let locked = ble.telemetry?.isLocked {
@@ -2913,7 +2950,7 @@ struct DashboardView: View {
                     title: "Arka Bagaj",
                     subtitle: trunkTileSubtitle,
                     icon: "car.side.rear.open",
-                    active: ble.telemetry?.trunkAjar == 1,
+                    active: effectiveTrunkAjar == true,
                     tint: DSColor.accent
                 ) {
                     if ble.state.isReady, let trunk = ble.telemetry?.trunkAjar {
@@ -2927,7 +2964,7 @@ struct DashboardView: View {
                     title: "Sürüş",
                     subtitle: driveTileSubtitle,
                     icon: "steeringwheel",
-                    active: ble.telemetry?.powerState == 4,
+                    active: effectivePowerState == 4,
                     tint: DSColor.accent
                 ) {
                     showQuickStart = true

@@ -13,22 +13,22 @@
 				<key>testCommandsSheetHasNoNewAuditIssues</key>
 				<dict>
 					<key>mrnet</key>
-					<real>9.4471619129180908</real>
+					<real>9.9519859552383423</real>
 				</dict>
 				<key>testOverviewHasNoNewAuditIssues</key>
 				<dict>
 					<key>mrnet</key>
-					<real>7.814539909362793</real>
+					<real>8.0692620277404785</real>
 				</dict>
 				<key>testScenarioGuideHasNoNewAuditIssues</key>
 				<dict>
 					<key>mrnet</key>
-					<real>12.706886053085327</real>
+					<real>11.764371991157532</real>
 				</dict>
 				<key>testTabsHaveNoNewAuditIssues</key>
 				<dict>
 					<key>mrnet</key>
-					<real>13.824090957641602</real>
+					<real>14.445317983627319</real>
 				</dict>
 			</dict>
 			<key>ToqdasAccessibilityTests</key>
@@ -36,17 +36,17 @@
 				<key>testDashboardSurvivesAccessibilityExtraExtraExtraLargeType</key>
 				<dict>
 					<key>mrnet</key>
-					<real>10.137814998626709</real>
+					<real>11.210132002830505</real>
 				</dict>
 				<key>testTabBarExposesVoiceOverLabelsAndSelectedState</key>
 				<dict>
 					<key>mrnet</key>
-					<real>10.32684600353241</real>
+					<real>10.676811933517456</real>
 				</dict>
 				<key>testTabBarTargetsAreAtLeastFortyFourPoints</key>
 				<dict>
 					<key>mrnet</key>
-					<real>9.6632429361343384</real>
+					<real>10.260039925575256</real>
 				</dict>
 			</dict>
 			<key>ToqdasCommandTests</key>
@@ -54,17 +54,17 @@
 				<key>testCommandGateExplainsWhyCommandsAreDisabled</key>
 				<dict>
 					<key>mrnet</key>
-					<real>15.593365907669067</real>
+					<real>16.238900899887085</real>
 				</dict>
 				<key>testHeaderMenuOpensCommandsSheetAndCloses</key>
 				<dict>
 					<key>mrnet</key>
-					<real>12.45114803314209</real>
+					<real>12.868438005447388</real>
 				</dict>
 				<key>testTappingDisabledCommandDoesNotAskForConfirmation</key>
 				<dict>
 					<key>mrnet</key>
-					<real>12.558850049972534</real>
+					<real>12.807269930839539</real>
 				</dict>
 			</dict>
 			<key>ToqdasFlowTests</key>
@@ -72,27 +72,27 @@
 				<key>testAllFourTabsArePresentAndSelectable</key>
 				<dict>
 					<key>mrnet</key>
-					<real>11.309745073318481</real>
+					<real>11.721873044967651</real>
 				</dict>
 				<key>testChargingTabOffersTrugoStationsEntry</key>
 				<dict>
 					<key>mrnet</key>
-					<real>6.5371569395065308</real>
+					<real>5.7420060634613037</real>
 				</dict>
 				<key>testClimateTabShowsTargetTemperatureControls</key>
 				<dict>
 					<key>mrnet</key>
-					<real>8.3493930101394653</real>
+					<real>7.5867929458618164</real>
 				</dict>
 				<key>testHealthTabShowsAuxBatteryAndKeepsMissingDataAsDash</key>
 				<dict>
 					<key>mrnet</key>
-					<real>11.099375009536743</real>
+					<real>10.330199003219604</real>
 				</dict>
 				<key>testOverviewShowsFixtureVehicleAndTelemetry</key>
 				<dict>
 					<key>mrnet</key>
-					<real>10.752616047859192</real>
+					<real>6.6090030670166016</real>
 				</dict>
 			</dict>
 			<key>ToqdasGuideTests</key>
@@ -100,22 +100,22 @@
 				<key>testProximityCalibrationSheetOpensAndCloses</key>
 				<dict>
 					<key>mrnet</key>
-					<real>13.862526059150696</real>
+					<real>13.544080972671509</real>
 				</dict>
 				<key>testProximityCardBookOpensGuideAtProximitySection</key>
 				<dict>
 					<key>mrnet</key>
-					<real>15.691597104072571</real>
+					<real>12.85989511013031</real>
 				</dict>
 				<key>testScenarioGuideOpensFromHeaderMenuAndCloses</key>
 				<dict>
 					<key>mrnet</key>
-					<real>13.421746969223022</real>
+					<real>13.360696077346802</real>
 				</dict>
 				<key>testScenarioGuideShowsLiveStatusBadges</key>
 				<dict>
 					<key>mrnet</key>
-					<real>9.8787260055541992</real>
+					<real>9.971358060836792</real>
 				</dict>
 			</dict>
 			<key>ToqdasLayoutTests</key>
@@ -123,17 +123,17 @@
 				<key>testAllControlsRevealsSecurityAndProximitySections</key>
 				<dict>
 					<key>mrnet</key>
-					<real>10.073184013366699</real>
+					<real>9.9452769756317139</real>
 				</dict>
 				<key>testChargingCalculatorStatesAssumptionsWithoutStartingCharge</key>
 				<dict>
 					<key>mrnet</key>
-					<real>7.9306489229202271</real>
+					<real>8.8299679756164551</real>
 				</dict>
 				<key>testChargingCalculatorUpdatesEnergyAndCost</key>
 				<dict>
 					<key>mrnet</key>
-					<real>14.080589890480042</real>
+					<real>14.619893908500671</real>
 				</dict>
 				<key>testSportLayoutPlacesQuickActionsAboveBLECard</key>
 				<dict>
@@ -148,7 +148,7 @@
 				<key>testVehicleScreenPlacesQuickActionsAboveAllControls</key>
 				<dict>
 					<key>mrnet</key>
-					<real>13.586176991462708</real>
+					<real>13.872641086578369</real>
 				</dict>
 			</dict>
 			<key>ToqdasNavigationTests</key>
@@ -156,42 +156,42 @@
 				<key>testAccountCenterOpensAndReturns</key>
 				<dict>
 					<key>mrnet</key>
-					<real>10.771968960762024</real>
+					<real>10.970404028892517</real>
 				</dict>
 				<key>testBLESetupGuideSheetOpensAndCloses</key>
 				<dict>
 					<key>mrnet</key>
-					<real>13.22763991355896</real>
+					<real>13.284939050674438</real>
 				</dict>
 				<key>testBluetoothDiscoverySheetOpensAndCloses</key>
 				<dict>
 					<key>mrnet</key>
-					<real>11.622956037521362</real>
+					<real>11.912080049514771</real>
 				</dict>
 				<key>testDriveExperienceOpensAndReturns</key>
 				<dict>
 					<key>mrnet</key>
-					<real>12.250317096710205</real>
+					<real>12.320359945297241</real>
 				</dict>
 				<key>testKeyDiscoverySheetOpensAndCloses</key>
 				<dict>
 					<key>mrnet</key>
-					<real>12.630468010902405</real>
+					<real>12.08099091053009</real>
 				</dict>
 				<key>testServiceCardOpensAndReturns</key>
 				<dict>
 					<key>mrnet</key>
-					<real>12.93904709815979</real>
+					<real>12.692355990409851</real>
 				</dict>
 				<key>testVehicleDetailOpensAndReturns</key>
 				<dict>
 					<key>mrnet</key>
-					<real>12.663393020629883</real>
+					<real>12.64500904083252</real>
 				</dict>
 				<key>testVoiceAssistantSheetOpensAndCloses</key>
 				<dict>
 					<key>mrnet</key>
-					<real>8.9986569881439209</real>
+					<real>9.0636320114135742</real>
 				</dict>
 			</dict>
 			<key>ToqdasSettingsTests</key>
@@ -199,7 +199,7 @@
 				<key>testDensityChoicePersistsAcrossRelaunch</key>
 				<dict>
 					<key>mrnet</key>
-					<real>18.787310004234314</real>
+					<real>79.389843940734863</real>
 				</dict>
 				<key>testLayoutChoicePersistsAcrossRelaunch</key>
 				<dict>
@@ -209,17 +209,17 @@
 				<key>testLogoutReturnsToLoginScreen</key>
 				<dict>
 					<key>mrnet</key>
-					<real>9.2103680372238159</real>
+					<real>12.058819890022278</real>
 				</dict>
 				<key>testMenuExposesExactlyOneSelectedThemeAndLayout</key>
 				<dict>
 					<key>mrnet</key>
-					<real>6.8268829584121704</real>
+					<real>7.6223360300064087</real>
 				</dict>
 				<key>testThemeChoicePersistsAcrossRelaunch</key>
 				<dict>
 					<key>mrnet</key>
-					<real>17.276448011398315</real>
+					<real>17.901023983955383</real>
 				</dict>
 			</dict>
 			<key>ToqdasSmokeTests</key>
@@ -227,22 +227,22 @@
 				<key>testCommandGateDisablesVehicleCommandsWhenNotReady</key>
 				<dict>
 					<key>mrnet</key>
-					<real>12.151726961135864</real>
+					<real>12.26914393901825</real>
 				</dict>
 				<key>testFixtureDashboardShowsVehicleAndCommandTab</key>
 				<dict>
 					<key>mrnet</key>
-					<real>6.4895890951156616</real>
+					<real>6.5327329635620117</real>
 				</dict>
 				<key>testLoginScreenShowsToggEntryPoint</key>
 				<dict>
 					<key>mrnet</key>
-					<real>5.6111059188842773</real>
+					<real>5.6933419704437256</real>
 				</dict>
 				<key>testTurkishCopySurvivesEnglishSystemLocale</key>
 				<dict>
 					<key>mrnet</key>
-					<real>4.5739560127258301</real>
+					<real>4.614717960357666</real>
 				</dict>
 			</dict>
 			<key>ToqdasStoreSeedTests</key>
@@ -250,22 +250,22 @@
 				<key>testChargingBudgetCardShowsEmptyState</key>
 				<dict>
 					<key>mrnet</key>
-					<real>6.668091893196106</real>
+					<real>6.8489099740982056</real>
 				</dict>
 				<key>testChargingBudgetCardShowsSeededSpend</key>
 				<dict>
 					<key>mrnet</key>
-					<real>6.7639189958572388</real>
+					<real>6.9490430355072021</real>
 				</dict>
 				<key>testMaintenanceCardShowsApproachingItem</key>
 				<dict>
 					<key>mrnet</key>
-					<real>6.8359380960464478</real>
+					<real>6.9727340936660767</real>
 				</dict>
 				<key>testMaintenanceCardShowsOverdueItem</key>
 				<dict>
 					<key>mrnet</key>
-					<real>6.6864790916442871</real>
+					<real>6.9051799774169922</real>
 				</dict>
 			</dict>
 		</dict>

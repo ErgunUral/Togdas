@@ -217,6 +217,19 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 
 ## 8. İlerleme
 
+- **Arayüz F6 — "son bilinen" araç durumu (2026-11-18, 649 birim + 43 UI):**
+  Hızlı kontrol karoları canlı BLE verisi yokken hep "Bilinmiyor" kalıyordu;
+  gerçek kullanımda BLE oturumları 3–60 sn olduğu için ekran fiilen boş
+  görünüyordu. `Core/VehicleStateSnapshot` + `VehicleStateSnapshotStore`:
+  son **imzalı** telemetrinin kilit/bagaj/sürüş değerleri VIN başına diske
+  yazılır, yaş etiketiyle gösterilir ("Kilitli · 2 saat önce", "Hazır değil ·
+  2 saat önce"). 90 sn altı yaş yazılmaz; **24 saatten eski kayıt yüklenmez
+  ve diskten silinir**; kayıt yoksa "Bilinmiyor" (değer uydurulmaz).
+  Durum şeridi de aynı önceliği kullanır (canlı → son bilinen → bilinmiyor)
+  ve alt not "Gösterilen değer N saat önce alınan imzalı telemetriden" der.
+  İklimlendirme karo durumu bilinçli olarak "Bilinmiyor": klima bir ölçüm
+  değil, komut sonucu; ack uygulandı anlamına gelmediği için eski değer
+  "son bilinen" diye sunulmaz. DEBUG: `-seedStateSnapshot` (2 saatlik kayıt).
 - **Arayüz F5 — cila ve UI test turu (2026-11-18, 643 birim + 43 UI test):**
   "Hızlı kontroller" karoları ters kurulmuştu (büyük yazı değer, küçük yazı
   ad; veri yoksa büyük yazı "—" kalıyordu) → **ad büyük, durum küçük**
