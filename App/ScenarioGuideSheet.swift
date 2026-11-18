@@ -70,7 +70,7 @@ struct ScenarioGuideSheet: View {
             }
         }
         .padding(14)
-        .toggCardBackground()
+        .dsCard()
     }
 
     // MARK: - Bölüm kartı
@@ -96,7 +96,7 @@ struct ScenarioGuideSheet: View {
             }
         }
         .padding(16)
-        .toggCardBackground()
+        .dsCard()
         .id(group.id)
     }
 

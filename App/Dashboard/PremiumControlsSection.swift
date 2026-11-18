@@ -66,7 +66,7 @@ struct PremiumControlsSection: View {
                 .background(RoundedRectangle(cornerRadius: 14).fill(ToggTheme.surfaceVariant))
             }
             .padding(18)
-            .toggCardBackground(24)
+            .dsCard()
 
             Text("Yan cam komutları onay ister; araç cam konumunu BLE ile doğrulamıyor. Panoramik tavan ve sentry bu uygulamada komut olarak sunulmaz.")
                 .font(.caption2).foregroundStyle(ToggTheme.muted)

@@ -89,7 +89,7 @@ struct AccountCenterView: View {
             if loading { ProgressView().tint(ToggTheme.teal) }
         }
         .padding(16)
-        .toggCardBackground(20)
+        .dsCard()
     }
 
     private var tabs: some View {
@@ -186,7 +186,7 @@ struct AccountCenterView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .toggCardBackground(18)
+        .dsCard()
     }
 
     @MainActor

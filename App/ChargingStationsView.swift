@@ -214,7 +214,7 @@ struct ChargingStationsView: View {
             .accessibilityLabel("EPDK kataloğunu yenile")
         }
         .padding(14)
-        .toggCardBackground(18)
+        .dsCard()
     }
 
     private var searchAndFilters: some View {
@@ -264,7 +264,7 @@ struct ChargingStationsView: View {
                 .disabled(!nearbyOnly && location.location == nil && !canUseLocation)
         }
         .padding(14)
-        .toggCardBackground(18)
+        .dsCard()
     }
 
     @ViewBuilder
@@ -305,7 +305,7 @@ struct ChargingStationsView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .toggCardBackground(16)
+            .dsCard()
         }
     }
 
@@ -401,7 +401,7 @@ struct ChargingStationsView: View {
             }
         }
         .padding(13)
-        .toggCardBackground(16)
+        .dsCard()
     }
 
     private func openInMaps(_ station: VisibleEPDKStation, directions: Bool) {
@@ -419,7 +419,7 @@ struct ChargingStationsView: View {
             .foregroundStyle(color)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
-            .toggCardBackground(14)
+            .dsCard()
     }
 
     @MainActor

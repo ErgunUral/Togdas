@@ -28,7 +28,7 @@ struct LoginView: View {
                 }
                 .padding(28)
                 .frame(maxWidth: .infinity)
-                .toggCardBackground()
+                .dsCard()
 
                 Button {
                     Task { await model.login() }

@@ -82,7 +82,7 @@ struct ChargingBudgetCard: View {
                 .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(18).toggCardBackground()
+        .padding(18).dsCard()
         .onAppear { reload() }
         .onReceive(NotificationCenter.default.publisher(for: .chargingBudgetDidChange)) { _ in
             reload()

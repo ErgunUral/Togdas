@@ -114,7 +114,7 @@ struct VehicleHealthCard: View {
                 .font(.caption2).foregroundStyle(ToggTheme.muted)
         }
         .padding(20)
-        .toggCardBackground()
+        .dsCard()
     }
 
     private var tireThresholdSummary: String {

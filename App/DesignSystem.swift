@@ -259,6 +259,7 @@ struct MetricCell: View {
                     .font(ToggTheme.text(.micro))
                     .foregroundStyle(DSColor.muted)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             Text(value)
                 .font(ToggTheme.text(.body, weight: .bold).monospacedDigit())

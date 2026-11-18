@@ -244,7 +244,7 @@ struct DriveExperienceView: View {
             Spacer()
         }
         .padding(16)
-        .toggCardBackground(20)
+        .dsCard()
     }
 
     private func errorBanner(_ text: String) -> some View {
@@ -387,7 +387,7 @@ struct DriveExperienceView: View {
             }
         }
         .padding(18)
-        .toggCardBackground(22)
+        .dsCard()
     }
 
     private func hero(for section: ExperienceSummarySection) -> (value: String, unit: String, label: String)? {
@@ -485,7 +485,7 @@ struct DriveExperienceView: View {
             }
         }
         .padding(18)
-        .toggCardBackground(22)
+        .dsCard()
     }
 
     private func comparisonRow(_ title: String, value: Double?, unit: String,
@@ -553,7 +553,7 @@ struct DriveExperienceView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
-            .toggCardBackground(16)
+            .dsCard()
         }
         .buttonStyle(.plain)
         .disabled(highlight.detailID == nil)
@@ -931,7 +931,7 @@ struct DriveExperienceView: View {
             }
         }
         .padding(16)
-        .toggCardBackground(20)
+        .dsCard()
     }
 
     /// Seçilen ölçüye göre çubukları dönüştürür; ölçüsü olmayan dönem atlanır.
@@ -990,7 +990,7 @@ struct DriveExperienceView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)
-        .toggCardBackground(20)
+        .dsCard()
         .accessibilityElement(children: .combine)
     }
 
@@ -1043,7 +1043,7 @@ struct DriveExperienceView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)
-        .toggCardBackground(20)
+        .dsCard()
     }
 
     private var chartCard: some View {
@@ -1072,7 +1072,7 @@ struct DriveExperienceView: View {
                 .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
         }
         .padding(16)
-        .toggCardBackground(20)
+        .dsCard()
     }
 
     // MARK: - Kayıtlar
@@ -1117,7 +1117,7 @@ struct DriveExperienceView: View {
                 }
             }
             .padding(16)
-            .toggCardBackground(18)
+            .dsCard()
         }
         .buttonStyle(.plain)
         .disabled(record.detailID == nil)
@@ -1522,7 +1522,7 @@ private struct ExperienceDetailSheet: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .toggCardBackground(20)
+        .dsCard()
     }
 
     private func metricsGrid(_ metrics: [ExperienceMetric]) -> some View {
@@ -1558,7 +1558,7 @@ private struct ExperienceDetailSheet: View {
             }
         }
         .padding(16)
-        .toggCardBackground(18)
+        .dsCard()
     }
 
     @MainActor

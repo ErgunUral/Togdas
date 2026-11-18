@@ -112,7 +112,7 @@ struct ClimateCard: View {
                 .font(.caption2).foregroundStyle(ToggTheme.muted)
         }
         .padding(20)
-        .toggCardBackground()
+        .dsCard()
     }
 
     private func circleButton(_ icon: String, action: @escaping () -> Void) -> some View {

@@ -86,6 +86,7 @@ struct DashboardView: View {
     @State private var showDesignPreview = false
     @State private var showAllControls = false
     @State private var showEnergyDetails = false
+    @State private var showCareDiagnostics = false
     /// Son **imzalı** kilit/bagaj/sürüş özeti (diskten). BLE oturumu
     /// kapandığında ekran "hiç yok" yerine "son bilinen + yaş" gösterir.
     @State private var stateSnapshot: VehicleStateSnapshot?
@@ -990,7 +991,7 @@ struct DashboardView: View {
                            icon: "battery.75", tint: batteryColor),
                 HeroMetric(label: "Hedef", value: model.chargingTarget.map { "%\($0)" } ?? "Kapalı",
                            icon: "target"),
-                HeroMetric(label: "Hedefe kalan", value: remainingToTargetText,
+                HeroMetric(label: "Kalan", value: remainingToTargetText,
                            icon: "flag.checkered")
             ],
             footer: "Enerji (kWh/kW) telemetrisi gelmiyor; yüzdeler bulut veya imzalı telemetriden. Uygulama şarjı durdurmaz.",
@@ -1088,11 +1089,110 @@ struct DashboardView: View {
 
     /// "Bakım": sağlık + servis + sürüş istatistikleri + tanı.
     private var careTab: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: blockSpacing) {
+            careHero
             healthTab
             MaintenanceCard(vin: vehicle.vin, odometer: telemetry?.odometerKM)
             drivingStatsCard
-            technicalOverview
+            careDetails
+        }
+    }
+
+    /// Bakım durum şeridi: tek bakışta "bir şey var mı". Uyarı yoksa
+    /// "Araç sağlıklı" der; veri yoksa susmaz, "Sağlık verisi yok" der.
+    private var careHero: some View {
+        let summary = LastSeenSummary.make(ble: ble.telemetry?.receivedAt, cloud: updatedAt)
+        return StatusHero(
+            eyebrow: "BAKIM",
+            title: healthHeadline,
+            subtitle: summary.map { "\($0.relativeText) · \($0.sourceText)" } ?? "Henüz veri alınmadı",
+            status: careStatus,
+            metrics: [
+                HeroMetric(label: "12 V", value: telemetry?.auxiliaryBatteryPercent.map { "%\(Int($0.rounded()))" } ?? "—",
+                           icon: "car.battery", tint: careAuxiliaryTint),
+                HeroMetric(label: "Lastik", value: lowestTirePSI.map { "\(Int($0.rounded())) PSI" } ?? "—",
+                           icon: "circle.dashed", tint: careTireTint),
+                HeroMetric(label: "İç sıcaklık", value: telemetry?.insideTemperatureC.map { String(format: "%.1f °C", $0) } ?? "—",
+                           icon: "thermometer.medium")
+            ],
+            footer: "12 V ve lastik değerleri imzalı telemetriden gelir; eksik değer \"—\" kalır, 0'a çevrilmez.",
+            primaryTitle: "Veriyi yenile",
+            primaryIcon: "arrow.clockwise",
+            primaryAction: { Task { await refresh() } }
+        )
+        .dsAppear(index: 0, reduceMotion: reduceMotion)
+    }
+
+    private var lowestTirePSI: Double? {
+        (telemetry?.tires ?? []).compactMap(\.pressurePSI).min()
+    }
+
+    private var healthHeadline: String {
+        if telemetry?.brakeWarning == true { return "Fren uyarısı var" }
+        if telemetry?.engineWarning == true { return "Motor uyarısı var" }
+        if let aux = telemetry?.auxiliaryBatteryPercent, aux < 40 { return "12 V akü zayıf" }
+        if let low = lowestTirePSI, low < TirePressurePolicy.default.lowThresholdPSI {
+            return "Lastik basıncı düşük"
+        }
+        guard telemetry != nil else { return "Sağlık verisi yok" }
+        // Uyarı yokluğu "sağlıklı" demek için yeterli değil: lastik gelmiyorsa söyle.
+        guard lowestTirePSI != nil else { return "Lastik verisi yok" }
+        return "Araç sağlıklı"
+    }
+
+    private var careStatus: DSStatus {
+        if telemetry?.brakeWarning == true || telemetry?.engineWarning == true { return .critical }
+        if let aux = telemetry?.auxiliaryBatteryPercent, aux < 40 { return .critical }
+        if let low = lowestTirePSI, low < TirePressurePolicy.default.criticalThresholdPSI { return .critical }
+        return heroStatus
+    }
+
+    private var careAuxiliaryTint: Color {
+        guard let aux = telemetry?.auxiliaryBatteryPercent else { return DSColor.muted }
+        if aux >= 60 { return DSColor.positive }
+        if aux >= 40 { return DSColor.warning }
+        return DSColor.negative
+    }
+
+    private var careTireTint: Color {
+        guard let low = lowestTirePSI else { return DSColor.muted }
+        if low < TirePressurePolicy.default.criticalThresholdPSI { return DSColor.negative }
+        if low < TirePressurePolicy.default.lowThresholdPSI { return DSColor.warning }
+        return DSColor.positive
+    }
+
+    /// Tanı ve bağlantı ayrıntısı ilk ekranı doldurmasın.
+    private var careDetails: some View {
+        VStack(spacing: DSSpace.sm) {
+            Button {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                    showCareDiagnostics.toggle()
+                }
+            } label: {
+                HStack(spacing: DSSpace.xs) {
+                    Image(systemName: "waveform.path.ecg").foregroundStyle(DSColor.accent)
+                    Text("Tanı ve bağlantı")
+                        .font(ToggTheme.text(.body, weight: .bold))
+                        .foregroundStyle(.white)
+                    Spacer(minLength: DSSpace.xs)
+                    Text(showCareDiagnostics ? "Gizle" : "BLE tanısı, olaylar")
+                        .font(ToggTheme.text(.micro))
+                        .foregroundStyle(DSColor.muted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                    Image(systemName: showCareDiagnostics ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(DSColor.muted)
+                }
+                .padding(DSSpace.sm)
+                .dsCard()
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("care.diagnostics")
+
+            if showCareDiagnostics {
+                technicalOverview
+            }
         }
     }
 
@@ -1145,7 +1245,7 @@ struct DashboardView: View {
             Spacer()
         }
         .padding(16)
-        .toggCardBackground()
+        .dsCard()
         .id("lastSeenCard")
         .accessibilityElement(children: .combine)
     }
@@ -1355,7 +1455,7 @@ struct DashboardView: View {
             .buttonStyle(.plain)
         }
         .padding(20)
-        .toggCardBackground()
+        .dsCard()
     }
 
     private var proximityCard: some View {
@@ -1539,7 +1639,7 @@ struct DashboardView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(18)
-        .toggCardBackground()
+        .dsCard()
     }
 
     private var geofenceCard: some View {
@@ -1616,7 +1716,7 @@ struct DashboardView: View {
                 .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(18).toggCardBackground()
+        .padding(18).dsCard()
     }
 
     private var geofenceStatusBadge: String {
@@ -1689,7 +1789,7 @@ struct DashboardView: View {
                  : "Yeterli veri yok. Birkaç günlük odometer ve batarya okumasından sonra km, tüketim ve maliyet hesaplanır.")
                 .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
         }
-        .padding(18).toggCardBackground()
+        .padding(18).dsCard()
     }
 
     var technicalOverview: some View {
@@ -1744,7 +1844,7 @@ struct DashboardView: View {
             }
         }
         .padding(14)
-        .toggCardBackground(18)
+        .dsCard()
     }
 
     func technicalMetric(_ title: String, _ value: String) -> some View {
@@ -3138,7 +3238,7 @@ struct DashboardView: View {
                 .font(.caption2).foregroundStyle(ToggTheme.muted)
         }
         .padding(20)
-        .toggCardBackground()
+        .dsCard()
     }
 
     private var chargingOverviewLink: some View {
@@ -3164,7 +3264,7 @@ struct DashboardView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .toggCardBackground()
+            .dsCard()
         }
         .buttonStyle(.plain)
     }
@@ -3223,7 +3323,7 @@ struct DashboardView: View {
                     .font(.caption2).foregroundStyle(ToggTheme.muted)
             }
             .padding(20)
-            .toggCardBackground()
+            .dsCard()
             .id("liveChargingCard")
         }
     }
@@ -3260,7 +3360,7 @@ struct DashboardView: View {
                 .font(.caption2).foregroundStyle(ToggTheme.muted)
         }
         .padding(20)
-        .toggCardBackground()
+        .dsCard()
         .id("chargingTargetCard")
     }
 
@@ -3308,7 +3408,7 @@ struct DashboardView: View {
                 .font(.caption2).foregroundStyle(ToggTheme.muted)
         }
         .padding(20)
-        .toggCardBackground()
+        .dsCard()
         .id("chargingHistoryCard")
     }
 
@@ -3422,7 +3522,7 @@ struct DashboardView: View {
                 .font(.caption2).foregroundStyle(ToggTheme.muted)
         }
         .padding(20)
-        .toggCardBackground()
+        .dsCard()
         .id("chargingCalculator")
     }
 
@@ -3489,7 +3589,7 @@ struct DashboardView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(24)
-            .toggCardBackground(20)
+            .dsCard()
         }
     }
 

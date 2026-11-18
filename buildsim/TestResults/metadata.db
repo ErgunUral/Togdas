@@ -13,22 +13,22 @@
 				<key>testCommandsSheetHasNoNewAuditIssues</key>
 				<dict>
 					<key>mrnet</key>
-					<real>10.354250073432922</real>
+					<real>8.1922439336776733</real>
 				</dict>
 				<key>testOverviewHasNoNewAuditIssues</key>
 				<dict>
 					<key>mrnet</key>
-					<real>7.9136809110641479</real>
+					<real>7.8032990694046021</real>
 				</dict>
 				<key>testScenarioGuideHasNoNewAuditIssues</key>
 				<dict>
 					<key>mrnet</key>
-					<real>12.511129021644592</real>
+					<real>11.622990965843201</real>
 				</dict>
 				<key>testTabsHaveNoNewAuditIssues</key>
 				<dict>
 					<key>mrnet</key>
-					<real>15.320931077003479</real>
+					<real>14.248318076133728</real>
 				</dict>
 			</dict>
 			<key>ToqdasAccessibilityTests</key>
@@ -72,32 +72,32 @@
 				<key>testAllFourTabsArePresentAndSelectable</key>
 				<dict>
 					<key>mrnet</key>
-					<real>11.053946971893311</real>
+					<real>11.248901009559631</real>
 				</dict>
 				<key>testChargingTabOffersTrugoStationsEntry</key>
 				<dict>
 					<key>mrnet</key>
-					<real>5.5287129878997803</real>
+					<real>5.541253924369812</real>
 				</dict>
 				<key>testClimateTabShowsTargetTemperatureControls</key>
 				<dict>
 					<key>mrnet</key>
-					<real>7.3339699506759644</real>
+					<real>7.2996819019317627</real>
 				</dict>
 				<key>testEnergyKeepsHistoryAndToolsBehindDisclosure</key>
 				<dict>
 					<key>mrnet</key>
-					<real>7.9309909343719482</real>
+					<real>7.8808310031890869</real>
 				</dict>
 				<key>testHealthTabShowsAuxBatteryAndKeepsMissingDataAsDash</key>
 				<dict>
 					<key>mrnet</key>
-					<real>9.946815013885498</real>
+					<real>9.907628059387207</real>
 				</dict>
 				<key>testOverviewShowsFixtureVehicleAndTelemetry</key>
 				<dict>
 					<key>mrnet</key>
-					<real>6.4699279069900513</real>
+					<real>6.4074169397354126</real>
 				</dict>
 			</dict>
 			<key>ToqdasGuideTests</key>

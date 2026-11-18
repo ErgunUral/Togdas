@@ -94,7 +94,7 @@ struct MaintenanceCard: View {
                     .font(.system(size: 9)).foregroundStyle(ToggTheme.muted)
             }
         }
-        .padding(18).toggCardBackground()
+        .padding(18).dsCard()
         .onAppear { reload() }
         .onChange(of: odometer) { _ in reload() }
     }
