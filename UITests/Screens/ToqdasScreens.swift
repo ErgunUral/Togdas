@@ -74,10 +74,28 @@ struct MenuSheet {
     static let layoutTitles = ["Rahat", "Sıkı"]
 
     func item(_ item: Item) -> XCUIElement { app.buttons[item.rawValue] }
-    func theme(_ title: String) -> XCUIElement { app.buttons[title] }
-    func layout(_ title: String) -> XCUIElement { app.buttons[title] }
+
+    /// Tema/yoğunluk artık "Görünüm" alt menüsünde.
+    func theme(_ title: String) -> XCUIElement {
+        if !app.buttons[title].exists { openSubmenu("Görünüm") }
+        return app.buttons[title]
+    }
+
+    func layout(_ title: String) -> XCUIElement {
+        if !app.buttons[title].exists { openSubmenu("Görünüm") }
+        return app.buttons[title]
+    }
+
+    func openSubmenu(_ title: String) {
+        let parent = app.buttons[title]
+        if parent.waitForExistence(timeout: 3) { parent.tap() }
+    }
 
     func tap(_ item: Item) {
+        switch item {
+        case .bluetoothCommands, .bluetoothScan: openSubmenu("Bluetooth")
+        default: break
+        }
         tap(app.buttons[item.rawValue])
     }
 

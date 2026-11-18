@@ -141,20 +141,24 @@ struct DashboardHeader: View {
                         }
                         Button("Araç detayı", systemImage: "info.circle") { onOpenDetail() }
                         Button("Senaryolar rehberi", systemImage: "book") { onOpenScenarioGuide() }
-                        Button("Tasarım önizleme", systemImage: "square.grid.2x2") { onOpenDesignPreview() }
                         Button("Servis kartı", systemImage: "wrench.and.screwdriver") { onOpenService() }
                         Button("Seyahatname", systemImage: "chart.xyaxis.line") { onOpenExperience() }
                         Button("Bildirimler & destek", systemImage: "bell.badge") { onOpenAccount() }
-                        Button("Bluetooth komutları", systemImage: "key.horizontal") { onOpenCommands() }
-                        Button("Bluetooth taraması", systemImage: "dot.radiowaves.left.and.right") { onOpenDiscovery() }
-                        Picker("Renk teması", selection: $themeName) {
-                            ForEach(ToggThemeStyle.selectable) { style in
-                                Text(style.title).tag(style.rawValue)
-                            }
+                        Menu("Bluetooth", systemImage: "dot.radiowaves.left.and.right") {
+                            Button("Bluetooth komutları", systemImage: "key.horizontal") { onOpenCommands() }
+                            Button("Bluetooth taraması", systemImage: "dot.radiowaves.left.and.right") { onOpenDiscovery() }
                         }
-                        Picker("Yoğunluk", selection: $layoutName) {
-                            Text("Rahat").tag(DashboardLayoutStyle.classic.rawValue)
-                            Text("Sıkı").tag(DashboardLayoutStyle.minimal.rawValue)
+                        Menu("Görünüm", systemImage: "paintpalette") {
+                            Picker("Renk teması", selection: $themeName) {
+                                ForEach(ToggThemeStyle.selectable) { style in
+                                    Text(style.title).tag(style.rawValue)
+                                }
+                            }
+                            Picker("Yoğunluk", selection: $layoutName) {
+                                Text("Rahat").tag(DashboardLayoutStyle.classic.rawValue)
+                                Text("Sıkı").tag(DashboardLayoutStyle.minimal.rawValue)
+                            }
+                            Button("Tasarım önizleme", systemImage: "square.grid.2x2") { onOpenDesignPreview() }
                         }
                         Divider()
                         Button("Çıkış yap", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) { onLogout() }

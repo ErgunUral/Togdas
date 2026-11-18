@@ -23,9 +23,25 @@ private enum AccountKind: Int, CaseIterable {
 
     var emptyText: String {
         switch self {
-        case .notifications: return "Bildirim bulunmuyor."
-        case .tickets: return "Destek talebi bulunmuyor."
-        case .subscriptions: return "Aktif paket bulunmuyor."
+        case .notifications: return "Yeni bir bildirim geldiğinde burada görünür."
+        case .tickets: return "Destek talebi açtığınızda yanıtlar burada listelenir."
+        case .subscriptions: return "Aktif bir paket yoksa bu liste boş kalır."
+        }
+    }
+
+    var emptyTitle: String {
+        switch self {
+        case .notifications: return "Bildirim yok"
+        case .tickets: return "Destek talebi yok"
+        case .subscriptions: return "Aktif paket yok"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .notifications: return "bell"
+        case .tickets: return "lifepreserver"
+        case .subscriptions: return "shippingbox"
         }
     }
 }
@@ -81,15 +97,15 @@ struct AccountCenterView: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text("Hesap Merkezi")
-                    .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                    .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
                 Text("Bildirimler, destek talepleri ve paketler")
-                    .font(.system(size: 11)).foregroundStyle(ToggTheme.muted)
+                    .font(ToggTheme.text(.micro)).foregroundStyle(DSColor.muted)
             }
             Spacer()
             if loading { ProgressView().tint(ToggTheme.teal) }
         }
-        .padding(16)
-        .dsCard()
+        .padding(DSSpace.md)
+        .dsCard(.raised)
     }
 
     private var tabs: some View {
@@ -101,12 +117,12 @@ struct AccountCenterView: View {
                     Task { await load() }
                 } label: {
                     Text(item.title)
-                        .font(.system(size: 12, weight: .bold))
+                        .font(ToggTheme.text(.caption, weight: .bold))
                         .foregroundStyle(kind == item ? .black : .white)
-                        .frame(maxWidth: .infinity).frame(height: 38)
+                        .frame(maxWidth: .infinity).frame(height: 40)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(kind == item ? ToggTheme.teal : ToggTheme.surfaceVariant)
+                            RoundedRectangle(cornerRadius: DSRadius.row, style: .continuous)
+                                .fill(kind == item ? DSColor.accent : DSColor.surfaceVariant)
                         )
                 }
                 .buttonStyle(.plain)
@@ -145,14 +161,27 @@ struct AccountCenterView: View {
     @ViewBuilder
     private var state: some View {
         if let error {
-            Text(error)
-                .font(.footnote).foregroundStyle(ToggTheme.pink)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        if items.isEmpty && !loading && error == nil {
-            Text(kind.emptyText)
-                .font(.footnote).foregroundStyle(ToggTheme.muted)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            EmptyState(
+                icon: "exclamationmark.triangle",
+                title: "Liste yüklenemedi",
+                message: error,
+                actionTitle: "Yeniden dene",
+                action: { Task { await load() } }
+            )
+        } else if loading && items.isEmpty {
+            VStack(alignment: .leading, spacing: DSSpace.xs) {
+                SkeletonRow(height: 16)
+                SkeletonRow(height: 12)
+                SkeletonRow(height: 12)
+            }
+            .padding(DSSpace.sm)
+            .dsCard()
+        } else if items.isEmpty {
+            EmptyState(
+                icon: kind.icon,
+                title: kind.emptyTitle,
+                message: kind.emptyText
+            )
         }
     }
 
@@ -164,11 +193,11 @@ struct AccountCenterView: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.title)
-                        .font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                        .font(ToggTheme.text(.body, weight: .bold)).foregroundStyle(.white)
                         .lineLimit(3)
                     if !item.body.isEmpty {
                         Text(item.body)
-                            .font(.system(size: 12)).foregroundStyle(ToggTheme.muted)
+                            .font(ToggTheme.text(.caption)).foregroundStyle(DSColor.muted)
                             .lineLimit(4)
                     }
                 }
@@ -181,12 +210,12 @@ struct AccountCenterView: View {
             }
             if !item.meta.isEmpty {
                 Text(item.meta)
-                    .font(.system(size: 10)).foregroundStyle(ToggTheme.teal)
+                    .font(ToggTheme.text(.micro)).foregroundStyle(DSColor.accent)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .dsCard()
+        .padding(DSSpace.sm)
+        .dsCard(.raised)
     }
 
     @MainActor
