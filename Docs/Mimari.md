@@ -217,6 +217,27 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 
 ## 8. İlerleme
 
+- **Saat ses/bildirim katmanı (2026-11-18, 630 test):** Ses kararları
+  `ToqdasWatchApp` içine dağılmıştı (3 olay, 3 magic `UserDefaults`
+  anahtarı, tek ton) ve **kilit duyurusu tazelik kontrolü yapmıyordu** —
+  gövde metni eski snapshot'tan bile "imzalı telemetriyle doğrulandı"
+  diyordu. Eklendi: `Core/WatchSoundPolicy` (olay → kanal/ton/sönümleme/
+  metin, saf ve testli; 6 olay: connected, resumed, locked, unlocked,
+  commandForwarded, commandFailed) + `WatchSoundSettings` (üç anahtar:
+  bağlantı/kilit/komut, varsayılan açık, VIN yok). Ön planda watchOS kendi
+  bildirimini sessiz işlediği için **kilit ve açılma tonları** eklendi
+  (alçalan/yükselen çift nota; bağlantı 880→1175 Hz); arka planda ayrım
+  hâlâ bildirim sayısıyla (kilit 1, açık 2). Tazelik şartı yalnız araç
+  durumu iddiası taşıyan olaylarda (`requiresFreshData`), komut sonucunda
+  değil. "forwarded" metni "Komut iletildi" der — ack uygulandı anlamına
+  gelmez. `AVAudioSession` artık çalma bitince kapatılıyor
+  (`mixWithOthers`, `notifyOthersOnDeactivation`) — eskiden
+  `setActive(false)` hiç çağrılmıyordu. Saatte **"Ses ve bildirimler"**
+  bölümü (watchOS'ta `DisclosureGroup` yok → aç/kapa düğmesi): üç anahtar,
+  bildirim izni durumu ("Arka planda ses kapalı · Ayarlar > Bildirimler")
+  ve "Sesi dene". Tanı: `ses · <olay> · <kanal|susturma nedeni>` saat
+  günlüğüne yazılır. Yeni Core dosyası saat hedefine eklendi (Sources fazı
+  `995D61EAA56DA73CB212EB4A`).
 - **UI/UX planı Faz U1–U3 (2026-11-12, 437 test):**
   - U1 tip ölçeği: `ToggText` (7 semantik stil, `ToggTheme.text`) — 158
     sabit `.system(size:)` taşıma; monospace meta sabit kalır; ClimateCard

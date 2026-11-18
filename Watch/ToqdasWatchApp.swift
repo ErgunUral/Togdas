@@ -1,6 +1,7 @@
 import SwiftUI
 import WatchKit
 import AVFoundation
+import UserNotifications
 
 @main
 struct ToqdasWatchApp: App {
@@ -24,6 +25,8 @@ struct WatchGarageView: View {
     @State private var previousLocked: Bool?
     @State private var lastSnapshotStamp: TimeInterval?
     @State private var toneTestNote: String?
+    @State private var notificationAllowed: Bool?
+    @State private var showSoundSettings = false
     private let watchPoster = SystemNotificationPoster()
 
     private var snapshot: WatchSnapshot? { link.snapshot }
@@ -208,20 +211,7 @@ struct WatchGarageView: View {
                             .multilineTextAlignment(.center)
                     }
 
-                    Button("Sesi dene") {
-                        toneTestNote = WatchChime.playConnected()
-                            ? "Ton çalındı. Duymadıysan: Ayarlar > Ses ve Dokunsal."
-                            : "Ton çalınamadı; ses oturumu açılamadı."
-                    }
-                    .buttonStyle(.bordered)
-                    .font(.caption2)
-
-                    if let toneTestNote {
-                        Text(toneTestNote)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
+                    soundSettingsSection
 
                     Text("Bagaj komutu iPhone üzerinden iletilir; cam komutları kapalı.")
                         .font(.caption2)
@@ -258,7 +248,10 @@ struct WatchGarageView: View {
         }
         .onChange(of: link.lastResult?.id) { _ in
             guard let result = link.lastResult else { return }
-            Self.playHaptic(for: result)
+            // Ses/haptik `announce` içinde; tanınmayan durumlarda eski haptik.
+            if !announceCommandResult(result) {
+                Self.playHaptic(for: result)
+            }
         }
         .onChange(of: link.snapshot?.updatedAt) { _ in
             checkChargingTargetOnWatch()
@@ -275,6 +268,7 @@ struct WatchGarageView: View {
             // Bildirim izni açılışta istenir: arka plan sesi ilk olay anında
             // değil, kullanıcı izni gördüğünde garantiye alınır.
             NotificationPoster.requestAuthorization(using: watchPoster)
+            refreshNotificationPermission()
             refreshIfStale()
         }
         .onChange(of: scenePhase) { phase in
@@ -305,79 +299,114 @@ struct WatchGarageView: View {
             && (stamp! - lastSnapshotStamp!) >= 60
         lastSnapshotStamp = stamp
         defer { previousReady = ready }
-        if resumed, ready, telemetryFresh(at: Date()) {
-            announceConnection(damping: 60)
+        if resumed, ready {
+            announce(.resumed)
             return
         }
         if let previous = previousReady {
             guard !previous, ready else { return }
         } else {
             // İlk gözlem: yalnız taze veri "gerçekten bağlı" sayılır; cache'ten
-            // gelen eski READY sessizce duyurulmaz.
-            guard ready, telemetryFresh(at: Date()) else { return }
+            // gelen eski READY sessizce duyurulmaz (tazelik `announce` içinde).
+            guard ready else { return }
         }
-        announceConnection(damping: 90)
+        announce(.connected)
     }
 
-    /// Duyuru sesi + haptik + (arka planda) yerel bildirim. Sönümleme
-    /// anahtarı tek: bağlantı flap'inde ses tekrarlamaz.
-    private func announceConnection(damping: TimeInterval) {
-        let defaults = UserDefaults.standard
-        let now = Date().timeIntervalSince1970
-        let last = defaults.double(forKey: "toqdas.watch.connectAnnouncedAt")
-        guard now - last >= damping else { return }
-        defaults.set(now, forKey: "toqdas.watch.connectAnnouncedAt")
-        WKInterfaceDevice.current().play(.success)
-        if scenePhase == .active {
-            WatchChime.playConnected()
+    /// Ses + haptik + (arka planda) yerel bildirim.
+    ///
+    /// Karar `WatchSoundPolicy`de: kullanıcı ayarı, imzalı veri tazeliği ve
+    /// sönümleme orada uygulanır; burada yalnız platform işi (ton/bildirim)
+    /// yapılır ve sonuç saat tanısına tek satır yazılır. Ses kararı hiçbir
+    /// zaman "araç hazır/başarılı" iddiası üretmez.
+    private func announce(_ event: WatchSoundPolicy.Event, now: Date = Date()) {
+        let toggle = WatchSoundPolicy.toggle(for: event)
+        let enabled = WatchSoundSettings.isEnabled(toggle)
+        let key = WatchSoundPolicy.dampingKey(for: event)
+        let last = UserDefaults.standard.double(forKey: key)
+        let since = last > 0 ? now.timeIntervalSince1970 - last : nil
+        let decision = WatchSoundPolicy.decision(
+            event: event,
+            enabled: enabled,
+            fresh: telemetryFresh(at: now),
+            foreground: scenePhase == .active,
+            sinceLast: since)
+        switch decision {
+        case .suppressed(let reason):
+            WatchDiagnostics.log("ses · \(event.rawValue) · \(reason)")
+        case .announce(let channel):
+            UserDefaults.standard.set(now.timeIntervalSince1970, forKey: key)
+            WKInterfaceDevice.current().play(Self.haptic(for: event))
+            switch channel {
+            case .chime(let tone):
+                let played = WatchChime.play(tone)
+                WatchDiagnostics.log("ses · \(event.rawValue) · ton "
+                                     + (played ? "çalındı" : "çalınamadı (ses oturumu)"))
+            case .notification(let count):
+                postNotifications(for: event, count: count)
+                WatchDiagnostics.log("ses · \(event.rawValue) · \(count) bildirim")
+            case .none:
+                break
+            }
         }
+    }
+
+    /// Komut sonucu sesi. "forwarded" yalnız **iletildi** demektir (araç
+    /// yanıtı bekleniyor) → metin "Komut iletildi"; ack uygulandı anlamına
+    /// gelmez. "unavailable"/"rejected" dürüstçe "tamamlanmadı" der.
+    @discardableResult
+    private func announceCommandResult(_ result: WatchCommandResult) -> Bool {
+        switch result.status {
+        case "forwarded", "acknowledged":
+            announce(.commandForwarded)
+            return true
+        case "unavailable", "rejected", "expired":
+            announce(.commandFailed)
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func haptic(for event: WatchSoundPolicy.Event) -> WKHapticType {
+        switch event {
+        case .connected, .resumed: return .success
+        case .locked: return .success
+        case .unlocked: return .notification
+        case .commandForwarded: return .success
+        case .commandFailed: return .failure
+        }
+    }
+
+    /// Arka plan bildirimi. watchOS özel bildirim sesi desteklemediği için
+    /// kilit açılması **çift** bildirimle ayrılır (0,5 sn arayla).
+    private func postNotifications(for event: WatchSoundPolicy.Event, count: Int) {
         NotificationPoster.requestAuthorization(using: watchPoster)
-        NotificationPoster.post(
-            NotificationPoster.Draft(
-                identifier: UUID().uuidString,
-                title: "Araç bağlandı",
-                body: "Kilit verisi akıyor; saat uygulamasından komut verebilirsin.",
-                timeSensitive: false),
-            using: watchPoster
-        )
+        let draft = NotificationPoster.Draft(
+            identifier: UUID().uuidString,
+            title: WatchSoundPolicy.title(for: event),
+            body: WatchSoundPolicy.body(for: event),
+            timeSensitive: false,
+            sound: true)
+        NotificationPoster.post(draft, using: watchPoster)
+        if count > 1 {
+            NotificationPoster.post(draft, using: watchPoster, delay: 0.5)
+        }
     }
 
-    /// Kilit geçişi sesli bildirim (anahtarlık davranışı): kilit AÇILDIĞINDA
-    /// **çift bip** (0,5 sn arayla iki bildirim), KİLİTLENDİĞİNDE **tek
-    /// bip** (tek bildirim). watchOS özel bildirim sesini desteklemediği
-    /// için ayrım bildirim sayısıyla üretilir. Bildirim sesi yalnız saat
-    /// uygulaması arka plandayken duyulur (platform davranışı); ön plandaysa
-    /// haptik kalır. Metinler telemetri kilit durumunu anlatır (kapının
-    /// fiziksel açılması ayrı bir iddia taşımaz); VIN yok. Yön başına 15 sn
-    /// sönümleme bağlantı flap'inde tekrar sesi önler.
+    /// Kilit geçişi duyurusu. Ön planda **ton** (kilit = tek ton, açık =
+    /// çift ton), arka planda **bildirim sayısı** (kilit 1, açık 2) —
+    /// watchOS özel bildirim sesi desteklemediği için ayrım böyle kurulur.
+    ///
+    /// Tazelik kapısı burada değil `WatchSoundPolicy.decision` içinde:
+    /// imzalı veri eskiyse duyuru yapılmaz ("kilitlendi" iddiası üretilmez),
+    /// sessiz kalır ve tanıya "imzalı veri eski" yazılır. Metinler telemetri
+    /// kilit durumunu anlatır; kapının fiziksel açılması ayrı bir iddiadır.
     private func announceLockChangeIfNeeded() {
         let locked = link.snapshot?.locked
         defer { previousLocked = locked }
         guard let previous = previousLocked, let locked, previous != locked else { return }
-        let defaults = UserDefaults.standard
-        let key = locked ? "toqdas.watch.lockAnnouncedAt" : "toqdas.watch.unlockAnnouncedAt"
-        let now = Date().timeIntervalSince1970
-        guard now - defaults.double(forKey: key) >= 15 else { return }
-        defaults.set(now, forKey: key)
-        WKInterfaceDevice.current().play(locked ? .success : .notification)
-        NotificationPoster.requestAuthorization(using: watchPoster)
-        let draft = NotificationPoster.Draft(
-            identifier: UUID().uuidString,
-            title: locked ? "Araç kilitlendi" : "Araç kilidi açıldı",
-            body: locked ? "Kilit durumu imzalı telemetriyle doğrulandı." : "Kilit durumu imzalı telemetriyle doğrulandı.",
-            timeSensitive: false,
-            sound: true)
-        if locked {
-            NotificationPoster.post(draft, using: watchPoster)
-        } else {
-            // Çift bip: ikinci bildirim 0,5 sn sonra (aynı default ses).
-            NotificationPoster.post(draft, using: watchPoster)
-            NotificationPoster.post(
-                draft,
-                using: watchPoster,
-                delay: 0.5
-            )
-        }
+        announce(locked ? .locked : .unlocked)
     }
 
     /// Şarj durumu satırı: yüzde, kullanıcı hedefi ve hedefe kalan.
@@ -487,6 +516,95 @@ struct WatchGarageView: View {
     /// Komut yanıtına göre dokunsal geri bildirim. "forwarded" başarının
     /// kanıtı değildir; onay telemetriden gelir, bu nedenle bildirim/hata
     /// tipi kullanılır ve kesin onay tıklaması çalınmaz.
+    // MARK: - Ses ve bildirim ayarları
+
+    /// Üç anahtar + izin durumu + ton denemesi. Tercihler `UserDefaults`ta
+    /// (VIN yok); kararlar `WatchSoundPolicy`de olduğu için buradaki
+    /// değişiklik bir sonraki olaydan itibaren geçerlidir.
+    private var soundSettingsSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // watchOS'ta DisclosureGroup yok; aç/kapa düğmesi.
+            Button {
+                withAnimation(.easeInOut(duration: 0.18)) { showSoundSettings.toggle() }
+            } label: {
+                HStack(spacing: 4) {
+                    Text("Ses ve bildirimler")
+                        .font(.caption2.weight(.semibold))
+                    Spacer()
+                    Image(systemName: showSoundSettings ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10))
+                }
+            }
+            .buttonStyle(.plain)
+
+            if showSoundSettings {
+                ForEach(WatchSoundPolicy.Toggle.allCases, id: \.rawValue) { toggle in
+                    Toggle(isOn: soundBinding(toggle)) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(toggle.title)
+                            Text(toggle.detail)
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .font(.caption2)
+                }
+
+                Text(notificationPermissionText)
+                    .font(.system(size: 10))
+                    .foregroundStyle(notificationAllowed == false ? .orange : .secondary)
+                    .multilineTextAlignment(.leading)
+
+                Button("Sesi dene") {
+                    toneTestNote = WatchChime.play(.connected)
+                        ? "Ton çalındı. Duymadıysan: Ayarlar > Ses ve Dokunsal."
+                        : "Ton çalınamadı; ses oturumu açılamadı."
+                }
+                .buttonStyle(.bordered)
+                .font(.caption2)
+
+                if let toneTestNote {
+                    Text(toneTestNote)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+
+                Text("Ses yalnız saatin ses düzeyi açıkken duyulur; arka planda "
+                     + "kilit açılması iki bip, kilitlenme tek bip.")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    private func soundBinding(_ toggle: WatchSoundPolicy.Toggle) -> Binding<Bool> {
+        Binding(
+            get: { WatchSoundSettings.isEnabled(toggle) },
+            set: { enabled in
+                WatchSoundSettings.set(enabled, for: toggle)
+                WatchDiagnostics.log("ses ayarı · \(toggle.rawValue) · "
+                                     + (enabled ? "açık" : "kapalı"))
+            }
+        )
+    }
+
+    private var notificationPermissionText: String {
+        switch notificationAllowed {
+        case .none: return "Bildirim izni kontrol ediliyor…"
+        case .some(true): return "Arka planda bildirim sesi açık."
+        case .some(false): return "Arka planda ses kapalı · Ayarlar > Bildirimler."
+        }
+    }
+
+    private func refreshNotificationPermission() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let allowed = settings.authorizationStatus == .authorized
+                || settings.authorizationStatus == .provisional
+            DispatchQueue.main.async { notificationAllowed = allowed }
+        }
+    }
+
     private static func playHaptic(for result: WatchCommandResult) {
         switch result.status {
         case "forwarded":
@@ -627,42 +745,82 @@ struct WatchGarageView: View {
 }
 
 
-/// Saatte uygulama içi kısa ton (bağlantı onayı).
+/// Saatte uygulama içi kısa tonlar (ön plan geri bildirimi).
 ///
 /// Neden gerekli: watchOS, uygulama ön plandayken kendi yerel bildirimini
-/// sessiz işler; kullanıcı "bağlandı" geri bildirimini duyamıyordu. Ton
-/// bellek içinde üretilen kısa bir WAV'dır (paket varlığı yok, telif yok),
-/// `AVAudioPlayer` ile çalınır ve yalnız uygulama etkinken çağrılır.
-/// Çalınamazsa sessiz düşer; haptik geri bildirim zaten verilmiş olur.
+/// **sessiz** işler; kullanıcı ön planda hiçbir ses duymuyordu (bağlantı ve
+/// kilit geçişleri dahil). Tonlar bellek içinde üretilen kısa WAV'lardır
+/// (paket varlığı yok, telif yok), `AVAudioPlayer` ile çalınır.
+///
+/// Kasıtlı sınırlar:
+/// - Yalnız ön planda çağrılır; arka planda ayrım bildirim **sayısıyla**.
+/// - Çalınamazsa sessiz düşer (çağıran tanıya yazar); haptik zaten verildi.
+/// - Oturum çalma bitince kapatılır: saatteki diğer sesler kesilmez ve
+///   ses oturumu açık kalmaz (eskiden `setActive(false)` hiç çağrılmıyordu).
 enum WatchChime {
     private static var player: AVAudioPlayer?
 
     @discardableResult
-    static func playConnected() -> Bool {
-        guard let data = connectedToneData() else { return false }
+    static func play(_ tone: WatchSoundPolicy.Tone) -> Bool {
+        guard let data = toneData(tone) else { return false }
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default)
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try session.setActive(true)
             let audio = try AVAudioPlayer(data: data)
             audio.volume = 0.9
+            audio.delegate = ChimeDelegate.shared
             audio.play()
             player = audio
             return true
         } catch {
-            // Ses çalınamadı: haptik zaten verildi; çağıran dürüst metin gösterir.
+            try? AVAudioSession.sharedInstance().setActive(false)
             return false
         }
     }
 
-    /// İki notalı kısa onay tonu (880 Hz → 1175 Hz), 16-bit PCM mono WAV.
-    private static func connectedToneData() -> Data? {
+    /// Çalma bitince (ya da çözme hatasında) oturumu bırak.
+    fileprivate static func finish() {
+        player = nil
+        try? AVAudioSession.sharedInstance()
+            .setActive(false, options: [.notifyOthersOnDeactivation])
+    }
+
+    private final class ChimeDelegate: NSObject, AVAudioPlayerDelegate {
+        static let shared = ChimeDelegate()
+
+        func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+            WatchChime.finish()
+        }
+
+        func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+            WatchChime.finish()
+        }
+    }
+
+    /// Ton sözlüğü: yön ve sonuç farkı frekans dizisiyle kurulur.
+    /// Kilit = alçalan, açılma = yükselen çift, komut = tek/inen kısa notalar.
+    private static func segments(for tone: WatchSoundPolicy.Tone)
+    -> [(frequency: Double, seconds: Double)] {
+        switch tone {
+        case .connected:
+            return [(880, 0.18), (0, 0.05), (1174.66, 0.26)]
+        case .lock:
+            return [(987.77, 0.14), (0, 0.04), (659.25, 0.20)]
+        case .unlock:
+            return [(659.25, 0.12), (0, 0.04), (987.77, 0.12), (0, 0.06), (1318.51, 0.16)]
+        case .commandOK:
+            return [(1046.50, 0.12)]
+        case .commandFail:
+            return [(392.00, 0.14), (0, 0.04), (329.63, 0.20)]
+        }
+    }
+
+    /// 16-bit PCM mono WAV (44,1 kHz).
+    private static func toneData(_ tone: WatchSoundPolicy.Tone) -> Data? {
         let rate = 44_100
-        let segments: [(frequency: Double, seconds: Double)] = [
-            (880, 0.18), (0, 0.05), (1174.66, 0.26)
-        ]
         var samples: [Int16] = []
-        for segment in segments {
+        for segment in segments(for: tone) {
             let count = Int(segment.seconds * Double(rate))
             guard count > 0 else { continue }
             let attack = max(1, Int(0.01 * Double(rate)))
