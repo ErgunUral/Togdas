@@ -14,20 +14,53 @@ struct PremiumControlsSection: View {
                 .font(ToggTheme.text(.lead, weight: .bold)).foregroundStyle(.white)
 
             VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
-                    windowButton(title: "Yan camları aç", subtitle: "İmzalı BLE komutu",
-                                 icon: "rectangle.split.3x3.fill", color: ToggTheme.cyan) {
-                        onWindowCommand(.windowsOpen)
+                // Kapatma birincil: güvenli ve sık. Açma ikincil ve onaylı:
+                // park hâlinde açık cam bırakmak risklidir.
+                Button { onWindowCommand(.windowsClose) } label: {
+                    HStack(spacing: DSSpace.xs) {
+                        Image(systemName: "xmark")
+                            .font(ToggTheme.text(.lead))
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Yan camları kapat")
+                                .font(ToggTheme.text(.body, weight: .bold))
+                                .lineLimit(1).minimumScaleFactor(0.8)
+                            Text("İmzalı BLE komutu · onay ister")
+                                .font(ToggTheme.text(.micro))
+                                .opacity(0.75)
+                        }
+                        Spacer(minLength: 0)
                     }
-                    windowButton(title: "Yan camları kapat", subtitle: "İmzalı BLE komutu",
-                                 icon: "xmark", color: ToggTheme.teal) {
-                        onWindowCommand(.windowsClose)
-                    }
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, DSSpace.sm)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .background(RoundedRectangle(cornerRadius: DSRadius.row, style: .continuous)
+                        .fill(DSColor.accent))
                 }
+                .buttonStyle(.plain)
+                .accessibilityHint("Komut onay sorulduktan sonra araca gönderilir")
 
-                Text("Cam konumu imzalı telemetride yok: komutun araca ulaştığını görürüz, camın gerçekten kapandığını doğrulayamayız. Kilitleme camları kapatmaz.")
+                Button { onWindowCommand(.windowsOpen) } label: {
+                    HStack(spacing: DSSpace.xxs) {
+                        Image(systemName: "rectangle.split.3x3.fill")
+                            .foregroundStyle(DSColor.muted)
+                        Text("Yan camları aç")
+                            .font(ToggTheme.text(.caption, weight: .semibold))
+                            .foregroundStyle(.white)
+                        Spacer(minLength: 0)
+                        Text("Onay ister")
+                            .font(ToggTheme.text(.micro))
+                            .foregroundStyle(DSColor.muted)
+                    }
+                    .padding(.horizontal, DSSpace.xs)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Park hâlinde açık cam bırakmak risklidir; komut onay sorulduktan sonra gönderilir.")
+
+                Text("Cam konumu imzalı telemetride yok: komutun araca ulaştığını görürüz, camın gerçekten kapandığını doğrulayamayız. Açık cam bırakmak yağmur ve hırsızlık riski taşır.")
                     .font(ToggTheme.text(.micro))
-                    .foregroundStyle(ToggTheme.muted)
+                    .foregroundStyle(DSColor.muted)
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 10) {

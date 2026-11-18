@@ -56,7 +56,7 @@ enum DashboardCommand: String, Identifiable {
         case .unlock: return "Kapı kilitleri açılacak."
         case .trunkOpen: return "Arka bagaj açılacak."
         case .trunkClose: return "Arka bagaj kapatılacak."
-        case .windowsOpen: return "Yan cam açma komutu gönderilecek. Cam konumu ayrıca doğrulanamayabilir; çevrede engel olmadığından emin olun."
+        case .windowsOpen: return "Yan cam açma komutu gönderilecek. Park hâlinde açık cam bırakmayın (yağmur/hırsızlık riski). Cam konumu doğrulanamaz; çevrede engel olmadığından emin olun."
         case .windowsClose: return "Yan cam kapatma komutu gönderilecek. Cam konumu ayrıca doğrulanamayabilir; çevrede engel olmadığından emin olun."
         case .automaticLockOn: return "Yakınlık otomasyonu etkinleştirilecek. Bu onay araç komutu göndermez; yaklaşma/uzaklaşma otomasyonu yönetilir."
         case .automaticLockOff: return "Yakınlık otomasyonu kapatılacak; araca komut gönderilmez."
@@ -336,6 +336,14 @@ struct DashboardView: View {
                             if let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("-openTab=") }),
                        let value = DashboardTab(rawValue: String(arg.dropFirst("-openTab=".count))) {
                         tab = value
+                    }
+                    if ProcessInfo.processInfo.arguments.contains("-scrollCamControls") {
+                        showAllControls = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                            withAnimation(reduceMotion ? nil : .default) {
+                                proxy.scrollTo("windows.section", anchor: .top)
+                            }
+                        }
                     }
                     if ProcessInfo.processInfo.arguments.contains("-scrollQuickActions") {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
@@ -951,6 +959,7 @@ struct DashboardView: View {
             climateCardBlock
             deferredLockRow
             PremiumControlsSection(onWindowCommand: requestWindowCommand)
+                .id("windows.section")
             proximityCard
             geofenceCard
             lastSeenCard

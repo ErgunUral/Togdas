@@ -250,6 +250,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   gönderir; cam kapatma ayrı ve açık bir eylemdir. Yakınlık otomasyonu da
   camları kapatmaz. Cam konumu imzalı telemetride **yok**; uygulama yalnız
   aracın komut onayını görür, camın fiziksel olarak kapandığını doğrulayamaz.
+- **Cam açma ikincil (2026-11-18):** Protokolde cam açma var (kod 6,
+  17.11 21:09:11'de bir kez ACK). Park hâlinde açık cam bırakmak yağmur ve
+  hırsızlık riski taşıdığı için **"Yan camları kapat" birincil** (dolu accent,
+  onay ister), **"Yan camları aç" ikincil** (düz satır, "Onay ister"); açma
+  onay metni riski söyler. Cam konumu doğrulanamadığı notu ikisinin altında
+  tek yerde durur.
 - **Arayüz F7 — durum yokken "Hızlı kontroller" (2026-11-18, 649 + 43):**
   Dört karo da "Bilinmiyor" iken bölüm ölü görünüyordu. Artık kilit/bagaj/
   sürüş/iklim değerlerinden **hiçbiri** yoksa dört karo yerine tek eylem
@@ -288,7 +294,8 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   `Tüm kontroller` derinliği (`vehicle.allControls`), menzil "365 km",
   bütçe → Enerji, bakım → Bakım, hesap → sekme; "düzen" testleri
   **yoğunluk** (Rahat/Sıkı) kalıcılığına dönüştü. Hata ayıklama argümanları:
-  `-openTab=<vehicle|energy|care|account>`, `-scrollQuickActions`.
+  `-openTab=<vehicle|energy|care|account>`, `-scrollQuickActions`,
+  `-scrollCamControls`.
   **Sonuç: 43/43 UI testi yeşil** (iPhone 17 Pro Max simülatörü, iOS 18.6).
 - **Arayüz yenilemesi F1–F4 — kabuk, Araç sekmesi, dinamik öncelik
   (2026-11-18, 643 test):** Gezinme tek amaçlı dörde indirildi:
