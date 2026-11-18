@@ -260,6 +260,17 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
   (18:13:58); camların fiziksel hareketi kullanıcı gözlemi bekliyor.
   18:10:41'de aynı otomatik adım gönderildi, 3 sn sonra bağlantı koptu:
   kilit kaydı kirlenmedi, tanıya `command_interrupted` düştü.
+  **Cam komutu fiziksel etki üretmiyor (18.11, açık):** 18:50'de 10+ manuel
+  "Yan camları kapat" ve iki otomatik kapatma araç tarafından ACK'lendi, camlar
+  hareket etmedi. Resmî APK (1.0.24.57.18-TEST) tersine mühendislikle
+  doğrulandı: **kod 6 = windowsOpen, kod 7 = windowsClose**, gövde bizimkiyle
+  aynı (kod + araç saati) ve resmî uygulama da cam konumunu doğrulayamıyor
+  (`physicalStateVerified: false`). Ancak resmî uygulama **manuel cam
+  komutlarını yalnız "kayıtlı test telefonu"nda** açıyor
+  ("Bu özellik yalnız kayıtlı test telefonunda açık"); otomatik kapatma
+  (kilit sonrası) bu kapıdan muaf. "Cam saha profili" yalnız doğrulanmış T10X +
+  yazılım sürümünde seçilebiliyor. Sonuç: kodlar doğru, araç ACK veriyor ama
+  uygulamıyor; destek araç yazılımına/yetkilendirmeye bağlı görünüyor.
 - **Cam açma ikincil (2026-11-18):** Protokolde cam açma var (kod 6,
   17.11 21:09:11'de bir kez ACK). Park hâlinde açık cam bırakmak yağmur ve
   hırsızlık riski taşıdığı için **"Yan camları kapat" birincil** (dolu accent,
