@@ -6,10 +6,246 @@
 	<integer>13</integer>
 	<key>logs</key>
 	<dict>
-		<key>41CB9CDD-2257-4ADF-98C3-126A5E475B4F</key>
+		<key>5047065B-E28F-40D5-9855-F4E2B5D9758E</key>
 		<dict>
 			<key>auxiliaryLogUniqueIdentifier</key>
-			<string>BDD6934B-F6A3-42D6-95B8-BDDA3F0FBB94</string>
+			<string>B4EAC8C7-C272-41C6-8AC4-34E9EE88C287</string>
+			<key>auxiliaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>W</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>5</integer>
+			</dict>
+			<key>className</key>
+			<string>IDESchemeActionsInvocationRecord</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>com.apple.dt.unit.cocoaUnitTest</string>
+			<key>fileName</key>
+			<string>Test-Toqdas-2026.11.18_15-21-28-+0300.xcresult</string>
+			<key>hasAuxiliaryLog</key>
+			<true/>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>T</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>1</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>4</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>Toqdas project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>Toqdas</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Test Toqdas</string>
+			<key>timeStartedRecording</key>
+			<real>816697288.68932402</real>
+			<key>timeStoppedRecording</key>
+			<real>816697366.80967605</real>
+			<key>title</key>
+			<string>Test Toqdas</string>
+			<key>uniqueIdentifier</key>
+			<string>5047065B-E28F-40D5-9855-F4E2B5D9758E</string>
+		</dict>
+		<key>5268E350-560D-4143-9413-6C0C27C84AFF</key>
+		<dict>
+			<key>auxiliaryLogUniqueIdentifier</key>
+			<string>7AF4161B-E97B-49AB-B932-7B57E7B5B688</string>
+			<key>auxiliaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>W</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>5</integer>
+			</dict>
+			<key>className</key>
+			<string>IDESchemeActionsInvocationRecord</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>com.apple.dt.unit.cocoaUnitTest</string>
+			<key>fileName</key>
+			<string>Test-Toqdas-2026.11.18_15-24-58-+0300.xcresult</string>
+			<key>hasAuxiliaryLog</key>
+			<true/>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>W</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>4</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>Toqdas project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>Toqdas</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Test Toqdas</string>
+			<key>timeStartedRecording</key>
+			<real>816697498.27805805</real>
+			<key>timeStoppedRecording</key>
+			<real>816697552.67397904</real>
+			<key>title</key>
+			<string>Test Toqdas</string>
+			<key>uniqueIdentifier</key>
+			<string>5268E350-560D-4143-9413-6C0C27C84AFF</string>
+		</dict>
+		<key>B6105188-3E20-452D-9A2C-1DECC8AC4E17</key>
+		<dict>
+			<key>auxiliaryLogUniqueIdentifier</key>
+			<string>C08C3E5B-C96F-4250-BC6F-57DB20ED0D41</string>
+			<key>auxiliaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>W</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>2</integer>
+			</dict>
+			<key>className</key>
+			<string>IDESchemeActionsInvocationRecord</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>com.apple.dt.unit.cocoaUnitTest</string>
+			<key>fileName</key>
+			<string>Test-Toqdas-2026.11.18_15-24-19-+0300.xcresult</string>
+			<key>hasAuxiliaryLog</key>
+			<true/>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>T</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>1</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>1</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>Toqdas project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>Toqdas</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Test Toqdas</string>
+			<key>timeStartedRecording</key>
+			<real>816697459.61136401</real>
+			<key>timeStoppedRecording</key>
+			<real>816697490.160151</real>
+			<key>title</key>
+			<string>Test Toqdas</string>
+			<key>uniqueIdentifier</key>
+			<string>B6105188-3E20-452D-9A2C-1DECC8AC4E17</string>
+		</dict>
+		<key>E4E15E5D-BD0B-4E06-9D85-BF0A0B9815F9</key>
+		<dict>
+			<key>auxiliaryLogUniqueIdentifier</key>
+			<string>306BB604-32C2-415F-909A-7E08EF85F9FF</string>
+			<key>auxiliaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>W</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>2</integer>
+			</dict>
+			<key>className</key>
+			<string>IDESchemeActionsInvocationRecord</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>com.apple.dt.unit.cocoaUnitTest</string>
+			<key>fileName</key>
+			<string>Test-Toqdas-2026.11.18_15-22-53-+0300.xcresult</string>
+			<key>hasAuxiliaryLog</key>
+			<true/>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>T</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>1</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>1</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>Toqdas project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>Toqdas</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Test Toqdas</string>
+			<key>timeStartedRecording</key>
+			<real>816697373.49002004</real>
+			<key>timeStoppedRecording</key>
+			<real>816697446.38189304</real>
+			<key>title</key>
+			<string>Test Toqdas</string>
+			<key>uniqueIdentifier</key>
+			<string>E4E15E5D-BD0B-4E06-9D85-BF0A0B9815F9</string>
+		</dict>
+		<key>F49C29B3-2BE7-46AB-82BA-0430126E9195</key>
+		<dict>
+			<key>auxiliaryLogUniqueIdentifier</key>
+			<string>834BE652-2191-481F-B4B2-5CB6BC56F3C1</string>
 			<key>auxiliaryObservable</key>
 			<dict>
 				<key>highLevelStatus</key>
@@ -30,7 +266,7 @@
 			<key>domainType</key>
 			<string>com.apple.dt.unit.cocoaUnitTest</string>
 			<key>fileName</key>
-			<string>Test-Toqdas-2026.11.18_14-48-46-+0300.xcresult</string>
+			<string>Test-Toqdas-2026.11.18_15-20-09-+0300.xcresult</string>
 			<key>hasAuxiliaryLog</key>
 			<true/>
 			<key>hasPrimaryLog</key>
@@ -57,72 +293,13 @@
 			<key>signature</key>
 			<string>Test Toqdas</string>
 			<key>timeStartedRecording</key>
-			<real>816695326.02496397</real>
+			<real>816697209.74662101</real>
 			<key>timeStoppedRecording</key>
-			<real>816695863.42759097</real>
+			<real>816697275.77452195</real>
 			<key>title</key>
 			<string>Test Toqdas</string>
 			<key>uniqueIdentifier</key>
-			<string>41CB9CDD-2257-4ADF-98C3-126A5E475B4F</string>
-		</dict>
-		<key>45596E4B-3E82-447A-A581-E93226A09D1F</key>
-		<dict>
-			<key>auxiliaryLogUniqueIdentifier</key>
-			<string>1830B42D-9D88-49E6-9EB2-4503619B7124</string>
-			<key>auxiliaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>W</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>6</integer>
-			</dict>
-			<key>className</key>
-			<string>IDESchemeActionsInvocationRecord</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>com.apple.dt.unit.cocoaUnitTest</string>
-			<key>fileName</key>
-			<string>Test-Toqdas-2026.11.18_15-04-37-+0300.xcresult</string>
-			<key>hasAuxiliaryLog</key>
-			<true/>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>W</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>5</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>Toqdas project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>Toqdas</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Test Toqdas</string>
-			<key>timeStartedRecording</key>
-			<real>816696277.49895</real>
-			<key>timeStoppedRecording</key>
-			<real>816696746.57755899</real>
-			<key>title</key>
-			<string>Test Toqdas</string>
-			<key>uniqueIdentifier</key>
-			<string>45596E4B-3E82-447A-A581-E93226A09D1F</string>
+			<string>F49C29B3-2BE7-46AB-82BA-0430126E9195</string>
 		</dict>
 	</dict>
 </dict>

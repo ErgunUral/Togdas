@@ -68,6 +68,21 @@ final class ToqdasFlowTests: ToqdasUITestCase {
         XCTAssertEqual(driveMode.textValue, "—")
     }
 
+    func testEnergyKeepsHistoryAndToolsBehindDisclosure() {
+        let app = launchFixture(["-openTab=energy"])
+        let dashboard = DashboardScreen(app: app)
+        dashboard.waitForLoad()
+
+        let disclosure = app.buttons["energy.details"]
+        XCTAssertTrue(disclosure.waitForExistence(timeout: 5), "Geçmiş ve araçlar aç/kapa yok")
+        XCTAssertFalse(app.staticTexts["Şarj Hesaplama"].exists,
+                       "Geçmiş ve araçlar başlangıçta kapalı olmalı")
+
+        disclosure.tap()
+        XCTAssertTrue(app.staticTexts["Şarj Hesaplama"].waitForExistence(timeout: 3),
+                      "Açınca hesaplama görünmeli")
+    }
+
     func testChargingTabOffersTrugoStationsEntry() {
         let app = launchFixture(["-openChargingTab"])
         let dashboard = DashboardScreen(app: app)

@@ -93,6 +93,10 @@ enum DSStatus {
     case offline
     /// Kritik eşik (12 V, lastik vb.).
     case critical
+    /// Şarj oturumu sürüyor.
+    case charging
+    /// Şarj oturumu yok (veri var).
+    case idle
 
     var text: String {
         switch self {
@@ -102,6 +106,8 @@ enum DSStatus {
         case .unverified: return "Doğrulanamadı"
         case .offline: return "Bağlantı yok"
         case .critical: return "Kritik"
+        case .charging: return "Şarj sürüyor"
+        case .idle: return "Şarj yok"
         }
     }
 
@@ -112,6 +118,8 @@ enum DSStatus {
         case .stale, .unverified: return DSColor.warning
         case .offline: return DSColor.muted
         case .critical: return DSColor.negative
+        case .charging: return DSColor.accent
+        case .idle: return DSColor.muted
         }
     }
 
@@ -123,6 +131,8 @@ enum DSStatus {
         case .unverified: return "questionmark.circle"
         case .offline: return "wifi.slash"
         case .critical: return "exclamationmark.triangle.fill"
+        case .charging: return "bolt.fill"
+        case .idle: return "bolt.slash"
         }
     }
 }
@@ -309,7 +319,7 @@ struct StatusHero: View {
     let title: String
     let subtitle: String
     let status: DSStatus
-    let statusDetail: String?
+    var statusDetail: String? = nil
     var metrics: [HeroMetric] = []
     var footer: String?
     var primaryTitle: String?

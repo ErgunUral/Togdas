@@ -72,27 +72,32 @@
 				<key>testAllFourTabsArePresentAndSelectable</key>
 				<dict>
 					<key>mrnet</key>
-					<real>11.291990041732788</real>
+					<real>11.053946971893311</real>
 				</dict>
 				<key>testChargingTabOffersTrugoStationsEntry</key>
 				<dict>
 					<key>mrnet</key>
-					<real>5.4613089561462402</real>
+					<real>5.5287129878997803</real>
 				</dict>
 				<key>testClimateTabShowsTargetTemperatureControls</key>
 				<dict>
 					<key>mrnet</key>
-					<real>7.7339919805526733</real>
+					<real>7.3339699506759644</real>
+				</dict>
+				<key>testEnergyKeepsHistoryAndToolsBehindDisclosure</key>
+				<dict>
+					<key>mrnet</key>
+					<real>7.9309909343719482</real>
 				</dict>
 				<key>testHealthTabShowsAuxBatteryAndKeepsMissingDataAsDash</key>
 				<dict>
 					<key>mrnet</key>
-					<real>9.9605278968811035</real>
+					<real>9.946815013885498</real>
 				</dict>
 				<key>testOverviewShowsFixtureVehicleAndTelemetry</key>
 				<dict>
 					<key>mrnet</key>
-					<real>6.3943378925323486</real>
+					<real>6.4699279069900513</real>
 				</dict>
 			</dict>
 			<key>ToqdasGuideTests</key>
@@ -123,17 +128,17 @@
 				<key>testAllControlsRevealsSecurityAndProximitySections</key>
 				<dict>
 					<key>mrnet</key>
-					<real>10.351768970489502</real>
+					<real>11.730306029319763</real>
 				</dict>
 				<key>testChargingCalculatorStatesAssumptionsWithoutStartingCharge</key>
 				<dict>
 					<key>mrnet</key>
-					<real>7.8685081005096436</real>
+					<real>7.9673380851745605</real>
 				</dict>
 				<key>testChargingCalculatorUpdatesEnergyAndCost</key>
 				<dict>
 					<key>mrnet</key>
-					<real>14.201437950134277</real>
+					<real>14.543712973594666</real>
 				</dict>
 				<key>testSportLayoutPlacesQuickActionsAboveBLECard</key>
 				<dict>
@@ -148,7 +153,7 @@
 				<key>testVehicleScreenPlacesQuickActionsAboveAllControls</key>
 				<dict>
 					<key>mrnet</key>
-					<real>13.71634304523468</real>
+					<real>13.772763967514038</real>
 				</dict>
 			</dict>
 			<key>ToqdasNavigationTests</key>

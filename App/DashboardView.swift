@@ -85,6 +85,7 @@ struct DashboardView: View {
     @State private var showQuickStart = false
     @State private var showDesignPreview = false
     @State private var showAllControls = false
+    @State private var showEnergyDetails = false
     /// Son **imzalı** kilit/bagaj/sürüş özeti (diskten). BLE oturumu
     /// kapandığında ekran "hiç yok" yerine "son bilinen + yaş" gösterir.
     @State private var stateSnapshot: VehicleStateSnapshot?
@@ -328,6 +329,7 @@ struct DashboardView: View {
                 .onAppear {
                     #if DEBUG
                     if ProcessInfo.processInfo.arguments.contains("-scrollChargingCalculator") {
+                        showEnergyDetails = true
                         scheduleScrollChargingCalculator(proxy: proxy)
                     }
                             if let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("-openTab=") }),
@@ -468,8 +470,11 @@ struct DashboardView: View {
             if ProcessInfo.processInfo.arguments.contains("-openDriveExperience") {
                 showExperience = true
             }
-            if ProcessInfo.processInfo.arguments.contains("-openChargingTab") {
+            if ProcessInfo.processInfo.arguments.contains("-openChargingTab")
+                || ProcessInfo.processInfo.arguments.contains("-scrollChargingCalculator") {
                 tab = .energy
+                // Hesaplayıcı artık "Geçmiş ve araçlar" derinliğinde: test için aç.
+                showEnergyDetails = true
             }
             if ProcessInfo.processInfo.arguments.contains("-openCommands") {
                 showCommands = true
@@ -757,8 +762,7 @@ struct DashboardView: View {
             eyebrow: vehicleBadge.uppercased(),
             title: lockValueText,
             subtitle: summary.map { "\($0.relativeText) · \($0.sourceText)" } ?? "Henüz araç verisi alınmadı",
-            status: heroStatus,
-            statusDetail: heroStatus.text,
+            status: energyStatus,
             metrics: [
                 HeroMetric(label: "Batarya", value: battery.map { "%\($0)" } ?? "—",
                            icon: "battery.75", tint: batteryColor),
@@ -962,34 +966,124 @@ struct DashboardView: View {
     /// "Enerji": şarj + hedef + geçmiş + 12 V maliyeti. Kart sırası sabittir
     /// (canlı oturum her zaman üstte).
     private var energyTab: some View {
-        VStack(spacing: 16) {
-            chargingCard
+        VStack(spacing: blockSpacing) {
+            energyHero
             liveChargingCard
             chargingTargetCard
             ChargingBudgetCard(vin: vehicle.vin)
-            chargingHistoryCard
-            chargingCalculator
-            Button { showExperience = true } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "chart.bar.xaxis")
-                        .font(ToggTheme.text(.lead)).foregroundStyle(ToggTheme.teal)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Seyahatname")
-                            .font(ToggTheme.text(.body, weight: .bold)).foregroundStyle(.white)
-                        Text("Yolculuk, şarj ve karşılaştırma kayıtları")
-                            .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(ToggTheme.muted)
+            energyDetails
+        }
+    }
+
+    /// Enerji durum şeridi: şarj hâli, batarya, hedef ve hedefe kalan.
+    /// Hiçbir komut göndermez; değer yoksa "—" / "Kapalı" der.
+    private var energyHero: some View {
+        let summary = LastSeenSummary.make(ble: ble.telemetry?.receivedAt, cloud: updatedAt)
+        return StatusHero(
+            eyebrow: "ENERJİ",
+            title: chargingHeroTitle,
+            subtitle: summary.map { "\($0.relativeText) · \($0.sourceText)" } ?? "Henüz veri alınmadı",
+            status: heroStatus,
+            statusDetail: heroStatus.text,
+            metrics: [
+                HeroMetric(label: "Batarya", value: battery.map { "%\($0)" } ?? "—",
+                           icon: "battery.75", tint: batteryColor),
+                HeroMetric(label: "Hedef", value: model.chargingTarget.map { "%\($0)" } ?? "Kapalı",
+                           icon: "target"),
+                HeroMetric(label: "Hedefe kalan", value: remainingToTargetText,
+                           icon: "flag.checkered")
+            ],
+            footer: "Enerji (kWh/kW) telemetrisi gelmiyor; yüzdeler bulut veya imzalı telemetriden. Uygulama şarjı durdurmaz.",
+            primaryTitle: "Veriyi yenile",
+            primaryIcon: "arrow.clockwise",
+            primaryAction: { Task { await refresh() } }
+        )
+        .dsAppear(index: 0, reduceMotion: reduceMotion)
+    }
+
+    private var chargingHeroTitle: String {
+        if model.chargingLive?.charging == true { return "Şarj sürüyor" }
+        let label = chargingLabel
+        guard label != "—" else { return "Şarj durumu bilinmiyor" }
+        return label
+    }
+
+    /// Şarj durumu: canlı oturum → şarj sürüyor/yok; veri yoksa "Bekleniyor".
+    private var energyStatus: DSStatus {
+        if model.chargingLive?.charging == true { return .charging }
+        if chargingLabel == "—" { return .waiting }
+        return .idle
+    }
+
+    private var remainingToTargetText: String {
+        guard let target = model.chargingTarget,
+              let remaining = ChargingTargetPolicy.remaining(
+                target: target, percent: telemetry?.batteryPercent) else { return "—" }
+        return "%\(Int(remaining.rounded()))"
+    }
+
+    /// Geçmiş, hesaplama ve istasyonlar ilk ekranı doldurmasın: aşamalı açılır.
+    private var energyDetails: some View {
+        VStack(spacing: DSSpace.sm) {
+            Button {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                    showEnergyDetails.toggle()
                 }
-                .padding(14)
-                .frame(maxWidth: .infinity)
+            } label: {
+                HStack(spacing: DSSpace.xs) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .foregroundStyle(DSColor.accent)
+                    Text("Geçmiş ve araçlar")
+                        .font(ToggTheme.text(.body, weight: .bold))
+                        .foregroundStyle(.white)
+                    Spacer(minLength: DSSpace.xs)
+                    Text(showEnergyDetails ? "Gizle" : "Geçmiş, hesaplama, istasyonlar")
+                        .font(ToggTheme.text(.micro))
+                        .foregroundStyle(DSColor.muted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                    Image(systemName: showEnergyDetails ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(DSColor.muted)
+                }
+                .padding(DSSpace.sm)
                 .dsCard()
             }
             .buttonStyle(.plain)
-            trugoStations
+            .accessibilityIdentifier("energy.details")
+
+            if showEnergyDetails {
+                VStack(spacing: DSSpace.md) {
+                    chargingHistoryCard
+                    chargingCalculator
+                    seyahatnameLink
+                    trugoStations
+                }
+            }
         }
+    }
+
+    private var seyahatnameLink: some View {
+        Button { showExperience = true } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "chart.bar.xaxis")
+                    .font(ToggTheme.text(.lead)).foregroundStyle(ToggTheme.teal)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Seyahatname")
+                        .font(ToggTheme.text(.body, weight: .bold)).foregroundStyle(.white)
+                    Text("Yolculuk, şarj ve karşılaştırma kayıtları")
+                        .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(ToggTheme.muted)
+                    .accessibilityHidden(true)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity)
+            .dsCard()
+        }
+        .buttonStyle(.plain)
     }
 
     /// "Bakım": sağlık + servis + sürüş istatistikleri + tanı.
@@ -1005,36 +1099,6 @@ struct DashboardView: View {
     private var accountTab: some View {
         NavigationStack {
             AccountCenterView(api: model.api)
-        }
-    }
-
-    private var chargingTab: some View {
-        VStack(spacing: 16) {
-            chargingCard
-            liveChargingCard
-            chargingTargetCard
-            chargingHistoryCard
-            chargingCalculator
-            Button { showExperience = true } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "chart.bar.xaxis")
-                        .font(ToggTheme.text(.lead)).foregroundStyle(ToggTheme.teal)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Seyahatname")
-                            .font(ToggTheme.text(.body, weight: .bold)).foregroundStyle(.white)
-                        Text("Yolculuk, şarj ve karşılaştırma kayıtları")
-                            .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(ToggTheme.muted)
-                }
-                .padding(14)
-                .frame(maxWidth: .infinity)
-                .background(RoundedRectangle(cornerRadius: 16).fill(ToggTheme.surfaceVariant))
-            }
-            .buttonStyle(.plain)
-            trugoStations
         }
     }
 
