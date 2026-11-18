@@ -25,6 +25,11 @@ struct PremiumControlsSection: View {
                     }
                 }
 
+                Text("Cam konumu imzalı telemetride yok: komutun araca ulaştığını görürüz, camın gerçekten kapandığını doğrulayamayız. Kilitleme camları kapatmaz.")
+                    .font(ToggTheme.text(.micro))
+                    .foregroundStyle(ToggTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+
                 HStack(spacing: 10) {
                     Image(systemName: "sun.max")
                         .font(ToggTheme.text(.headline)).foregroundStyle(ToggTheme.muted)

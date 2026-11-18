@@ -243,10 +243,12 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 - **Arayüz F13 — Cila (2026-11-18):** XXXL testi Enerji/Bakım şeritlerini de
   kapsıyor; boş durum eylemleri ve aç/kapa satırları en az 44 pt; erişilebilirlik
   denetimi dört sekmede de temiz.
-- **Kilitleme kaydı (2026-11-18):** "Kilitle" önce cam kapatma komutunu
-  (kod 7) gönderir. Bu adım yanıtsız kalırsa makbuz artık kullanıcı niyetiyle
-  **"Kilitle · Başarısız: Cam kapatma yanıtsız kaldı; kapı kilidi
-  gönderilmedi"** der. Cam konumu imzalı telemetride **yok**; uygulama yalnız
+- **Kilitleme artık tek komut (2026-11-18):** Cihaz kayıtları, kilidin cam
+  kapatma adımına zincirlenmesinin kilidi engellediğini gösterdi
+  (17.11 22:08 · kod 7 `linkLost`; kilit hiç gönderilmedi; 21:55'te aynı akış
+  cam onayı alınca kilit doğrulandı). Artık **"Kilitle" yalnız kod 1**
+  gönderir; cam kapatma ayrı ve açık bir eylemdir. Yakınlık otomasyonu da
+  camları kapatmaz. Cam konumu imzalı telemetride **yok**; uygulama yalnız
   aracın komut onayını görür, camın fiziksel olarak kapandığını doğrulayamaz.
 - **Arayüz F7 — durum yokken "Hızlı kontroller" (2026-11-18, 649 + 43):**
   Dört karo da "Bilinmiyor" iken bölüm ölü görünüyordu. Artık kilit/bagaj/

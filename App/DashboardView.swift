@@ -52,7 +52,7 @@ enum DashboardCommand: String, Identifiable {
 
     var detail: String {
         switch self {
-        case .lock: return "Önce cam kapatma komutu, ardından kapı kilitleme komutu gönderilecek. Cam konumu doğrulanamıyor; çevrede engel olmadığından emin olun."
+        case .lock: return "Kapı kilitleme komutu gönderilecek. Camlar bu komuta dahil değildir; açık cam varsa ayrıca 'Yan camları kapat' kullanın."
         case .unlock: return "Kapı kilitleri açılacak."
         case .trunkOpen: return "Arka bagaj açılacak."
         case .trunkClose: return "Arka bagaj kapatılacak."
@@ -594,7 +594,7 @@ struct DashboardView: View {
             Button("Etkinleştir", role: .destructive) { setProximityEnabled(true) }
             Button("Vazgeç", role: .cancel) { }
         } message: {
-            Text("Uygulama ekrandayken yeni yaklaşma algılanırsa kilit açılır. Uzaklaşınca, tüm kapılar kapalı ve araç beklemedeyse önce cam kapatma isteği, araç onayından sonra kilitleme gönderilir. Pencere açıklığı telemetride yok; bu nedenle cam kapatma her kilitlemeden önce denenir. Arka planda araç komutu gönderilmez.")
+            Text("Uygulama ekrandayken yeni yaklaşma algılanırsa kilit açılır. Uzaklaşınca, tüm kapılar kapalı ve araç beklemedeyse kilitleme komutu gönderilir. Camlar kapatılmaz: pencere açıklığı telemetride yok ve cam komutu kilidi geciktiriyordu. Arka planda araç komutu gönderilmez.")
         }
         .sheet(isPresented: $showVoice) {
             VoiceSheet(voice: voice) { text in
@@ -2363,8 +2363,8 @@ struct DashboardView: View {
                     pendingAutomaticCommandKind = .lock
                     pendingAutomaticCommandAt = Date()
                     recordWidgetCommand("Kilitleme (yakınlık)")
-                    proximityStatus = "Uzaklaşma algılandı; cam kapatma ve ardından kapı kilitleme akışı başlatıldı."
-                    ble.recordDiagnostic("Yakınlık otomasyonu cam kapatma/kilitleme akışını başlattı")
+                    proximityStatus = "Uzaklaşma algılandı; kilitleme komutu gönderildi. Camlar otomatik kapatılmaz."
+                    ble.recordDiagnostic("Yakınlık otomasyonu kilitleme komutunu başlattı")
                 } else {
                     pendingAutoLockTask?.cancel()
                     pendingAutoLockTask = nil

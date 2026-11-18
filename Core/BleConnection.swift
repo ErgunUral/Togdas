@@ -97,7 +97,6 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     private var carTimeReadAt: Date?
     private var pendingCommand: PendingCommand?
     private var pendingCommandNonce: Data?
-    private var lockAfterWindowsClose = false
     private var waitingForCommandTime = false
     private var waitingForCommandNonce = false
     private var pendingLockVerification: Bool?
@@ -328,7 +327,6 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         pendingCommand = nil
         pendingCommandNonce = nil
         lastCommandReceipt = nil
-        lockAfterWindowsClose = false
         waitingForCommandTime = false
         waitingForCommandNonce = false
         pendingLockVerification = nil
@@ -418,7 +416,6 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         pendingCommand = nil
         pendingCommandNonce = nil
         lastCommandReceipt = nil
-        lockAfterWindowsClose = false
         waitingForCommandTime = false
         waitingForCommandNonce = false
         pendingLockVerification = nil
@@ -561,20 +558,11 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     // MARK: - Komutlar
 
+    /// Kilit yalnız kilit komutunu gönderir. Cam kapatma ayrı ve açık bir
+    /// eylemdir: cihaz kayıtları, cam adımının bağlantı koptuğunda kilidi
+    /// tamamen engellediğini gösterdi (17.11 22:08 · linkLost).
     @discardableResult
-    func lock() -> Bool {
-        lockAfterWindowsClose = true
-        // Kullanıcı "Kilitle"ye bastı. Kayıt bu niyetle görünmeli: iç adım
-        // (cam kapatma) başarısız olsa bile kullanıcı "kilitleme başarısız"
-        // okumalı, "kapı kilidinden önce camları kapat" değil.
-        if !sendCommand(code: 7,
-                        action: "Kapı kilidinden önce camları kapat",
-                        receiptAction: "Kilitle") {
-            lockAfterWindowsClose = false
-            return false
-        }
-        return true
-    }
+    func lock() -> Bool { sendCommand(code: 1, action: "Kilitle") }
     @discardableResult func unlock() -> Bool { sendCommand(code: 2, action: "Kilidi aç") }
     @discardableResult func trunkOpen() -> Bool { sendCommand(code: 4, action: "Bagajı aç") }
     @discardableResult func trunkClose() -> Bool { sendCommand(code: 5, action: "Bagajı kapat") }
@@ -583,9 +571,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
     @discardableResult func driveAuthorize() -> Bool { sendCommand(code: 14, action: "Sürüş yetkilendir") }
 
     @discardableResult
-    private func sendCommand(code: UInt8, action: String,
-                             receiptAction: String? = nil) -> Bool {
-        let receiptAction = receiptAction ?? action
+    private func sendCommand(code: UInt8, action: String) -> Bool {
         // Doğrulama bekleyen kilit yeni komutu bloke etmez: doğrulama yalnız
         // telemetri gözlemidir, komut tek uçuşu `pendingCommand`dır. Yeni
         // komut başlarken eski gözlem zaten temizlenir.
@@ -593,7 +579,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         if let rejection = BLECommandPolicy.rejection(code: code, linkReady: state.isReady, telemetry: telemetry) {
             lastEvent = rejection.message
             if !hasActiveCommand {
-                recordCommandReceipt(code: code, action: receiptAction, phase: .failed,
+                recordCommandReceipt(code: code, action: action, phase: .failed,
                                      detail: rejection.message, failureReason: .gateRejected)
             }
             recordDiagnostic("command_gate_rejected · \(action): \(rejection.diagnosticCode)")
@@ -602,7 +588,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         guard commandChar != nil else {
             lastEvent = "Komut kanalı yok."
             if !hasActiveCommand {
-                recordCommandReceipt(code: code, action: receiptAction, phase: .failed,
+                recordCommandReceipt(code: code, action: action, phase: .failed,
                                      detail: "Komut kanalı yok.", failureReason: .gateRejected)
             }
             return false
@@ -610,7 +596,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         guard phoneKey != nil else {
             lastEvent = "Telefon imza anahtarı yok."
             if !hasActiveCommand {
-                recordCommandReceipt(code: code, action: receiptAction, phase: .failed,
+                recordCommandReceipt(code: code, action: action, phase: .failed,
                                      detail: "Telefon imza anahtarı yok.", failureReason: .gateRejected)
             }
             return false
@@ -628,7 +614,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         commandVerificationTask?.cancel()
         commandVerificationTask = nil
         lastEvent = "Araç saati ve tek kullanımlık komut sorusu alınıyor"
-        recordCommandReceipt(code: code, action: receiptAction, phase: .queued, detail: lastEvent)
+        recordCommandReceipt(code: code, action: action, phase: .queued, detail: lastEvent)
 
         if let readAt = carTimeReadAt,
            Date().timeIntervalSince(readAt) < 30 {
@@ -749,13 +735,7 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
 
     private func finishPendingCommand(error: String) {
         let hadPendingCommand = pendingCommand != nil
-        // Cam kapatma adımı yanıtsız kaldıysa kilit hiç gönderilmedi: bunu
-        // "kilit başarısız" olarak ve nedeniyle birlikte söyle.
-        let abortedLock = pendingCommand?.code == 7 && lockAfterWindowsClose
-        if pendingCommand?.code == 7 { lockAfterWindowsClose = false }
-        let message = abortedLock
-            ? "Cam kapatma yanıtsız kaldı; kapı kilidi gönderilmedi. Araç yakınında tekrar deneyin."
-            : error
+        let message = error
         commandTimeoutTask?.cancel()
         commandTimeoutTask = nil
         pendingCommand = nil
@@ -782,17 +762,6 @@ final class BleConnection: NSObject, ObservableObject, CBPeripheralDelegate {
         }
         pendingCommand = nil
         recordDiagnostic("command_ack · \(command.action)")
-        if command.code == 7, lockAfterWindowsClose {
-            lockAfterWindowsClose = false
-            lastEvent = "Cam kapatma komutu alındı; cam konumu doğrulanmıyor. Kapılar kilitleniyor."
-            advanceCommandReceipt(.acknowledged, detail: "Cam kapatma alındı; kapı kilidi başlatılıyor.")
-            recordDiagnostic("Cam kapatma komutu onaylandı; konum bilinmiyor, kilitleme başlatılıyor")
-            if !sendCommand(code: 1, action: "Kilitle") {
-                lastEvent = "Cam kapatma komutu alındı ancak kapı kilitleme komutu gönderilemedi."
-            }
-            return
-        }
-
         let targetLocked: Bool? = command.code == 1 ? true : (command.code == 2 ? false : nil)
         guard let targetLocked else {
             if command.code == 6 || command.code == 7 {
