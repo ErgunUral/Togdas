@@ -77,6 +77,7 @@ struct DashboardView: View {
     @State private var facingError: UserFacingError?
     @State private var geofenceNotice: String?
     @State private var showCommands = false
+    @State private var showQuickStart = false
     @State private var showDetail = false
     @State private var showDiscovery = false
     @State private var showService = false
@@ -582,6 +583,10 @@ struct DashboardView: View {
                     telemetryFresh: updatedAt.map { Date().timeIntervalSince($0) < 300 }
                 )
             )
+        }
+        .sheet(isPresented: $showQuickStart) {
+            QuickStartView()
+                .environmentObject(ble)
         }
         .sheet(isPresented: $showCommands) {
             NavigationStack {
@@ -2572,6 +2577,15 @@ struct DashboardView: View {
                     } else {
                         showCommands = true
                     }
+                }
+                QuickActionButton(
+                    title: ble.telemetry.map { $0.powerStateText } ?? "Sürüş",
+                    subtitle: "Sürüş",
+                    icon: "steeringwheel",
+                    active: ble.telemetry?.powerState == 4,
+                    activeColor: ToggTheme.orange
+                ) {
+                    showQuickStart = true
                 }
             }
 

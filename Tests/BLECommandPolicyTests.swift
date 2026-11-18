@@ -114,3 +114,31 @@ final class WatchCommandPolicyTests: XCTestCase {
         XCTAssertLessThan(WatchCommandPolicy.maxLifetime, 60)
     }
 }
+
+/// "Hızlı Çalıştır": üç aşama, yerel geri sayım ve hazır modu ölçütü.
+final class QuickStartPolicyTests: XCTestCase {
+    func testStagesMatchAndroidOrder() {
+        XCTAssertEqual(QuickStartPolicy.stageTitles.count, 3)
+        XCTAssertEqual(QuickStartPolicy.stageTitles[1], "Sürüş yetkisi isteği")
+        XCTAssertEqual(QuickStartPolicy.stageTitles[2], "Hazır modu")
+    }
+
+    func testReadyComesOnlyFromPowerState4() {
+        XCTAssertTrue(QuickStartPolicy.isReadyPowerState(4))
+        XCTAssertFalse(QuickStartPolicy.isReadyPowerState(3))
+        XCTAssertFalse(QuickStartPolicy.isReadyPowerState(2))
+        XCTAssertFalse(QuickStartPolicy.isReadyPowerState(nil))
+    }
+
+    func testCountdownSaysLocalCounterAndExpiresHonestly() {
+        XCTAssertEqual(QuickStartPolicy.countdownText(remaining: 12),
+                       "Start/Stop için kalan: 12 sn (yerel sayaç)")
+        XCTAssertEqual(QuickStartPolicy.countdownText(remaining: 0),
+                       "Süre doldu; hazır modu bildirilmedi.")
+    }
+
+    func testWindowsMatchAndroid() {
+        XCTAssertEqual(QuickStartPolicy.readyWindow, 30)
+        XCTAssertEqual(QuickStartPolicy.authorizationWindow, 12)
+    }
+}

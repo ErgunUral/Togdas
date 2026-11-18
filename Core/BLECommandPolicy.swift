@@ -101,3 +101,40 @@ enum WatchCommandPolicy {
     static let queuedLifetime: TimeInterval = 30
     static let maxLifetime: TimeInterval = queuedLifetime
 }
+
+/// "Hızlı Çalıştır" (sürüş yetkilendirme) akışının kuralları ve metinleri.
+///
+/// Dürüstlük sınırları:
+/// - **Kalan süre** araçtan doğrulanamaz; geri sayım yalnız istek anından
+///   itibaren yerel ölçümdür, "araçta kalan yetki" iddiası taşımaz.
+/// - "Hazır" yalnız imzalı telemetriden (powerState 4) gelir; araç ack'i
+///   hazır moda geçildiği anlamına gelmez.
+/// - Komut kuyruğa alınmaz, otomatik retry yoktur.
+enum QuickStartPolicy {
+    /// Aşama başlıkları (Android paritesi, aynı sıra).
+    static let stageTitles = [
+        "Bağlantı ve güncel durum",
+        "Sürüş yetkisi isteği",
+        "Hazır modu"
+    ]
+
+    /// Hazır modu için tanınan süre: araçtaki Start/Stop'a 30 sn içinde
+    /// basılması beklenir (Android ile aynı).
+    static let readyWindow: TimeInterval = 30
+
+    /// Araç protokol yanıtı (ack) için tanınan süre.
+    static let authorizationWindow: TimeInterval = 12
+
+    static func isReadyPowerState(_ state: Int?) -> Bool { state == 4 }
+
+    /// Geri sayım metni: yerel sayaç olduğu açıkça söylenir.
+    static func countdownText(remaining: Int) -> String {
+        remaining > 0
+            ? "Start/Stop için kalan: \(remaining) sn (yerel sayaç)"
+            : "Süre doldu; hazır modu bildirilmedi."
+    }
+
+    static let readyTimeoutText =
+        "30 saniye içinde hazır modu bildirilmedi. İstek onayı, hazır moda "
+        + "geçildiği anlamına gelmez; araçtaki Start/Stop akışını tamamlayın."
+}
