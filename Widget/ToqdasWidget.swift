@@ -85,7 +85,7 @@ private struct VehicleStatusView: View {
         switch tone {
         case .positive: return Color(hex: 0x00E676)
         case .warning: return Color(hex: 0xFF9100)
-        case .negative: return Color(hex: 0xFF5252)
+        case .negative: return Color(hex: 0xFF3D00)
         case .neutral: return Color(hex: 0x9AA7BD)
         }
     }
@@ -105,7 +105,7 @@ private struct VehicleStatusView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .widgetBackground(Color(red: 0.025, green: 0.075, blue: 0.13))
+        .widgetBackground(Color(hex: 0x0A0F14))
     }
 
     @ViewBuilder
@@ -174,7 +174,7 @@ private struct VehicleStatusView: View {
     private var unavailableContent: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("TOQDAS").font(.system(size: 10, weight: .bold)).tracking(1.2)
-                .foregroundStyle(Color.cyan)
+                .foregroundStyle(Color(hex: 0x00D2C8))
             Text("Araç verisi yok")
                 .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
             Text("Uygulamayı açıp araç verilerini yenileyin.")
@@ -186,7 +186,7 @@ private struct VehicleStatusView: View {
 
     private func header(_ name: String, extra: String?) -> some View {
         HStack(spacing: 5) {
-            Circle().fill(Color.cyan).frame(width: 6, height: 6)
+            Circle().fill(Color(hex: 0x00D2C8)).frame(width: 6, height: 6)
             Text(name.isEmpty ? "Toqdas" : name)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.white.opacity(0.75))
@@ -203,7 +203,7 @@ private struct VehicleStatusView: View {
     private func metric(_ icon: String, _ value: String, tint: Color? = nil) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon).font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(tint ?? Color.cyan)
+                .foregroundStyle(tint ?? Color(hex: 0x00D2C8))
             Text(value).font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundStyle(tint ?? .white).lineLimit(1)
         }

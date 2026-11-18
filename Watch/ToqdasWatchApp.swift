@@ -6,10 +6,14 @@ import UserNotifications
 @main
 struct ToqdasWatchApp: App {
     @StateObject private var link = WatchLink()
+    /// Kurumsal vurgu — iPhone paletiyle aynı (0x00D2C8).
+    private let accent = Color(red: 0, green: 0xD2 / 255, blue: 0xC8 / 255)
+
     var body: some Scene {
         WindowGroup {
             WatchGarageView(link: link)
                 .environment(\.locale, Locale(identifier: "tr_TR"))
+                .tint(accent)
         }
     }
 }
