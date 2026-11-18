@@ -217,6 +217,37 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 
 ## 8. İlerleme
 
+- **Arayüz F8 — Enerji (2026-11-18, 649 + 44):** Sekme durum şeridiyle
+  başlıyor: şarj hâli (canlı oturum / "Şarj durumu bilinmiyor"), batarya,
+  hedef ve hedefe kalan. İlk ekranda dört blok; geçmiş, hesaplama ve
+  istasyonlar **"Geçmiş ve araçlar"** aç/kapasının altında. Ölü `chargingTab`
+  kopyası silindi. Şarj pill'i `DSStatus.charging/.idle` ile dürüst.
+- **Arayüz F9 — Bakım (2026-11-18):** Durum şeridi 12 V, lastik (en düşük
+  PSI) ve iç sıcaklığı gösterir. Fren/motor uyarısı, 12 V < %40 veya kritik
+  lastik varsa başlık uyarıyı söyler. **Lastik verisi yokken "Araç sağlıklı"
+  denmez**, "Lastik verisi yok" yazar. BLE tanısı "Tanı ve bağlantı"
+  derinliğinde. Kart zemini uygulama genelinde `dsCard()` tokenına geçti.
+- **Arayüz F10 — Hesap ve menü (2026-11-18):** Hesap Merkezi kart dili,
+  iskelet yükleme, boş durum ve hata durumunda "Yeniden dene". Üst menü 9
+  öğeye indi; **Bluetooth** (komutlar/tarama) ve **Görünüm** (tema, yoğunluk,
+  tasarım önizleme) alt menü oldu.
+- **Arayüz F11 — "Tüm kontroller" ayrı ekran denemesi (2026-11-18):**
+  Sheet olarak sunulduğunda yuvalanmış sunumlar (dijital anahtar kurulumu,
+  yakınlık kalibrasyonu, senaryo rehberi) açılmıyordu: sunum sahipliği
+  `DashboardView`da, içerik ise sheet'te kalıyordu. **Geri alındı**; derinlik
+  satır içi aç/kapa olarak korundu. Ayrı ekran için kartların ve alt
+  sheet'lerin kendi görünümüne taşınması gerekir.
+- **Arayüz F12 — Widget ve saat (2026-11-18):** Widget zemini `0x0A0F14`,
+  vurgu `0x00D2C8`, negatif ton `0xFF3D00`; saat uygulaması aynı vurguyu
+  kullanıyor (`ToqdasWatch` şeması `generic/platform=watchOS` ile derlendi).
+- **Arayüz F13 — Cila (2026-11-18):** XXXL testi Enerji/Bakım şeritlerini de
+  kapsıyor; boş durum eylemleri ve aç/kapa satırları en az 44 pt; erişilebilirlik
+  denetimi dört sekmede de temiz.
+- **Kilitleme kaydı (2026-11-18):** "Kilitle" önce cam kapatma komutunu
+  (kod 7) gönderir. Bu adım yanıtsız kalırsa makbuz artık kullanıcı niyetiyle
+  **"Kilitle · Başarısız: Cam kapatma yanıtsız kaldı; kapı kilidi
+  gönderilmedi"** der. Cam konumu imzalı telemetride **yok**; uygulama yalnız
+  aracın komut onayını görür, camın fiziksel olarak kapandığını doğrulayamaz.
 - **Arayüz F7 — durum yokken "Hızlı kontroller" (2026-11-18, 649 + 43):**
   Dört karo da "Bilinmiyor" iken bölüm ölü görünüyordu. Artık kilit/bagaj/
   sürüş/iklim değerlerinden **hiçbiri** yoksa dört karo yerine tek eylem
