@@ -91,4 +91,24 @@ final class ProximitySettingsTests: XCTestCase {
         settings.setNearSample(-50, vin: "V1")
         XCTAssertNil(settings.nearSample(vin: "V2"))
     }
+
+    func testAggressiveProfileMigratesToBalancedOnce() {
+        let settings = ProximitySettings(store: MemoryStore())
+        settings.setProfileRaw(ProximityProfile.aggressive.rawValue, vin: "V1")
+
+        XCTAssertTrue(settings.migrateAggressiveProfileOnce(vin: "V1"))
+        XCTAssertEqual(settings.profile(vin: "V1"), .balanced)
+
+        // Kullanıcı sonradan yeniden Agresif seçerse göç tekrar etmez.
+        settings.setProfileRaw(ProximityProfile.aggressive.rawValue, vin: "V1")
+        XCTAssertFalse(settings.migrateAggressiveProfileOnce(vin: "V1"))
+        XCTAssertEqual(settings.profile(vin: "V1"), .aggressive)
+    }
+
+    func testProfileMigrationLeavesOtherProfilesAlone() {
+        let settings = ProximitySettings(store: MemoryStore())
+        settings.setProfileRaw(ProximityProfile.fast.rawValue, vin: "V1")
+        XCTAssertFalse(settings.migrateAggressiveProfileOnce(vin: "V1"))
+        XCTAssertEqual(settings.profile(vin: "V1"), .fast)
+    }
 }

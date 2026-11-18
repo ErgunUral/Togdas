@@ -42,6 +42,25 @@ struct ProximitySettings {
         store.set(raw, forKey: Self.profileKey(vin))
     }
 
+    /// Tek seferlik profil göçü işareti (VIN bazlı).
+    static func profileMigrationKey(_ vin: String) -> String {
+        "toqdas.proximity.profileMigrated.v1.\(vin)"
+    }
+
+    /// 2026-11-18: "Agresif" profil tek örnekle karar verdiği için cihaz
+    /// günlüğünde yaklaşma/uzaklaşma saniyede bir zıpladı (−66…−80 dBm).
+    /// Kayıtlı agresif profil **bir kez** Dengeli'ye çekilir; kullanıcı
+    /// sonradan Agresif'i yeniden seçerse dokunulmaz (işaret anahtarı).
+    @discardableResult
+    func migrateAggressiveProfileOnce(vin: String) -> Bool {
+        let marker = Self.profileMigrationKey(vin)
+        guard store.bool(forKey: marker) == false else { return false }
+        store.set(true, forKey: marker)
+        guard profile(vin: vin) == .aggressive else { return false }
+        setProfileRaw(ProximityProfile.balanced.rawValue, vin: vin)
+        return true
+    }
+
     /// Kayıtlı profili çözer; bilinmeyen ham değer (veya boşluk) `nil`.
     func profile(vin: String) -> ProximityProfile? {
         profileRaw(vin: vin).flatMap(ProximityProfile.init(rawValue:))

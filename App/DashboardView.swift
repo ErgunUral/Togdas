@@ -2011,6 +2011,9 @@ struct DashboardView: View {
     }
 
     private func loadProximitySettings() {
+        // 2026-11-18: agresif profil saniyede bir zıplayan yaklaşma/uzaklaşma
+        // üretti; kayıtlı agresif bir kez Dengeli'ye çekilir.
+        proximitySettings.migrateAggressiveProfileOnce(vin: vehicle.vin)
         if let profile = proximitySettings.profile(vin: vehicle.vin) {
             proximityProfile = profile
         }
