@@ -9,6 +9,7 @@ final class ToqdasStoreSeedTests: ToqdasUITestCase {
     func testChargingBudgetCardShowsEmptyState() {
         let app = launchFixture(["-uiTestResetStores"])
         app.waitForDashboard()
+        DashboardScreen(app: app).selectTab("Enerji")
 
         XCTAssertTrue(app.staticTexts["Şarj Bütçesi"].waitForExistence(timeout: 5),
                       "Şarj bütçesi kartı yok")
@@ -22,6 +23,7 @@ final class ToqdasStoreSeedTests: ToqdasUITestCase {
     func testChargingBudgetCardShowsSeededSpend() {
         let app = launchFixture(["-uiTestSeedStores"])
         app.waitForDashboard()
+        DashboardScreen(app: app).selectTab("Enerji")
 
         XCTAssertTrue(app.staticTexts["Şarj Bütçesi"].waitForExistence(timeout: 5),
                       "Şarj bütçesi kartı yok")
@@ -35,6 +37,7 @@ final class ToqdasStoreSeedTests: ToqdasUITestCase {
     func testMaintenanceCardShowsApproachingItem() {
         let app = launchFixture(["-uiTestSeedStores"])
         app.waitForDashboard()
+        DashboardScreen(app: app).selectTab("Bakım")
 
         XCTAssertTrue(app.staticTexts["Bakım Hatırlatıcıları"].waitForExistence(timeout: 5),
                       "Bakım kartı yok")
@@ -46,6 +49,7 @@ final class ToqdasStoreSeedTests: ToqdasUITestCase {
     func testMaintenanceCardShowsOverdueItem() {
         let app = launchFixture(["-uiTestSeedStores"])
         app.waitForDashboard()
+        DashboardScreen(app: app).selectTab("Bakım")
 
         XCTAssertTrue(app.staticTexts["Bakım Hatırlatıcıları"].waitForExistence(timeout: 5),
                       "Bakım kartı yok")

@@ -1,54 +1,56 @@
-// Pano düzeni varyantları (Sportif/Teknik) ve şarj hesaplayıcı.
-// Düzen seçimi `-uiTestResetLook` ile her testte sıfırlanır; test sonunda
-// varsayılana dönülür ki sonraki sınıflar etkilenmesin.
+// Pano iskeleti: durum → öncelik → hızlı kontroller sırası, "Tüm kontroller"
+// derinliği ve şarj hesaplayıcı. Yoğunluk tercihi `-uiTestResetLook` ile her
+// testte sıfırlanır; test sonunda Rahat'a dönülür.
 
 import XCTest
 
 final class ToqdasLayoutTests: ToqdasUITestCase {
-    /// Düzeni seçer ve test bitiminde Klasik'e döner (hata olsa bile).
-    private func selectLayout(_ title: String, app: XCUIApplication,
-                              dashboard: DashboardScreen) {
+    /// Yoğunluk seçer ve test bitiminde Rahat'a döner (hata olsa bile).
+    private func selectDensity(_ title: String, app: XCUIApplication,
+                               dashboard: DashboardScreen) {
         dashboard.openMenu().selectLayout(title)
         addTeardownBlock {
             guard app.state == .runningForeground else { return }
-            DashboardScreen(app: app).openMenu().selectLayout("Klasik · Tüm kartlar")
+            DashboardScreen(app: app).openMenu().selectLayout("Rahat")
         }
     }
 
-    func testSportLayoutPlacesQuickActionsAboveBLECard() {
+    /// Ana ekran sırası: hızlı kontroller, "Tüm kontroller" düğmesinden önce.
+    /// (Ayrıntılı kartlar derinlikte; ilk ekran beş blokla sınırlı.)
+    func testVehicleScreenPlacesQuickActionsAboveAllControls() {
         let app = launchFixture(["-uiTestResetLook"])
         let dashboard = DashboardScreen(app: app)
         dashboard.waitForLoad()
 
-        selectLayout("Sportif · Kontroller önde", app: app, dashboard: dashboard)
+        selectDensity("Rahat", app: app, dashboard: dashboard)
 
-        let quickActions = app.staticTexts["Hızlı Araç Kontrolleri"]
+        let quickActions = app.staticTexts["Hızlı kontroller"]
         XCTAssertTrue(quickActions.waitForExistence(timeout: 5), "Hızlı kontroller yok")
-        let bleCard = app.staticTexts["Bluetooth Dijital Anahtar"]
-        XCTAssertTrue(bleCard.waitForExistence(timeout: 5), "BLE kartı yok")
-        XCTAssertLessThan(quickActions.frame.minY, bleCard.frame.minY,
-                          "Sportif düzende hızlı kontroller BLE kartından önce gelmeli")
 
-        // Sportif düzen cam/güvenlik bölümünü gizlemez.
-        XCTAssertTrue(app.staticTexts["Cam ve Güvenlik"].scrollIntoView(app),
-                      "Cam ve güvenlik bölümü sportif düzende yok")
+        let controls = dashboard.allControls
+        XCTAssertTrue(controls.waitForExistence(timeout: 5), "Tüm kontroller düğmesi yok")
+        if !controls.isHittable { controls.scrollIntoView(app) }
+        XCTAssertLessThan(quickActions.frame.minY, controls.frame.minY,
+                          "Hızlı kontroller 'Tüm kontroller'den önce gelmeli")
     }
 
-    func testTechnicalLayoutShowsDiagnosticsAboveProximityCard() {
+    /// Derinlik gerçekten açılıp kapanıyor: cam/güvenlik ve yakınlık kartları
+    /// yalnız "Tüm kontroller" açıkken görünür.
+    func testAllControlsRevealsSecurityAndProximitySections() {
         let app = launchFixture(["-uiTestResetLook"])
         let dashboard = DashboardScreen(app: app)
         dashboard.waitForLoad()
 
-        selectLayout("Teknik · Tanı ve telemetri önde", app: app, dashboard: dashboard)
+        XCTAssertTrue(dashboard.openAllControls(), "Tüm kontroller açılmadı")
+        XCTAssertTrue(app.staticTexts["Cam ve Güvenlik"].scrollIntoView(app),
+                      "Cam ve güvenlik bölümü derinlikte yok")
+        XCTAssertTrue(dashboard.proximityScenarios.scrollIntoView(app),
+                      "Yakınlık kartı derinlikte yok")
 
-        let diagnostics = app.staticTexts["Canlı BLE Tanısı"]
-        XCTAssertTrue(diagnostics.scrollIntoView(app), "Tanı bloğu görünmedi")
-
-        let proximity = app.buttons["proximity.scenarios"]
-        XCTAssertTrue(proximity.scrollIntoView(app), "Yakınlık kartı yok")
-        XCTAssertTrue(diagnostics.exists, "Tanı bloğu kaydırma sonrası kayboldu")
-        XCTAssertLessThan(diagnostics.frame.minY, proximity.frame.minY,
-                          "Teknik düzende tanı bloğu yakınlık kartından önce gelmeli")
+        dashboard.allControls.scrollIntoView(app)
+        dashboard.allControls.tap()
+        XCTAssertTrue(dashboard.proximityScenarios.waitForNonExistence(timeout: 3),
+                      "Tüm kontroller kapanınca kartlar gizlenmedi")
     }
 
     func testChargingCalculatorUpdatesEnergyAndCost() {

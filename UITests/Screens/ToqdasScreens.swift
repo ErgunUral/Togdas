@@ -16,8 +16,10 @@ struct DashboardScreen {
 
     var vehicleName: XCUIElement { app.staticTexts["UI Test Aracı • UI 0001"] }
     var batteryPercent: XCUIElement { app.staticTexts["%79"] }
-    var range: XCUIElement { app.staticTexts["365"] }
+    var range: XCUIElement { app.staticTexts["365 km"] }
     var healthHeading: XCUIElement { app.staticTexts["Araç Sağlığı & Lastik Basınçları"] }
+
+    var allControls: XCUIElement { app.buttons["vehicle.allControls"] }
 
     var proximityScenarios: XCUIElement { app.buttons["proximity.scenarios"] }
     var proximityCalibration: XCUIElement { app.buttons["proximity.calibration"] }
@@ -33,6 +35,16 @@ struct DashboardScreen {
 
     func selectTab(_ title: String) {
         tab(title).tap()
+    }
+
+    /// "Araç → Tüm kontroller" derinliğini açar. Klima, cam/güvenlik,
+    /// yakınlık ve Bluetooth kartları bu katmanda yaşar.
+    @discardableResult
+    func openAllControls(timeout: TimeInterval = 5) -> Bool {
+        guard allControls.waitForExistence(timeout: timeout) else { return false }
+        if !allControls.isHittable { allControls.scrollIntoView(app) }
+        allControls.tap()
+        return proximityScenarios.waitForExistence(timeout: timeout)
     }
 
     @discardableResult
@@ -58,13 +70,8 @@ struct MenuSheet {
         case logout = "Çıkış yap"
     }
 
-    static let themeTitles = ["Togg Gece", "Okyanus", "Grafit / Amber"]
-    static let layoutTitles = [
-        "Klasik · Tüm kartlar",
-        "Minimal · Özet ve hızlı erişim",
-        "Sportif · Kontroller önde",
-        "Teknik · Tanı ve telemetri önde"
-    ]
+    static let themeTitles = ["Kurumsal", "Yüksek Kontrast"]
+    static let layoutTitles = ["Rahat", "Sıkı"]
 
     func item(_ item: Item) -> XCUIElement { app.buttons[item.rawValue] }
     func theme(_ title: String) -> XCUIElement { app.buttons[title] }

@@ -31,6 +31,7 @@ final class ToqdasNavigationTests: ToqdasUITestCase {
         let dashboard = DashboardScreen(app: app)
         dashboard.waitForLoad()
 
+        XCTAssertTrue(dashboard.openAllControls(), "Tüm kontroller açılmadı")
         XCTAssertTrue(dashboard.bleSetupGuide.waitForExistence(timeout: 5),
                       "Kurulum girişi yok")
         dashboard.bleSetupGuide.tap()
@@ -46,6 +47,7 @@ final class ToqdasNavigationTests: ToqdasUITestCase {
         let dashboard = DashboardScreen(app: app)
         dashboard.waitForLoad()
 
+        XCTAssertTrue(dashboard.openAllControls(), "Tüm kontroller açılmadı")
         XCTAssertTrue(dashboard.keyDiscovery.scrollIntoView(app), "Aday seç girişi yok")
         dashboard.keyDiscovery.tap()
 
@@ -100,8 +102,13 @@ final class ToqdasNavigationTests: ToqdasUITestCase {
         let dashboard = DashboardScreen(app: app)
         dashboard.waitForLoad()
 
+        // Hesap artık ayrı sekme: menüden açılan yüzey yerine sekme seçilir.
         dashboard.openMenu().tap(.accountCenter)
-        XCTAssertTrue(app.navigationBars["Bildirimler & Destek"].waitForExistence(timeout: 10))
-        goBack(app)
+        XCTAssertTrue(app.staticTexts["Hesap Merkezi"].waitForExistence(timeout: 10),
+                      "Hesap sekmesi açılmadı")
+        XCTAssertEqual(dashboard.tab("Hesap").textValue, "Seçili",
+                       "Hesap sekmesi seçili bildirilmeli")
+        dashboard.selectTab("Araç")
+        XCTAssertTrue(app.staticTexts["Hızlı kontroller"].waitForExistence(timeout: 5))
     }
 }

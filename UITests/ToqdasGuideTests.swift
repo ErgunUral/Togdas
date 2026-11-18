@@ -38,6 +38,8 @@ final class ToqdasGuideTests: ToqdasUITestCase {
         let dashboard = DashboardScreen(app: app)
         dashboard.waitForLoad()
 
+        XCTAssertTrue(dashboard.openAllControls(),
+                      "Tüm kontroller açılmadı")
         XCTAssertTrue(dashboard.proximityScenarios.scrollIntoView(app),
                       "Yakınlık senaryoları düğmesi bulunamadı")
         dashboard.proximityScenarios.tap()
@@ -57,6 +59,8 @@ final class ToqdasGuideTests: ToqdasUITestCase {
         let dashboard = DashboardScreen(app: app)
         dashboard.waitForLoad()
 
+        XCTAssertTrue(dashboard.openAllControls(),
+                      "Tüm kontroller açılmadı")
         XCTAssertTrue(dashboard.proximityCalibration.scrollIntoView(app),
                       "Kalibrasyon düğmesi bulunamadı")
         dashboard.proximityCalibration.tap()

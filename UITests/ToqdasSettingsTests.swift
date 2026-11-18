@@ -19,40 +19,41 @@ final class ToqdasSettingsTests: ToqdasUITestCase {
         var app = launch(["-uiTestFixture", "-uiTestResetLook"])
         DashboardScreen(app: app).waitForLoad()
 
-        DashboardScreen(app: app).openMenu().selectTheme("Okyanus")
+        DashboardScreen(app: app).openMenu().selectTheme("Yüksek Kontrast")
 
         app = relaunch(app)
         let menu = DashboardScreen(app: app).openMenu()
-        XCTAssertTrue(menu.theme("Okyanus").waitForExistence(timeout: 5))
-        XCTAssertTrue(menu.theme("Okyanus").isSelected,
+        XCTAssertTrue(menu.theme("Yüksek Kontrast").waitForExistence(timeout: 5))
+        XCTAssertTrue(menu.theme("Yüksek Kontrast").isSelected,
                       "Tema seçimi yeniden başlatmada korunmadı")
-        XCTAssertFalse(menu.theme("Togg Gece").isSelected)
+        XCTAssertFalse(menu.theme("Kurumsal").isSelected)
 
         // Diğer testleri etkilememek için varsayılana dön.
-        menu.selectTheme("Togg Gece")
+        menu.selectTheme("Kurumsal")
     }
 
-    func testLayoutChoicePersistsAcrossRelaunch() {
+    /// Eski 4 "düzen" 2 gerçek tercihe indi: Rahat / Sıkı. Sıkı yoğunluk
+    /// içeriği gizlemez; yalnız blok aralığını daraltır (bilgi kaybı yok).
+    func testDensityChoicePersistsAcrossRelaunch() {
         var app = launch(["-uiTestFixture", "-uiTestResetLook"])
         var dashboard = DashboardScreen(app: app)
         dashboard.waitForLoad()
-        XCTAssertTrue(dashboard.proximityScenarios.scrollIntoView(app),
-                      "Klasik düzende yakınlık kartı yok")
 
-        dashboard.openMenu().selectLayout("Minimal · Özet ve hızlı erişim")
+        dashboard.openMenu().selectLayout("Sıkı")
 
-        XCTAssertTrue(dashboard.proximityScenarios.waitForNonExistence(timeout: 3),
-                      "Minimal düzende yakınlık kartı gizlenmedi")
+        // Yoğunluk değişse de ilk ekran aynı blokları gösterir.
+        XCTAssertTrue(dashboard.allControls.waitForExistence(timeout: 3),
+                      "Sıkı yoğunlukta kontroller kayboldu")
 
         app = relaunch(app)
         dashboard = DashboardScreen(app: app)
-        XCTAssertTrue(dashboard.proximityScenarios.waitForNonExistence(timeout: 3),
-                      "Düzen seçimi yeniden başlatmada korunmadı")
-
         let menu = dashboard.openMenu()
-        XCTAssertTrue(menu.layout("Minimal · Özet ve hızlı erişim").isSelected)
-        menu.selectLayout("Klasik · Tüm kartlar")
-        XCTAssertTrue(dashboard.proximityScenarios.waitForExistence(timeout: 3))
+        XCTAssertTrue(menu.layout("Sıkı").waitForExistence(timeout: 5))
+        XCTAssertTrue(menu.layout("Sıkı").isSelected,
+                      "Yoğunluk seçimi yeniden başlatmada korunmadı")
+        menu.selectLayout("Rahat")
+        // Seçim menüyü kapatır; kalıcılığı doğrulamak için yeniden açılır.
+        XCTAssertTrue(DashboardScreen(app: app).openMenu().layout("Rahat").isSelected)
     }
 
     func testMenuExposesExactlyOneSelectedThemeAndLayout() {
@@ -61,11 +62,11 @@ final class ToqdasSettingsTests: ToqdasUITestCase {
         dashboard.waitForLoad()
         let menu = dashboard.openMenu()
 
-        XCTAssertTrue(menu.theme("Togg Gece").waitForExistence(timeout: 5))
+        XCTAssertTrue(menu.theme("Kurumsal").waitForExistence(timeout: 5))
         XCTAssertEqual(MenuSheet.themeTitles.filter { menu.theme($0).isSelected }.count, 1,
                        "VoiceOver tek bir tema seçili bildirmeli")
         XCTAssertEqual(MenuSheet.layoutTitles.filter { menu.layout($0).isSelected }.count, 1,
-                       "VoiceOver tek bir düzen seçili bildirmeli")
+                       "VoiceOver tek bir yoğunluk seçili bildirmeli")
     }
 
     func testLogoutReturnsToLoginScreen() {

@@ -217,6 +217,22 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 
 ## 8. İlerleme
 
+- **Arayüz F5 — cila ve UI test turu (2026-11-18, 643 birim + 43 UI test):**
+  "Hızlı kontroller" karoları ters kurulmuştu (büyük yazı değer, küçük yazı
+  ad; veri yoksa büyük yazı "—" kalıyordu) → **ad büyük, durum küçük**
+  ("Kapılar · Kilit bilinmiyor", "Sürüş · Hazır değil"). Bilinmeyen değer
+  "Bilinmiyor" der; uydurma yok. Eski `VehicleVisualCard` (kalan menzil)
+  kaldırıldı: yeni `StatusHero` ile aynı veriyi tekrarlıyor ve **her sekmede**
+  görünüyordu. Palet göçü tamamlandı: `themeName` varsayılanı `corporate`;
+  kayıtlı eski değer (togg/ocean/graphite) açılışta kurumsala yazılır
+  (VoiceOver "seçili" bildirir, seçici boş görünmez). Hesap Merkezi'ndeki
+  dekoratif ikonlar `accessibilityHidden` (denetim "bell.badge.fill"
+  okumasını yakaladı). UI testleri yeni bilgi mimarisine göre düzeltildi:
+  `Tüm kontroller` derinliği (`vehicle.allControls`), menzil "365 km",
+  bütçe → Enerji, bakım → Bakım, hesap → sekme; "düzen" testleri
+  **yoğunluk** (Rahat/Sıkı) kalıcılığına dönüştü. Hata ayıklama argümanları:
+  `-openTab=<vehicle|energy|care|account>`, `-scrollQuickActions`.
+  **Sonuç: 43/43 UI testi yeşil** (iPhone 17 Pro Max simülatörü, iOS 18.6).
 - **Arayüz yenilemesi F1–F4 — kabuk, Araç sekmesi, dinamik öncelik
   (2026-11-18, 643 test):** Gezinme tek amaçlı dörde indirildi:
   **Araç · Enerji · Bakım · Hesap** (`DashboardTab` üyeleri

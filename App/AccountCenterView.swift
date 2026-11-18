@@ -77,6 +77,7 @@ struct AccountCenterView: View {
                 Circle().fill(ToggTheme.teal.opacity(0.2)).frame(width: 40, height: 40)
                 Image(systemName: "bell.badge.fill")
                     .font(.system(size: 18)).foregroundStyle(ToggTheme.teal)
+                    .accessibilityHidden(true)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text("Hesap Merkezi")
@@ -175,6 +176,7 @@ struct AccountCenterView: View {
                 if item.ticketID != nil {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 11, weight: .bold)).foregroundStyle(ToggTheme.muted)
+                        .accessibilityHidden(true)
                 }
             }
             if !item.meta.isEmpty {

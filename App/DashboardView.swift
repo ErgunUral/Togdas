@@ -67,7 +67,7 @@ enum DashboardCommand: String, Identifiable {
 struct DashboardView: View {
     @ObservedObject var model: GarageModel
     let vehicle: Vehicle
-    @AppStorage(StorageKeys.theme) private var themeName = ToggThemeStyle.togg.rawValue
+    @AppStorage(StorageKeys.theme) private var themeName = ToggThemeStyle.corporate.rawValue
     @AppStorage(StorageKeys.dashboardLayout) private var layoutName = DashboardLayoutStyle.classic.rawValue
 
     @EnvironmentObject private var ble: BleConnection
@@ -297,15 +297,6 @@ struct DashboardView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         dashboardHeader
-                    VehicleVisualCard(
-                        battery: battery,
-                        range: range,
-                        batteryColor: batteryColor,
-                        updatedAt: updatedAt,
-                        lockState: ble.telemetry?.isLocked,
-                        odometer: telemetry?.odometerKM,
-                        outsideTemperature: telemetry?.outsideTemperatureC
-                    )
 
                     switch tab {
                     case .vehicle: vehicleTab
@@ -335,6 +326,15 @@ struct DashboardView: View {
                     #if DEBUG
                     if ProcessInfo.processInfo.arguments.contains("-scrollChargingCalculator") {
                         scheduleScrollChargingCalculator(proxy: proxy)
+                    }
+                            if let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("-openTab=") }),
+                       let value = DashboardTab(rawValue: String(arg.dropFirst("-openTab=".count))) {
+                        tab = value
+                    }
+                    if ProcessInfo.processInfo.arguments.contains("-scrollQuickActions") {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            withAnimation { proxy.scrollTo("quickActions", anchor: .top) }
+                        }
                     }
                     #endif
                 }
@@ -430,6 +430,11 @@ struct DashboardView: View {
             }
         }
         .onAppear {
+            // Palet göçü: eski değer (togg/ocean/graphite) seçicide karşılık
+            // bulamaz; kurumsala yazılır ki VoiceOver doğru seçiliyi bildirsin.
+            if !ToggThemeStyle.selectable.contains(where: { $0.rawValue == themeName }) {
+                themeName = ToggThemeStyle.corporate.rawValue
+            }
             // İlk açılış tanıtımı: bir kez; UI testlerinde atlanır.
             let args = ProcessInfo.processInfo.arguments
             if !onboardingSeen,
@@ -747,7 +752,9 @@ struct DashboardView: View {
         var inputs = DashboardPriorities.Inputs()
         inputs.linkReady = ble.state.isReady
         inputs.lastSeenText = LastSeenSummary.make(
-            ble: ble.telemetry?.receivedAt, cloud: updatedAt)?.relativeText
+            ble: ble.telemetry?.receivedAt, cloud: updatedAt).map {
+                "\($0.relativeText) · \($0.sourceText)"
+            }
         inputs.telemetryAge = telemetryAgeSeconds
         if let receipt = ble.lastCommandReceipt, receipt.phase == .failed {
             inputs.commandUnverifiedDetail = receipt.detail
@@ -2842,6 +2849,32 @@ struct DashboardView: View {
 
     // MARK: - Hızlı kontroller
 
+    private var lockTileSubtitle: String {
+        switch ble.telemetry?.isLocked {
+        case true: return "Kilitli"
+        case false: return "Kilit açık"
+        default: return "Kilit bilinmiyor"
+        }
+    }
+
+    private var climateTileSubtitle: String {
+        guard climateKnown else { return "Bilinmiyor" }
+        return displayClimateOn
+            ? "Açık · \(TurkishFormat.decimal(targetTemperature, digits: 1))°C"
+            : "Kapalı"
+    }
+
+    private var trunkTileSubtitle: String {
+        guard let trunk = ble.telemetry?.trunkAjar else { return "Bilinmiyor" }
+        return trunk == 1 ? "Açık" : "Kapalı"
+    }
+
+    /// "Hazır" yalnız imzalı telemetriden (`powerState == 4`).
+    private var driveTileSubtitle: String {
+        guard ble.telemetry != nil else { return "Bilinmiyor" }
+        return ble.telemetry?.powerState == 4 ? "Hazır" : "Hazır değil"
+    }
+
     private var quickActions: some View {
         VStack(alignment: .leading, spacing: DSSpace.xs) {
             SectionHeader(title: "Hızlı kontroller", subtitle: "Kapı, iklim, bagaj, sürüş")
@@ -2849,8 +2882,8 @@ struct DashboardView: View {
                                 GridItem(.flexible(), spacing: DSSpace.sm)],
                       spacing: DSSpace.sm) {
                 ActionTile(
-                    title: ble.telemetry?.isLocked.map { $0 ? "Kilitli" : "Açık" } ?? "—",
-                    subtitle: "Kapılar",
+                    title: "Kapılar",
+                    subtitle: lockTileSubtitle,
                     icon: ble.telemetry?.isLocked == false ? "lock.open.fill" : "lock.fill",
                     active: ble.telemetry?.isLocked == false,
                     tint: DSColor.warning
@@ -2863,8 +2896,8 @@ struct DashboardView: View {
                 }
 
                 ActionTile(
-                    title: climateKnown ? (displayClimateOn ? "Açık" : "Kapalı") : "—",
-                    subtitle: "İklimlendirme",
+                    title: "İklimlendirme",
+                    subtitle: climateTileSubtitle,
                     icon: "snowflake",
                     active: climateKnown && displayClimateOn,
                     tint: DSColor.info
@@ -2877,8 +2910,8 @@ struct DashboardView: View {
                 }
 
                 ActionTile(
-                    title: ble.telemetry.map { $0.trunkAjar == 1 ? "Açık" : "Kapalı" } ?? "—",
-                    subtitle: "Arka Bagaj",
+                    title: "Arka Bagaj",
+                    subtitle: trunkTileSubtitle,
                     icon: "car.side.rear.open",
                     active: ble.telemetry?.trunkAjar == 1,
                     tint: DSColor.accent
@@ -2891,8 +2924,8 @@ struct DashboardView: View {
                 }
 
                 ActionTile(
-                    title: ble.telemetry.map { $0.powerStateText } ?? "Sürüş",
-                    subtitle: "Sürüş",
+                    title: "Sürüş",
+                    subtitle: driveTileSubtitle,
                     icon: "steeringwheel",
                     active: ble.telemetry?.powerState == 4,
                     tint: DSColor.accent
@@ -2900,6 +2933,7 @@ struct DashboardView: View {
                     showQuickStart = true
                 }
             }
+            .id("quickActions")
         }
     }
 
