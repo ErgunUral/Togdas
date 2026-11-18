@@ -428,6 +428,8 @@ struct EmptyState: View {
     let message: String
     var actionTitle: String?
     var action: (() -> Void)?
+    /// Eylem birincil mi (dolu düğme) — boş durumun tek çıkışı olduğunda.
+    var prominentAction: Bool = false
 
     var body: some View {
         VStack(spacing: DSSpace.xs) {
@@ -444,11 +446,26 @@ struct EmptyState: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if let actionTitle, let action {
-                Button(actionTitle, action: action)
-                    .font(ToggTheme.text(.caption, weight: .bold))
-                    .foregroundStyle(DSColor.accent)
+                if prominentAction {
+                    Button(action: action) {
+                        Text(actionTitle)
+                            .font(ToggTheme.text(.body, weight: .bold))
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(RoundedRectangle(cornerRadius: DSRadius.row,
+                                                         style: .continuous)
+                                .fill(DSColor.accent))
+                    }
                     .buttonStyle(.plain)
-                    .padding(.top, 2)
+                    .padding(.top, DSSpace.xxs)
+                    .accessibilityIdentifier("emptyState.action")
+                } else {
+                    Button(actionTitle, action: action)
+                        .font(ToggTheme.text(.caption, weight: .bold))
+                        .foregroundStyle(DSColor.accent)
+                        .buttonStyle(.plain)
+                        .padding(.top, 2)
+                }
             }
         }
         .padding(DSSpace.lg)

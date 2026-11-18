@@ -217,6 +217,17 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 
 ## 8. İlerleme
 
+- **Arayüz F7 — durum yokken "Hızlı kontroller" (2026-11-18, 649 + 43):**
+  Dört karo da "Bilinmiyor" iken bölüm ölü görünüyordu. Artık kilit/bagaj/
+  sürüş/iklim değerlerinden **hiçbiri** yoksa dört karo yerine tek eylem
+  kartı çıkar: "Araç durumu henüz okunmadı" + **Araçla bağlan** (BLE hazırsa
+  "Durumu oku" → sertifika/oturum). En az bir değer varsa karolar gösterilir
+  ve yalnız bilinmeyenler "Bilinmiyor" der. `EmptyState` birincil (dolu)
+  eylem düğmesi kazandı (`prominentAction`).
+  Karo son hâli — canlı → son bilinen (yaşlı) → (hiçbiri yoksa kart):
+  **Kapılar** "Kilitli"/"Kilit açık" · **İklimlendirme** "Açık · 22,0 °C" /
+  "Kapalı" (komut sonucu; özetlenmez) · **Arka Bagaj** "Açık"/"Kapalı" ·
+  **Sürüş** "Hazır" (yalnız `powerState == 4`) / "Hazır değil".
 - **Arayüz F6 — "son bilinen" araç durumu (2026-11-18, 649 birim + 43 UI):**
   Hızlı kontrol karoları canlı BLE verisi yokken hep "Bilinmiyor" kalıyordu;
   gerçek kullanımda BLE oturumları 3–60 sn olduğu için ekran fiilen boş

@@ -2912,9 +2912,33 @@ struct DashboardView: View {
         return power == 4 ? "Hazır" : "Hazır değil"
     }
 
+    /// Kilit/bagaj/sürüş/iklim değerlerinden **hiçbiri** yoksa dört ölü
+    /// karo yerine tek eylem kartı gösterilir: "Bilinmiyor" tekrarı yerine
+    /// "bağlan ve oku" çıkışı.
+    private var hasAnyVehicleState: Bool {
+        effectiveLocked != nil || effectiveTrunkAjar != nil
+            || effectivePowerState != nil || climateKnown
+    }
+
     private var quickActions: some View {
         VStack(alignment: .leading, spacing: DSSpace.xs) {
             SectionHeader(title: "Hızlı kontroller", subtitle: "Kapı, iklim, bagaj, sürüş")
+            if !hasAnyVehicleState {
+                EmptyState(
+                    icon: "antenna.radiowaves.left.and.right",
+                    title: "Araç durumu henüz okunmadı",
+                    message: "Kilit, bagaj ve sürüş durumu yalnız araçla kurulan BLE oturumunda okunur. Araç yakınken bağlanın; okunan son imzalı değer yaşıyla birlikte saklanır.",
+                    actionTitle: ble.state.isReady ? "Durumu oku" : "Araçla bağlan",
+                    action: {
+                        if ble.state.isReady {
+                            Task { await authenticateBLE() }
+                        } else {
+                            toggleConnection()
+                        }
+                    },
+                    prominentAction: true
+                )
+            } else {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DSSpace.sm),
                                 GridItem(.flexible(), spacing: DSSpace.sm)],
                       spacing: DSSpace.sm) {
@@ -2971,6 +2995,7 @@ struct DashboardView: View {
                 }
             }
             .id("quickActions")
+            }
         }
     }
 

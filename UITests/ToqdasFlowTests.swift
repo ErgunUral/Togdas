@@ -27,6 +27,9 @@ final class ToqdasFlowTests: ToqdasUITestCase {
         XCTAssertTrue(dashboard.vehicleName.waitForExistence(timeout: 5))
         XCTAssertTrue(dashboard.batteryPercent.exists, "Akü yüzdesi gösterilmiyor")
         XCTAssertTrue(dashboard.range.exists, "Menzil gösterilmiyor")
+        // İmzalı durum yokken dört "Bilinmiyor" karosu yerine tek eylem kartı.
+        XCTAssertTrue(app.staticTexts["Araç durumu henüz okunmadı"].exists,
+                      "Durum yokken eylem kartı gösterilmeli")
     }
 
     func testClimateTabShowsTargetTemperatureControls() {
