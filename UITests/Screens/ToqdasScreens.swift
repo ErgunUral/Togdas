@@ -9,7 +9,7 @@ import XCTest
 struct DashboardScreen {
     let app: XCUIApplication
 
-    static let tabs = ["Genel Bakış", "İklimlendirme", "Trugo Şarj", "Araç Durumu"]
+    static let tabs = ["Araç", "Enerji", "Bakım", "Hesap"]
 
     var title: XCUIElement { app.staticTexts["TRUMORE"] }
     var menuButton: XCUIElement { app.element(identifiedBy: "header.menu") }

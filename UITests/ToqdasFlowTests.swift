@@ -13,10 +13,10 @@ final class ToqdasFlowTests: ToqdasUITestCase {
                           "\(title) sekmesi yok")
         }
 
-        dashboard.selectTab("Araç Durumu")
+        dashboard.selectTab("Bakım")
         XCTAssertTrue(dashboard.healthHeading.waitForExistence(timeout: 5))
-        XCTAssertEqual(dashboard.tab("Araç Durumu").textValue, "Seçili")
-        XCTAssertEqual(dashboard.tab("Genel Bakış").textValue, "")
+        XCTAssertEqual(dashboard.tab("Bakım").textValue, "Seçili")
+        XCTAssertEqual(dashboard.tab("Araç").textValue, "")
     }
 
     func testOverviewShowsFixtureVehicleAndTelemetry() {
@@ -34,7 +34,9 @@ final class ToqdasFlowTests: ToqdasUITestCase {
         let dashboard = DashboardScreen(app: app)
         dashboard.waitForLoad()
 
-        dashboard.selectTab("İklimlendirme")
+        // İklimlendirme ayrı sekme değil: "Araç → Tüm kontroller" derinliğinde.
+        dashboard.selectTab("Araç")
+        app.buttons["vehicle.allControls"].tap()
         XCTAssertTrue(app.staticTexts["Klima & İklimlendirme"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Hedef Sıcaklık"].exists)
     }
@@ -44,7 +46,7 @@ final class ToqdasFlowTests: ToqdasUITestCase {
         let dashboard = DashboardScreen(app: app)
         dashboard.waitForLoad()
 
-        dashboard.selectTab("Araç Durumu")
+        dashboard.selectTab("Bakım")
         XCTAssertTrue(dashboard.healthHeading.waitForExistence(timeout: 5))
 
         let auxiliary = app.element(labelled: "12 V Akü")

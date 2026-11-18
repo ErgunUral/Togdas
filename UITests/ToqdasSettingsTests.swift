@@ -78,7 +78,7 @@ final class ToqdasSettingsTests: ToqdasUITestCase {
         let login = LoginScreen(app: app)
         XCTAssertTrue(login.toggButton.waitForExistence(timeout: 5),
                       "Çıkış sonrası giriş ekranı gelmedi")
-        XCTAssertFalse(dashboard.tab("Araç Durumu").exists)
+        XCTAssertFalse(dashboard.tab("Bakım").exists)
         XCTAssertTrue(login.subtitle.exists)
     }
 }

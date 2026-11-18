@@ -24,8 +24,8 @@ final class ToqdasSmokeTests: ToqdasUITestCase {
         let dashboard = DashboardScreen(app: app)
 
         XCTAssertTrue(dashboard.title.waitForExistence(timeout: 8))
-        XCTAssertTrue(dashboard.tab("İklimlendirme").waitForExistence(timeout: 3))
-        XCTAssertTrue(dashboard.tab("Araç Durumu").exists)
+        XCTAssertTrue(dashboard.tab("Araç").waitForExistence(timeout: 3))
+        XCTAssertTrue(dashboard.tab("Bakım").exists)
     }
 
     func testCommandGateDisablesVehicleCommandsWhenNotReady() {

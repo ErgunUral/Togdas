@@ -3,24 +3,29 @@ import SwiftUI
 import UIKit
 import UserNotifications
 
+/// Alt menü: her sekmenin **tek işi** var. İklimlendirme ayrı sekme değil,
+/// "Araç → Tüm kontroller" derinliğinde (klima sık kullanılan bir eylem
+/// olarak hızlı karolarda da duruyor).
 enum DashboardTab: String, CaseIterable, Identifiable {
-    case overview, climate, charging, health
+    case vehicle, energy, care, account
 
     var id: String { rawValue }
+
     var title: String {
         switch self {
-        case .overview: return "Genel Bakış"
-        case .climate: return "İklimlendirme"
-        case .charging: return "Trugo Şarj"
-        case .health: return "Araç Durumu"
+        case .vehicle: return "Araç"
+        case .energy: return "Enerji"
+        case .care: return "Bakım"
+        case .account: return "Hesap"
         }
     }
+
     var icon: String {
         switch self {
-        case .overview: return "car.side.fill"
-        case .climate: return "snowflake"
-        case .charging: return "bolt.car.fill"
-        case .health: return "gauge.with.dots.needle.50percent"
+        case .vehicle: return "car.side.fill"
+        case .energy: return "bolt.car.fill"
+        case .care: return "wrench.and.screwdriver.fill"
+        case .account: return "person.crop.circle"
         }
     }
 }
@@ -69,7 +74,7 @@ struct DashboardView: View {
     /// Reduce Motion: kaydırma/büyüme animasyonlarını kapatır (U3).
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var tab: DashboardTab = .overview
+    @State private var tab: DashboardTab = .vehicle
     @State private var telemetry: VehicleTelemetry?
     @State private var updatedAt: Date?
     @State private var busy = false
@@ -79,12 +84,14 @@ struct DashboardView: View {
     @State private var showCommands = false
     @State private var showQuickStart = false
     @State private var showDesignPreview = false
+    @State private var showAllControls = false
+    @State private var showOnboarding = false
+    @AppStorage("toqdas.onboarding.seen.v1") private var onboardingSeen = false
     @State private var showDetail = false
     @State private var showDiscovery = false
     @State private var showService = false
     @State private var showExperience = false
     @State private var showStations = false
-    @State private var showAccount = false
     @State private var showBLESetupGuide = false
     @State private var authBusy = false
     @State private var showRepairConfirm = false
@@ -212,7 +219,7 @@ struct DashboardView: View {
             onOpenCommands: { showCommands = true },
             onOpenService: { showService = true },
             onOpenExperience: { showExperience = true },
-            onOpenAccount: { showAccount = true },
+            onOpenAccount: { tab = .account },
             onOpenDetail: { showDetail = true },
             onOpenDiscovery: { showDiscovery = true },
             onOpenScenarioGuide: {
@@ -301,10 +308,10 @@ struct DashboardView: View {
                     )
 
                     switch tab {
-                    case .overview: overviewTab
-                    case .climate: climateTab
-                    case .charging: chargingTab
-                    case .health: healthTab
+                    case .vehicle: vehicleTab
+                    case .energy: energyTab
+                    case .care: careTab
+                    case .account: accountTab
                     }
 
                     if let facingError {
@@ -422,13 +429,23 @@ struct DashboardView: View {
                 break
             }
         }
+        .onAppear {
+            // İlk açılış tanıtımı: bir kez; UI testlerinde atlanır.
+            let args = ProcessInfo.processInfo.arguments
+            if !onboardingSeen,
+               !args.contains("-uiTestFixture"),
+               !args.contains("-uiTestSignedOut"),
+               !args.contains("-skipOnboarding") {
+                showOnboarding = true
+            }
+        }
         #if DEBUG
         .onAppear {
             if ProcessInfo.processInfo.arguments.contains("-openDriveExperience") {
                 showExperience = true
             }
             if ProcessInfo.processInfo.arguments.contains("-openChargingTab") {
-                tab = .charging
+                tab = .energy
             }
             if ProcessInfo.processInfo.arguments.contains("-openCommands") {
                 showCommands = true
@@ -586,6 +603,10 @@ struct DashboardView: View {
                 )
             )
         }
+        .sheet(isPresented: $showOnboarding) {
+            FirstRunSheet()
+                .onDisappear { onboardingSeen = true }
+        }
         .sheet(isPresented: $showDesignPreview) {
             DesignPreviewView()
         }
@@ -626,46 +647,322 @@ struct DashboardView: View {
         .navigationDestination(isPresented: $showStations) {
             ChargingStationsView()
         }
-        .navigationDestination(isPresented: $showAccount) {
-            AccountCenterView(api: model.api)
-        }
     }
 
     // MARK: - Sekmeler
 
-    private var overviewTab: some View {
-        let layout = DashboardLayoutStyle(rawValue: layoutName) ?? .classic
-        return VStack(spacing: 16) {
+    /// "Araç": durum → öncelik → eylem. İlk ekranda en fazla beş blok;
+    /// geri kalan her şey "Tüm kontroller" derinliğinde (aşamalı açıklama).
+    private var vehicleTab: some View {
+        VStack(spacing: blockSpacing) {
             bleSecurityBanner
-            if layout == .sport { quickActions }
-            lastSeenCard
-            bleCard
-            if layout == .technical { technicalOverview }
-            if layout != .minimal && layout != .sport { proximityCard }
-            if layout != .minimal {
-                PremiumControlsSection(onWindowCommand: requestWindowCommand)
-            }
-            if layout == .sport { proximityCard }
-            geofenceCard
-            drivingStatsCard
-            ChargingBudgetCard(vin: vehicle.vin)
-            MaintenanceCard(vin: vehicle.vin, odometer: telemetry?.odometerKM)
-            if layout != .sport { quickActions }
-            chargingOverviewLink
+            statusHero
+            prioritiesSection
+            quickActions
+            lastCommandCard
+            controlsSection
         }
     }
 
-    private var climateTab: some View {
+    /// Yoğunluk tercihi: eski "düzen" seçimi (Klasik/Sportif/Teknik) gevşek,
+    /// "Sade" sıkı ritme eşlenir. Düzen sırası artık dinamik (öncelik motoru).
+    private var compactDensity: Bool {
+        (DashboardLayoutStyle(rawValue: layoutName) ?? .classic) == .minimal
+    }
+
+    private var blockSpacing: CGFloat {
+        compactDensity ? DSSpace.xs : DSSpace.md
+    }
+
+    // MARK: - Durum şeridi
+
+    private var telemetryAgeSeconds: TimeInterval? {
+        ble.telemetry.map { Date().timeIntervalSince($0.receivedAt) }
+    }
+
+    /// 45 sn üstü gerçekten bayat; 15–45 sn normal dönem arasıdır
+    /// (imzalı telemetri ~30 sn aralıklı gelir).
+    private var heroStatus: DSStatus {
+        guard let age = telemetryAgeSeconds else { return .waiting }
+        if age < 45 { return .fresh }
+        if age < 300 { return .waiting }
+        return .stale
+    }
+
+    private var lockValueText: String {
+        switch ble.telemetry?.isLocked {
+        case true: return "Kilitli"
+        case false: return "Kilit açık"
+        default: return "Kilit bilinmiyor"
+        }
+    }
+
+    private var auxiliaryValueText: String {
+        guard let aux = telemetry?.auxiliaryBatteryPercent else { return "—" }
+        return AuxiliaryBatteryPolicy.percentText(aux) ?? "—"
+    }
+
+    private var auxiliaryTint: Color {
+        guard let assessment = AuxiliaryBatteryPolicy.assess(telemetry?.auxiliaryBatteryPercent) else {
+            return telemetry?.auxiliaryBatteryPercent == nil ? ToggTheme.muted : ToggTheme.green
+        }
+        return assessment.severity == .critical ? ToggTheme.red : ToggTheme.orange
+    }
+
+    private var statusHero: some View {
+        let summary = LastSeenSummary.make(ble: ble.telemetry?.receivedAt, cloud: updatedAt)
+        return StatusHero(
+            eyebrow: vehicleBadge.uppercased(),
+            title: lockValueText,
+            subtitle: summary.map { "\($0.relativeText) · \($0.sourceText)" } ?? "Henüz araç verisi alınmadı",
+            status: heroStatus,
+            statusDetail: heroStatus.text,
+            metrics: [
+                HeroMetric(label: "Batarya", value: battery.map { "%\($0)" } ?? "—",
+                           icon: "battery.75", tint: batteryColor),
+                HeroMetric(label: "Menzil", value: range.map { "\($0) km" } ?? "—",
+                           icon: "road.lanes"),
+                HeroMetric(label: "12 V", value: auxiliaryValueText,
+                           icon: "bolt.batteryblock", tint: auxiliaryTint)
+            ],
+            footer: ble.state.isReady
+                ? "Komut onayı uygulandı anlamına gelmez; sonuç imzalı telemetriden doğrulanır."
+                : "Komutlar için dijital anahtar ve taze imzalı durum gerekir.",
+            primaryTitle: ble.state.isReady ? "Veriyi yenile" : "Araç servisine bağlan",
+            primaryIcon: ble.state.isReady ? "arrow.clockwise" : "antenna.radiowaves.left.and.right",
+            primaryAction: {
+                if ble.state.isReady {
+                    Task { await refresh() }
+                } else {
+                    toggleConnection()
+                }
+            }
+        )
+        .dsAppear(index: 0, reduceMotion: reduceMotion)
+    }
+
+    // MARK: - Öncelikler ("şimdi ne önemli")
+
+    private var priorityInputs: DashboardPriorities.Inputs {
+        var inputs = DashboardPriorities.Inputs()
+        inputs.linkReady = ble.state.isReady
+        inputs.lastSeenText = LastSeenSummary.make(
+            ble: ble.telemetry?.receivedAt, cloud: updatedAt)?.relativeText
+        inputs.telemetryAge = telemetryAgeSeconds
+        if let receipt = ble.lastCommandReceipt, receipt.phase == .failed {
+            inputs.commandUnverifiedDetail = receipt.detail
+                ?? receipt.failureReason?.explanation
+        }
+        inputs.auxiliaryPercent = telemetry?.auxiliaryBatteryPercent
+        let live = model.chargingLive
+        inputs.chargingActive = live?.charging == true
+        if let target = model.chargingTarget {
+            inputs.chargingTargetRemaining = ChargingTargetPolicy.remaining(
+                target: target, percent: telemetry?.batteryPercent).map { Int($0.rounded()) }
+            if let live, live.charging {
+                inputs.chargingEtaText = liveRemainingText(live: live, now: Date())
+            }
+        }
+        inputs.openDoorCount = ble.telemetry?.openDoorCount ?? 0
+        inputs.trunkAjar = ble.telemetry?.trunkAjar == 1
+        inputs.powerState = ble.telemetry?.powerState
+        inputs.weakSignal = ble.rssi.map { $0 <= BleReconnectPolicy.weakSignalThreshold } ?? false
+        return inputs
+    }
+
+    @ViewBuilder
+    private var prioritiesSection: some View {
+        let items = DashboardPriorities.make(priorityInputs)
+        if items.isEmpty {
+            EmptyState(icon: "checkmark.circle",
+                       title: "Şimdi acil bir şey yok",
+                       message: "Bağlantı, 12 V ve son komut durumu normal görünüyor. Ayrıntılar \"Tüm kontroller\" altında.")
+        } else {
+            VStack(alignment: .leading, spacing: DSSpace.xs) {
+                SectionHeader(title: "Şimdi önemli", subtitle: "En fazla üç başlık")
+                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                    PriorityCard(
+                        title: item.title,
+                        detail: item.detail,
+                        icon: priorityIcon(item.kind),
+                        severity: prioritySeverity(item.severity),
+                        actionTitle: item.actionTitle,
+                        action: { handlePriority(item.kind) }
+                    )
+                    .dsAppear(index: index, reduceMotion: reduceMotion)
+                }
+            }
+        }
+    }
+
+    private func priorityIcon(_ kind: DashboardPriorities.Kind) -> String {
+        switch kind {
+        case .connectionLost: return "wifi.slash"
+        case .auxiliaryCritical: return "bolt.batteryblock"
+        case .lockUnverified: return "questionmark.circle"
+        case .doorOpen: return "door.left.hand.open"
+        case .telemetryStale: return "clock.badge.exclamationmark"
+        case .weakSignal: return "antenna.radiowaves.left.and.right"
+        case .chargingTarget: return "bolt.car"
+        case .readyToDrive: return "steeringwheel"
+        }
+    }
+
+    private func prioritySeverity(_ severity: DashboardPriorities.Severity) -> DSStatus {
+        switch severity {
+        case .critical: return .critical
+        case .warning: return .unverified
+        case .info: return .waiting
+        }
+    }
+
+    private func handlePriority(_ kind: DashboardPriorities.Kind) {
+        switch kind {
+        case .connectionLost:
+            if !ble.state.isReady { toggleConnection() }
+        case .lockUnverified:
+            showCommands = true
+        case .chargingTarget:
+            tab = .energy
+        case .readyToDrive:
+            showQuickStart = true
+        default:
+            break
+        }
+    }
+
+    // MARK: - Son komut
+
+    @ViewBuilder
+    private var lastCommandCard: some View {
+        if let receipt = ble.lastCommandReceipt {
+            VStack(alignment: .leading, spacing: DSSpace.xs) {
+                SectionHeader(title: "Son komut",
+                              subtitle: TurkishFormat.date(receipt.updatedAt, format: "HH:mm"))
+                VStack(spacing: DSSpace.xs) {
+                    DataRow(label: receipt.action,
+                            value: receipt.phase == .verified ? "Doğrulandı"
+                                 : (receipt.phase == .failed ? "Doğrulanamadı" : "Bekliyor"),
+                            detail: receipt.note
+                                ?? receipt.detail
+                                ?? receipt.failureReason?.explanation,
+                            tint: receipt.phase == .verified ? DSColor.positive
+                                 : (receipt.phase == .failed ? DSColor.warning : DSColor.muted))
+                    if receipt.phase == .failed {
+                        Text(receipt.failureReason?.explanation
+                             ?? "Araç gerekçe bildirmiyor.")
+                            .font(ToggTheme.text(.micro))
+                            .foregroundStyle(DSColor.muted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(DSSpace.md)
+                .dsCard()
+            }
+        }
+    }
+
+    // MARK: - Tüm kontroller (aşamalı açıklama)
+
+    private var controlsSection: some View {
+        VStack(spacing: DSSpace.sm) {
+            Button {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                    showAllControls.toggle()
+                }
+            } label: {
+                HStack(spacing: DSSpace.xs) {
+                    Image(systemName: "slider.horizontal.3")
+                        .foregroundStyle(DSColor.accent)
+                    Text("Tüm kontroller")
+                        .font(ToggTheme.text(.body, weight: .bold))
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Text(showAllControls ? "Gizle" : "Klima, cam, yakınlık, güvenlik")
+                        .font(ToggTheme.text(.micro))
+                        .foregroundStyle(DSColor.muted)
+                    Image(systemName: showAllControls ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(DSColor.muted)
+                }
+                .padding(DSSpace.sm)
+                .dsCard()
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("vehicle.allControls")
+
+            if showAllControls {
+                VStack(spacing: DSSpace.md) {
+                    climateCardBlock
+                    deferredLockRow
+                    PremiumControlsSection(onWindowCommand: requestWindowCommand)
+                    proximityCard
+                    geofenceCard
+                    lastSeenCard
+                    bleCard
+                }
+            }
+        }
+    }
+
+    private var climateCardBlock: some View {
+        ClimateCard(
+            isOn: displayClimateOn,
+            known: climateStatusFresh,
+            temperature: $targetTemperature,
+            busy: climateBusy,
+            note: climateNote,
+            onToggle: { Task { await toggleClimate() } },
+            onApplyTemperature: { Task { await applyClimateTemperature() } }
+        )
+    }
+
+    /// "Enerji": şarj + hedef + geçmiş + 12 V maliyeti. Kart sırası sabittir
+    /// (canlı oturum her zaman üstte).
+    private var energyTab: some View {
         VStack(spacing: 16) {
-            ClimateCard(
-                isOn: displayClimateOn,
-                known: climateStatusFresh,
-                temperature: $targetTemperature,
-                busy: climateBusy,
-                note: climateNote,
-                onToggle: { Task { await toggleClimate() } },
-                onApplyTemperature: { Task { await applyClimateTemperature() } }
-            )
+            chargingCard
+            liveChargingCard
+            chargingTargetCard
+            ChargingBudgetCard(vin: vehicle.vin)
+            chargingHistoryCard
+            chargingCalculator
+            Button { showExperience = true } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(ToggTheme.text(.lead)).foregroundStyle(ToggTheme.teal)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Seyahatname")
+                            .font(ToggTheme.text(.body, weight: .bold)).foregroundStyle(.white)
+                        Text("Yolculuk, şarj ve karşılaştırma kayıtları")
+                            .font(ToggTheme.text(.micro)).foregroundStyle(ToggTheme.muted)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(ToggTheme.text(.caption, weight: .bold)).foregroundStyle(ToggTheme.muted)
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity)
+                .dsCard()
+            }
+            .buttonStyle(.plain)
+            trugoStations
+        }
+    }
+
+    /// "Bakım": sağlık + servis + sürüş istatistikleri + tanı.
+    private var careTab: some View {
+        VStack(spacing: 16) {
+            healthTab
+            MaintenanceCard(vin: vehicle.vin, odometer: telemetry?.odometerKM)
+            drivingStatsCard
+            technicalOverview
+        }
+    }
+
+    private var accountTab: some View {
+        NavigationStack {
+            AccountCenterView(api: model.api)
         }
     }
 
@@ -2546,18 +2843,17 @@ struct DashboardView: View {
     // MARK: - Hızlı kontroller
 
     private var quickActions: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Hızlı Araç Kontrolleri")
-                .font(ToggTheme.text(.lead, weight: .bold))
-                .foregroundStyle(.white)
-
-            HStack(spacing: 12) {
-                QuickActionButton(
-                    title: ble.telemetry?.isLocked.map { $0 ? "Kilitli" : "Açık" } ?? "Kapılar",
+        VStack(alignment: .leading, spacing: DSSpace.xs) {
+            SectionHeader(title: "Hızlı kontroller", subtitle: "Kapı, iklim, bagaj, sürüş")
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: DSSpace.sm),
+                                GridItem(.flexible(), spacing: DSSpace.sm)],
+                      spacing: DSSpace.sm) {
+                ActionTile(
+                    title: ble.telemetry?.isLocked.map { $0 ? "Kilitli" : "Açık" } ?? "—",
                     subtitle: "Kapılar",
                     icon: ble.telemetry?.isLocked == false ? "lock.open.fill" : "lock.fill",
                     active: ble.telemetry?.isLocked == false,
-                    activeColor: ToggTheme.pink
+                    tint: DSColor.warning
                 ) {
                     if ble.state.isReady, let locked = ble.telemetry?.isLocked {
                         alert = .confirm(locked ? .unlock : .lock)
@@ -2565,17 +2861,27 @@ struct DashboardView: View {
                         showCommands = true
                     }
                 }
-                QuickActionButton(title: climateKnown ? (displayClimateOn ? "Açık" : "Kapalı") : "—",
-                                  subtitle: "İklimlendirme", icon: "snowflake",
-                                  active: displayClimateOn, activeColor: ToggTheme.cyan) {
-                    Task { await toggleClimate() }
+
+                ActionTile(
+                    title: climateKnown ? (displayClimateOn ? "Açık" : "Kapalı") : "—",
+                    subtitle: "İklimlendirme",
+                    icon: "snowflake",
+                    active: climateKnown && displayClimateOn,
+                    tint: DSColor.info
+                ) {
+                    if ble.state.isReady {
+                        Task { await toggleClimate() }
+                    } else {
+                        showAllControls = true
+                    }
                 }
-                QuickActionButton(
-                    title: ble.telemetry.map { $0.trunkAjar == 1 ? "Açık" : "Kapalı" } ?? "Bagaj",
+
+                ActionTile(
+                    title: ble.telemetry.map { $0.trunkAjar == 1 ? "Açık" : "Kapalı" } ?? "—",
                     subtitle: "Arka Bagaj",
                     icon: "car.side.rear.open",
                     active: ble.telemetry?.trunkAjar == 1,
-                    activeColor: ToggTheme.teal
+                    tint: DSColor.accent
                 ) {
                     if ble.state.isReady, let trunk = ble.telemetry?.trunkAjar {
                         alert = .confirm(trunk == 1 ? .trunkClose : .trunkOpen)
@@ -2583,18 +2889,17 @@ struct DashboardView: View {
                         showCommands = true
                     }
                 }
-                QuickActionButton(
+
+                ActionTile(
                     title: ble.telemetry.map { $0.powerStateText } ?? "Sürüş",
                     subtitle: "Sürüş",
                     icon: "steeringwheel",
                     active: ble.telemetry?.powerState == 4,
-                    activeColor: ToggTheme.orange
+                    tint: DSColor.accent
                 ) {
                     showQuickStart = true
                 }
             }
-
-            deferredLockRow
         }
     }
 
@@ -2677,7 +2982,7 @@ struct DashboardView: View {
     }
 
     private var chargingOverviewLink: some View {
-        Button { tab = .charging } label: {
+        Button { tab = .energy } label: {
             HStack(spacing: 12) {
                 Image(systemName: "bolt.car.fill")
                     .font(ToggTheme.text(.headline))
@@ -3031,22 +3336,24 @@ struct DashboardView: View {
     // MARK: - Alt menü
 
     private var bottomBar: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: DSSpace.xxs) {
             ForEach(DashboardTab.allCases) { item in
                 Button { tab = item } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: item.icon).font(ToggTheme.text(.title))
+                    VStack(spacing: 3) {
+                        Image(systemName: item.icon)
+                            .font(.system(size: 17, weight: tab == item ? .semibold : .regular))
                         Text(item.title)
                             .font(ToggTheme.text(.micro, weight: tab == item ? .bold : .regular))
                             .lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity, minHeight: 44)
-                    .foregroundStyle(tab == item ? ToggTheme.teal : ToggTheme.muted)
+                    .foregroundStyle(tab == item ? DSColor.accent : DSColor.muted)
+                    .background(
+                        RoundedRectangle(cornerRadius: DSRadius.row, style: .continuous)
+                            .fill(tab == item ? DSColor.accent.opacity(0.12) : .clear)
+                    )
                 }
                 .buttonStyle(.plain)
-                // Dokunma hedefi düğmenin kendisinde 44pt olmalı; aksi halde
-                // erişilebilirlik çerçevesi yalnız ikon+yazı boyutunda kalıyor.
-                .frame(maxWidth: .infinity, minHeight: 44)
                 .contentShape(Rectangle())
                 .accessibilityLabel("\(item.title) sekmesi")
                 .accessibilityIdentifier("tab.\(item.rawValue)")
@@ -3054,12 +3361,13 @@ struct DashboardView: View {
                 .accessibilityAddTraits(tab == item ? .isSelected : [])
             }
         }
-        .padding(.top, 10)
-        .padding(.bottom, 4)
+        .padding(.horizontal, DSSpace.xs)
+        .padding(.top, DSSpace.xs)
+        .padding(.bottom, DSSpace.xxs)
         .background(
-            ToggTheme.surface
+            DSColor.surface
                 .overlay(alignment: .top) {
-                    Rectangle().fill(ToggTheme.outline.opacity(0.5)).frame(height: 1)
+                    Rectangle().fill(DSColor.outline.opacity(0.5)).frame(height: 1)
                 }
         )
     }

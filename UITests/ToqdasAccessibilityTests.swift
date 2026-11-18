@@ -28,12 +28,12 @@ final class ToqdasAccessibilityTests: ToqdasUITestCase {
             XCTAssertTrue(tab.waitForExistence(timeout: 5))
             XCTAssertEqual(tab.label, "\(title) sekmesi")
         }
-        XCTAssertEqual(dashboard.tab("Genel Bakış").textValue, "Seçili",
-                       "Açılışta Genel Bakış seçili olmalı")
+        XCTAssertEqual(dashboard.tab("Araç").textValue, "Seçili",
+                       "Açılışta Araç sekmesi seçili olmalı")
 
-        dashboard.selectTab("İklimlendirme")
-        XCTAssertEqual(dashboard.tab("İklimlendirme").textValue, "Seçili")
-        XCTAssertEqual(dashboard.tab("Genel Bakış").textValue, "")
+        dashboard.selectTab("Enerji")
+        XCTAssertEqual(dashboard.tab("Enerji").textValue, "Seçili")
+        XCTAssertEqual(dashboard.tab("Araç").textValue, "")
     }
 
     func testDashboardSurvivesAccessibilityExtraExtraExtraLargeType() {

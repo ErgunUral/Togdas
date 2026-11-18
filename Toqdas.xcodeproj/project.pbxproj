@@ -30,6 +30,7 @@
 		D4F3A1B2C4D5E6F708192A3F /* Core/DeferredLockSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4F3A1B2C4D5E6F708192A3E /* Core/DeferredLockSettings.swift */; };
 		D5A3A1B2C4D5E6F708192A42 /* Core/LockVerificationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A3A1B2C4D5E6F708192A41 /* Core/LockVerificationPolicy.swift */; };
 		D6B3A1B2C4D5E6F708192A45 /* Core/ProximityPowerGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6B3A1B2C4D5E6F708192A44 /* Core/ProximityPowerGate.swift */; };
+		5A1B2C3D4E5F60718293A4B5 /* Core/DashboardPriorityEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1B2C3D4E5F60718293A4B6 /* Core/DashboardPriorityEngine.swift */; };
 		1E28C93D9BA3BFA279C7C17D /* BleTelemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA44742AB17EF2BB229C2C0B /* BleTelemetry.swift */; };
 		1E2F3A4B5C6D7E8F9A0B1C2D /* VehicleVisualCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1F2A3B4C5D6E7F8A9B0C1D /* VehicleVisualCard.swift */; };
 		1E8DF67676E9DA6D8BA9B001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4EDFED152C5F6A3C1F1D0224 /* PrivacyInfo.xcprivacy */; };
@@ -65,6 +66,7 @@
 		4A7B9C0D1E2F33445566778A /* QuickStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7B9C0D1E2F33445566778B /* QuickStartView.swift */; };
 		41A2B3C4D5E6F708192A3B4E /* DesignPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41A2B3C4D5E6F708192A3B4F /* DesignPreviewView.swift */; };
 		41A2B3C4D5E6F708192A3B4C /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41A2B3C4D5E6F708192A3B4D /* DesignSystem.swift */; };
+		62B3C4D5E6F708192A3B4C5D /* FirstRunSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B3C4D5E6F708192A3B4C5E /* FirstRunSheet.swift */; };
 		417996F78A66EC40C130758D /* BLECommandHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BB6FCCA03B6B8BD132B1CF /* BLECommandHistoryStore.swift */; };
 		4317E884109146BF8BB94813 /* VoiceCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E3943ADA53E9864A4A558C3 /* VoiceCommand.swift */; };
 		49808D4581BF8AB41A118BD0 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916E3FFCE5A36274CE3483A4 /* BLEProtocol.swift */; };
@@ -329,6 +331,7 @@
 		D4F3A1B2C4D5E6F708192A3E /* Core/DeferredLockSettings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/DeferredLockSettings.swift; sourceTree = "<group>"; };
 		D5A3A1B2C4D5E6F708192A41 /* Core/LockVerificationPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/LockVerificationPolicy.swift; sourceTree = "<group>"; };
 		D6B3A1B2C4D5E6F708192A44 /* Core/ProximityPowerGate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/ProximityPowerGate.swift; sourceTree = "<group>"; };
+		5A1B2C3D4E5F60718293A4B6 /* Core/DashboardPriorityEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/DashboardPriorityEngine.swift; sourceTree = "<group>"; };
 		7C1D2E3F405162738495A6B8 /* Core/WatchSoundPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Core/WatchSoundPolicy.swift; sourceTree = "<group>"; };
 		266AF5BEEDC756597FF5C07D /* PhoneKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PhoneKeyStore.swift; path = Core/PhoneKeyStore.swift; sourceTree = "<group>"; };
 		2A3B4C5D6E7F8A9B0C1D2E3F /* ProximityCycleGuard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProximityCycleGuard.swift; path = Core/ProximityCycleGuard.swift; sourceTree = "<group>"; };
@@ -375,6 +378,7 @@
 		4A7B9C0D1E2F33445566778B /* QuickStartView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = QuickStartView.swift; path = App/QuickStartView.swift; sourceTree = "<group>"; };
 		41A2B3C4D5E6F708192A3B4F /* DesignPreviewView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DesignPreviewView.swift; path = App/DesignPreviewView.swift; sourceTree = "<group>"; };
 		41A2B3C4D5E6F708192A3B4D /* DesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DesignSystem.swift; path = App/DesignSystem.swift; sourceTree = "<group>"; };
+		62B3C4D5E6F708192A3B4C5E /* FirstRunSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FirstRunSheet.swift; path = App/FirstRunSheet.swift; sourceTree = "<group>"; };
 		68D5366CFC2C2BABF91AF7DC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = App/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		6D9E0F1A2B3C4D5E6F0A1B2C /* BleRestorePlan.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BleRestorePlan.swift; path = Core/BleRestorePlan.swift; sourceTree = "<group>"; };
 		6E7F8A9B0C1D2E3F4A5B6C7D /* StorageKeys.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = StorageKeys.swift; path = App/StorageKeys.swift; sourceTree = "<group>"; };
@@ -586,6 +590,7 @@
 				4A7B9C0D1E2F33445566778B /* QuickStartView.swift */,
 				41A2B3C4D5E6F708192A3B4F /* DesignPreviewView.swift */,
 				41A2B3C4D5E6F708192A3B4D /* DesignSystem.swift */,
+				62B3C4D5E6F708192A3B4C5E /* FirstRunSheet.swift */,
 				ED85292C3B4DC74E070D4819 /* LoginCoordinator.swift */,
 				17BD712EE0834958833A382D /* ProximityDetectionMonitor.swift */,
 				C39F9C8F8DE63FDCFB5C37C9 /* ServiceView.swift */,
@@ -703,6 +708,7 @@
 				D4F3A1B2C4D5E6F708192A3E /* Core/DeferredLockSettings.swift */,
 				D5A3A1B2C4D5E6F708192A41 /* Core/LockVerificationPolicy.swift */,
 				D6B3A1B2C4D5E6F708192A44 /* Core/ProximityPowerGate.swift */,
+				5A1B2C3D4E5F60718293A4B6 /* Core/DashboardPriorityEngine.swift */,
 				7C1D2E3F405162738495A6B8 /* Core/WatchSoundPolicy.swift */,
 				1A90646A8F064CC74B8E1653 /* Core/GaragePreferences.swift */,
 				9CDCAC4C8F3596E99B43B8E6 /* Core/EnergyPricing.swift */,
@@ -1086,6 +1092,7 @@
 				4A7B9C0D1E2F33445566778A /* QuickStartView.swift in Sources */,
 				41A2B3C4D5E6F708192A3B4E /* DesignPreviewView.swift in Sources */,
 				41A2B3C4D5E6F708192A3B4C /* DesignSystem.swift in Sources */,
+				62B3C4D5E6F708192A3B4C5D /* FirstRunSheet.swift in Sources */,
 				4DD16715A4D136BCF499E5AB /* LoginCoordinator.swift in Sources */,
 				BFFC90F44D1902601A16ADD4 /* ProximityDetectionMonitor.swift in Sources */,
 				1C6DA13A06FA16344F363701 /* ServiceView.swift in Sources */,
@@ -1159,6 +1166,7 @@
 				D4F3A1B2C4D5E6F708192A3F /* Core/DeferredLockSettings.swift in Sources */,
 				D5A3A1B2C4D5E6F708192A42 /* Core/LockVerificationPolicy.swift in Sources */,
 				D6B3A1B2C4D5E6F708192A45 /* Core/ProximityPowerGate.swift in Sources */,
+				5A1B2C3D4E5F60718293A4B5 /* Core/DashboardPriorityEngine.swift in Sources */,
 				78B95720E4FE860F8E25C1EC /* Core/GaragePreferences.swift in Sources */,
 				C23920B6B06B730C7550F679 /* Core/EnergyPricing.swift in Sources */,
 				A5CDF76839DDCD594CF8BD6E /* ChargingBudget.swift in Sources */,

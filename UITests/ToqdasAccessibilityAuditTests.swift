@@ -41,7 +41,7 @@ final class ToqdasAccessibilityAuditTests: ToqdasUITestCase {
         let dashboard = DashboardScreen(app: app)
         dashboard.waitForLoad()
 
-        for tab in ["İklimlendirme", "Trugo Şarj", "Araç Durumu"] {
+        for tab in ["Enerji", "Bakım", "Hesap"] {
             dashboard.selectTab(tab)
             try audit(app)
         }

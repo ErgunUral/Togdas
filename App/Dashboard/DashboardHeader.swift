@@ -152,10 +152,9 @@ struct DashboardHeader: View {
                                 Text(style.title).tag(style.rawValue)
                             }
                         }
-                        Picker("Dashboard düzeni", selection: $layoutName) {
-                            ForEach(DashboardLayoutStyle.allCases) { layout in
-                                Text("\(layout.title) · \(layout.subtitle)").tag(layout.rawValue)
-                            }
+                        Picker("Yoğunluk", selection: $layoutName) {
+                            Text("Rahat").tag(DashboardLayoutStyle.classic.rawValue)
+                            Text("Sıkı").tag(DashboardLayoutStyle.minimal.rawValue)
                         }
                         Divider()
                         Button("Çıkış yap", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) { onLogout() }

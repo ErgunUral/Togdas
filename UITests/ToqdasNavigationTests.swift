@@ -9,7 +9,7 @@ final class ToqdasNavigationTests: ToqdasUITestCase {
         let back = app.navigationBars.buttons.element(boundBy: 0)
         XCTAssertTrue(back.waitForExistence(timeout: 5), "Geri düğmesi yok")
         back.tap()
-        XCTAssertTrue(DashboardScreen(app: app).tab("Araç Durumu").waitForExistence(timeout: 5),
+        XCTAssertTrue(DashboardScreen(app: app).tab("Bakım").waitForExistence(timeout: 5),
                       "Panoya dönülmedi")
     }
 

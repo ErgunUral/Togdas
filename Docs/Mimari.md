@@ -217,6 +217,33 @@ Her faz sonunda uygulama çalışır ve mevcut testler yeşil kalır.
 
 ## 8. İlerleme
 
+- **Arayüz yenilemesi F1–F4 — kabuk, Araç sekmesi, dinamik öncelik
+  (2026-11-18, 643 test):** Gezinme tek amaçlı dörde indirildi:
+  **Araç · Enerji · Bakım · Hesap** (`DashboardTab` üyeleri
+  `vehicle/energy/care/account`; iklimlendirme ayrı sekme değil,
+  "Araç → Tüm kontroller" derinliğinde ve hızlı karolarda). Alt bar:
+  seçili sekme için yumuşak vurgu kapsülü + 44pt hedef (erişilebilirlik
+  kimlikleri `tab.<raw>` korunur). "Hesap" artık gerçek sekme
+  (`AccountCenterView` kendi `NavigationStack`'inde); menüdeki
+  "Bildirimler & destek" sekmeye yönlendirir.
+  **Araç ekranı** (`vehicleTab`): güvenlik şeridi → `StatusHero` (kilit,
+  son görülme, batarya/menzil/12 V, durum rozeti) → **"Şimdi önemli"**
+  (en fazla 3 kart) → `ActionTile` 2 sütun (Kapılar/İklim/Bagaj/Sürüş) →
+  son komut kartı → **"Tüm kontroller"** (aşamalı açıklama: klima, uzaklaşma
+  bileti, cam/kontrol, yakınlık, geofence, son görülme, Bluetooth).
+  Dinamik sıralama `Core/DashboardPriorityEngine` (saf, 13 test): bağlantı
+  yok, 12 V kritik/uyarı, komut doğrulanamadı, kapı/bagaj açık, veri eski,
+  sinyal zayıf, şarj hedefi, hazır (yalnız `powerState == 4`). Metinler
+  ölçüleni söyler; eksik değer için yüzde/süre uydurulmaz, "araç reddetti"
+  yazılmaz. Öncelik yoksa dürüst boş durum: "Şimdi acil bir şey yok".
+  Eski 4 "düzen" seçimi 2 gerçek tercihe indi: **Yoğunluk (Rahat/Sıkı)**;
+  kayıtlı `classic/sport/technical` → Rahat, `minimal` → Sıkı (sessiz
+  sıfırlama yok). Enerji sekmesi: canlı oturum + hedef + bütçe + geçmiş +
+  hesap + istasyonlar. Bakım: sağlık + servis + sürüş istatistikleri +
+  teknik özet. **İlk açılış tanıtımı** (`App/FirstRunSheet.swift`, 3 adım,
+  atlanabilir, `toqdas.onboarding.seen.v1`; UI testlerinde atlanır) ve
+  Reduce Motion uyumlu kart girişi (`dsAppear`) eklendi. UI testleri yeni
+  sekme adlarına ve iklimlendirmenin derinliğine güncellendi.
 - **Arayüz yenilemesi F0 — kurumsal tasarım sistemi (2026-11-18):**
   `App/DesignSystem.swift` (spacing 4/8/12/16/24/32, radius 12/16/20,
   elevation, `StatusPill`/`DSStatus` tek durum dili, `StatusHero`,
