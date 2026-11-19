@@ -753,6 +753,28 @@ struct DashboardView: View {
         return "Komutlar için dijital anahtar ve taze imzalı durum gerekir."
     }
 
+    /// Bağlantı hazırlanırken düğme metni: kullanıcı "bağlan"a basmadan önce
+    /// ne olduğunu görsün (ön bağlantı açılışta kendiliğinden başlar).
+    private var connectionPhaseText: String? {
+        guard !ble.state.isReady else { return nil }
+        switch model.link.phase {
+        case .searching: return "Araç aranıyor…"
+        case .connecting: return "Araçla bağlanıyor…"
+        case .authenticating: return "Anahtar doğrulanıyor…"
+        case .pairingWait: return "Araç ekranından eşleştirme bekleniyor"
+        case .repairRequired: return "Yeniden eşleştirme gerekiyor"
+        case .radioOff: return "Bluetooth kapalı"
+        case .idle, .ready, .degraded, .stopped: return nil
+        }
+    }
+
+    /// Komut düğmeleri yalnız READY + taze imzalı telemetride etkin.
+    private var commandsReady: Bool {
+        guard ble.state.isReady, let telemetry = ble.telemetry else { return false }
+        let age = Date().timeIntervalSince(telemetry.receivedAt)
+        return age >= 0 && age < BLECommandPolicy.telemetryFreshness
+    }
+
     private var auxiliaryValueText: String {
         guard let aux = telemetry?.auxiliaryBatteryPercent else { return "—" }
         return AuxiliaryBatteryPolicy.percentText(aux) ?? "—"
@@ -781,8 +803,13 @@ struct DashboardView: View {
                            icon: "bolt.batteryblock", tint: auxiliaryTint)
             ],
             footer: heroFooter,
-            primaryTitle: ble.state.isReady ? "Veriyi yenile" : "Araç servisine bağlan",
-            primaryIcon: ble.state.isReady ? "arrow.clockwise" : "antenna.radiowaves.left.and.right",
+            primaryTitle: ble.state.isReady
+                ? "Veriyi yenile"
+                : (connectionPhaseText ?? "Araç servisine bağlan"),
+            primaryIcon: ble.state.isReady
+                ? "arrow.clockwise"
+                : (connectionPhaseText == nil ? "antenna.radiowaves.left.and.right" : "hourglass"),
+            primaryDisabled: connectionPhaseText != nil,
             primaryAction: {
                 if ble.state.isReady {
                     Task { await refresh() }
@@ -958,7 +985,7 @@ struct DashboardView: View {
         VStack(spacing: DSSpace.md) {
             climateCardBlock
             deferredLockRow
-            PremiumControlsSection(onWindowCommand: requestWindowCommand)
+            PremiumControlsSection(onWindowCommand: requestWindowCommand, enabled: commandsReady)
                 .id("windows.section")
             proximityCard
             geofenceCard
@@ -3178,7 +3205,16 @@ struct DashboardView: View {
                     showQuickStart = true
                 }
             }
+            .disabled(!commandsReady)
+            .opacity(commandsReady ? 1 : 0.55)
             .id("quickActions")
+            if !commandsReady {
+                Text(connectionPhaseText ?? "Komutlar için bağlantı ve güncel imzalı araç durumu gerekir.")
+                    .font(ToggTheme.text(.micro))
+                    .foregroundStyle(DSColor.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel("Komutlar hazır değil: \(connectionPhaseText ?? "bağlantı ve güncel araç durumu bekleniyor")")
+            }
             }
         }
     }

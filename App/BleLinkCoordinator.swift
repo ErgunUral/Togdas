@@ -158,12 +158,16 @@ final class BleLinkCoordinator: ObservableObject {
         start()
     }
 
-    /// Uygulama açıldığında, kullanıcı bağlı tutmayı seçtiyse kendiliğinden bağlanır.
+    /// Uygulama açıldığında **ön bağlantı** kurar: kullanıcı düğmeye basmadan
+    /// önce arama + kimlik doğrulama tamamlanır. Komut göndermez; yalnız oturum
+    /// hazırlar. Kopma sonrası otomatik denemeler yine "bağlı tut/yakınlık"
+    /// iznine bağlıdır (`handleForeground`), bu yüzden tek seferliktir.
     func startIfDesired() {
         guard !ble.needsRepair else { return }
-        guard autoConnectEnabled,
-              ble.state.isDisconnected || ble.state.isFailed else { return }
-        ble.recordDiagnostic("Otomatik bağlantı: bağlı tutma/yakınlık açık")
+        guard ble.state.isDisconnected || ble.state.isFailed else { return }
+        ble.recordDiagnostic(autoConnectEnabled
+            ? "Ön bağlantı: bağlı tutma/yakınlık açık"
+            : "Ön bağlantı: uygulama açılışı")
         start()
     }
 

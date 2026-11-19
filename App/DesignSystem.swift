@@ -325,6 +325,7 @@ struct StatusHero: View {
     var footer: String?
     var primaryTitle: String?
     var primaryIcon: String = "arrow.clockwise"
+    var primaryDisabled: Bool = false
     var primaryAction: (() -> Void)?
 
     var body: some View {
@@ -364,13 +365,14 @@ struct StatusHero: View {
                         Text(primaryTitle)
                     }
                     .font(ToggTheme.text(.body, weight: .bold))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(primaryDisabled ? DSColor.muted : .black)
                     .padding(.vertical, 11)
                     .frame(maxWidth: .infinity)
                     .background(RoundedRectangle(cornerRadius: DSRadius.row, style: .continuous)
-                        .fill(DSColor.accent))
+                        .fill(primaryDisabled ? DSColor.surfaceVariant : DSColor.accent))
                 }
                 .buttonStyle(.plain)
+                .disabled(primaryDisabled)
                 .accessibilityLabel(primaryTitle)
             }
 

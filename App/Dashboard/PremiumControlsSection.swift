@@ -7,6 +7,8 @@ import SwiftUI
 
 struct PremiumControlsSection: View {
     let onWindowCommand: (DashboardCommand) -> Void
+    /// Komut kapısı: READY + taze imzalı telemetri yoksa düğmeler pasif.
+    var enabled: Bool = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -37,6 +39,7 @@ struct PremiumControlsSection: View {
                         .fill(DSColor.accent))
                 }
                 .buttonStyle(.plain)
+                .disabled(!enabled)
                 .accessibilityHint("Komut onay sorulduktan sonra araca gönderilir")
 
                 Button { onWindowCommand(.windowsOpen) } label: {
@@ -56,6 +59,7 @@ struct PremiumControlsSection: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .disabled(!enabled)
                 .accessibilityHint("Park hâlinde açık cam bırakmak risklidir; komut onay sorulduktan sonra gönderilir.")
 
                 Text("Cam konumu imzalı telemetride yok: komutun araca ulaştığını görürüz, camın gerçekten kapandığını doğrulayamayız. Tek dokunuş birkaç kısa komut gönderir; cam kademeli kapanır, tam kapanmazsa yeniden dokunun. \"Kilitle\" sonrası camlar otomatik kapatılmaya çalışılır. Açık cam bırakmak yağmur ve hırsızlık riski taşır.")
