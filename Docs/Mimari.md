@@ -121,6 +121,24 @@ enum CommandReceipt {
 Bu değişiklikler, "kapı açılmadı" durumunda komutun hangi aşamada ve neden
 durduğunu kullanıcıya göstermeyi zorunlu hale getirir.
 
+### Açılışta ön bağlantı, pasif düğmeler, "hazır olunca bildir"
+
+- Uygulama açılışında `BleLinkCoordinator.startIfDesired` bağlantıyı
+  kendiliğinden kurar (komut göndermez). Kopma sonrası denemeler yine
+  "bağlı tut / yakınlık" iznine bağlıdır; ön bağlantı tek seferliktir.
+- Hero düğmesi aşamayı yazar (aranıyor / bağlanıyor / anahtar doğrulanıyor)
+  ve o sırada pasiftir. Bluetooth kapalı ya da eşleşme yenileme gerekiyorsa
+  düğme etkin kalır, neden alt satırda yazar.
+- Hızlı kontrol döşemeleri ve cam düğmeleri yalnız READY + taze (15 sn)
+  imzalı telemetride etkindir; aksi hâlde pasif ve tek satır nedeni görünür.
+  Gerçek kapı yine `BLECommandPolicy`'dir: UI pasifliği kapının yerine geçmez.
+- "Hazır olunca bildir" yalnız kullanıcı isterse tek yerel bildirim gönderir;
+  5 dakika içinde sonuçlanmazsa sessizce düşer. Uygulama askıya alınmışsa
+  bildirim gelmez — bu sınır metinde açıkça yazar.
+- Saatte kilitle/aç/bagaj düğmeleri zaten vardı: istek `WCSession` ile
+  iletilir, telefon erişilebilir değilse tek kez kuyruğa bırakılır (retry yok),
+  kimlik doğrulama + taze telemetri yoksa istek reddedilir.
+
 ## 4. Feature state sınırı
 
 `DashboardView` yalnız sekme yönlendirmesi ve ortak kabuk olacak. Her sekme
