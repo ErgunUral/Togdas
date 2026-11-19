@@ -116,6 +116,10 @@ struct DashboardView: View {
     @State private var proximityGate: ProximityGate?
     @State private var proximityRSSISamples: [Int] = []
     @State private var proximityStatus = "Ölçüm bekleniyor"
+    /// "Hazır olunca bildir": yalnız kullanıcı isterse, bağlantı + taze
+    /// telemetri hazır olduğunda tek bir yerel bildirim gönderilir.
+    @State private var readyNoticeRequested = false
+    @State private var readyNoticeRequestedAt: Date?
     /// Android .57 paritesi: tek biletl açma + 30 sn belirsizlik guard'ı.
     @State private var proximityGuard = ProximityCycleGuard()
     /// Android .57 paritesi: yaklaşma karar gecikmesi ölçümü.
@@ -563,6 +567,17 @@ struct DashboardView: View {
                 proximitySettings.setAutoOffCustomMinutes(minutes, vin: vehicle.vin)
             }
         }
+        .onChange(of: commandsReady) { ready in
+            if ready { finishReadyNotice(success: true) }
+        }
+        .onChange(of: model.link.phase) { phase in
+            switch phase {
+            case .stopped, .radioOff, .repairRequired:
+                finishReadyNotice(success: false)
+            default:
+                break
+            }
+        }
         .onChange(of: telemetry?.batteryPercent) { value in
             guard !chargeStartInitialized, let value, value.isFinite else { return }
             chargeStartInitialized = true
@@ -762,9 +777,17 @@ struct DashboardView: View {
         case .connecting: return "Araçla bağlanıyor…"
         case .authenticating: return "Anahtar doğrulanıyor…"
         case .pairingWait: return "Araç ekranından eşleştirme bekleniyor"
-        case .repairRequired: return "Yeniden eşleştirme gerekiyor"
-        case .radioOff: return "Bluetooth kapalı"
-        case .idle, .ready, .degraded, .stopped: return nil
+        default: return nil
+        }
+    }
+
+    /// Düğmeyi pasifleştirmeyen engel metni: kullanıcı yine de deneyebilir.
+    private var connectionBlockerText: String? {
+        guard !ble.state.isReady else { return nil }
+        switch model.link.phase {
+        case .radioOff: return "Bluetooth kapalı; Ayarlar'dan açın."
+        case .repairRequired: return "Araç eşleşmesi yenilenmeli."
+        default: return nil
         }
     }
 
@@ -802,7 +825,7 @@ struct DashboardView: View {
                 HeroMetric(label: "12 V", value: auxiliaryValueText,
                            icon: "bolt.batteryblock", tint: auxiliaryTint)
             ],
-            footer: heroFooter,
+            footer: [heroFooter, connectionBlockerText].compactMap { $0 }.joined(separator: " "),
             primaryTitle: ble.state.isReady
                 ? "Veriyi yenile"
                 : (connectionPhaseText ?? "Araç servisine bağlan"),
@@ -2011,6 +2034,36 @@ struct DashboardView: View {
         }
     }
 
+    /// "Hazır olunca bildir" isteği. Yalnız tek bildirim; istek 5 dakika
+    /// içinde sonuçlanmazsa sessizce düşer (sonsuz bekleyen bildirim yok).
+    private func requestReadyNotice() {
+        NotificationPoster.requestAuthorization(using: notificationPoster)
+        readyNoticeRequested = true
+        readyNoticeRequestedAt = Date()
+        ble.recordDiagnostic("ready_notice · hazır olunca bildir istendi")
+    }
+
+    private func finishReadyNotice(success: Bool) {
+        guard readyNoticeRequested, let requestedAt = readyNoticeRequestedAt else { return }
+        readyNoticeRequested = false
+        readyNoticeRequestedAt = nil
+        guard Date().timeIntervalSince(requestedAt) < 300 else {
+            ble.recordDiagnostic("ready_notice_expired · 5 dk içinde sonuçlanmadı")
+            return
+        }
+        NotificationPoster.post(
+            NotificationPoster.Draft(
+                identifier: "toqdas.ready-notice.\(UUID().uuidString)",
+                title: success ? "Araç hazır" : "Araç bağlantısı kurulamadı",
+                body: success
+                    ? "Dijital anahtar hazır; kilit ve cam komutları kullanılabilir."
+                    : "Bağlantı kurulamadı. Uygulama açıkken yeniden deneyin; arka planda komut gönderilmez."
+            ),
+            using: notificationPoster
+        )
+        ble.recordDiagnostic(success ? "ready_notice_sent · araç hazır" : "ready_notice_sent · bağlantı kurulamadı")
+    }
+
     private func toggleConnection() {
         if ble.state.isDisconnected || ble.state.isFailed {
             keepBLEConnected = true
@@ -3209,11 +3262,26 @@ struct DashboardView: View {
             .opacity(commandsReady ? 1 : 0.55)
             .id("quickActions")
             if !commandsReady {
-                Text(connectionPhaseText ?? "Komutlar için bağlantı ve güncel imzalı araç durumu gerekir.")
-                    .font(ToggTheme.text(.micro))
-                    .foregroundStyle(DSColor.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityLabel("Komutlar hazır değil: \(connectionPhaseText ?? "bağlantı ve güncel araç durumu bekleniyor")")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(connectionPhaseText ?? connectionBlockerText ?? "Komutlar için bağlantı ve güncel imzalı araç durumu gerekir.")
+                        .font(ToggTheme.text(.micro))
+                        .foregroundStyle(DSColor.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityLabel("Komutlar hazır değil: \(connectionPhaseText ?? connectionBlockerText ?? "bağlantı ve güncel araç durumu bekleniyor")")
+                    Button {
+                        requestReadyNotice()
+                    } label: {
+                        Label(readyNoticeRequested
+                              ? "Hazır olunca haber vereceğim"
+                              : "Hazır olunca bildir",
+                              systemImage: readyNoticeRequested ? "bell.badge" : "bell")
+                            .font(ToggTheme.text(.micro, weight: .semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(DSColor.accent)
+                    .disabled(readyNoticeRequested)
+                    .accessibilityHint("Bağlantı ve güncel araç durumu hazır olduğunda yerel bildirim gönderilir; uygulama kapalıysa bildirim gelmez.")
+                }
             }
             }
         }

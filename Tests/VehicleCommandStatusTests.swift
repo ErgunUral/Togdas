@@ -12,7 +12,7 @@ final class VehicleCommandStatusTests: XCTestCase {
         let defaults = storeDefaults
         var count = 0
         let observer = NotificationCenter.default.addObserver(
-            forName: .vehicleCommandStatusDidChange, object: nil, queue: nil
+            forName: .vehicleCommandStatusDidChange, object: defaults, queue: nil
         ) { _ in count += 1 }
         defer { NotificationCenter.default.removeObserver(observer) }
 

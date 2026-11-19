@@ -71,7 +71,9 @@ enum VehicleCommandStatusStore {
         // markVerified'ın "zaten dolu" durumu bildirim üretmez.
         if defaults.data(forKey: VehicleCommandStatus.storageKey) == data { return }
         defaults.set(data, forKey: VehicleCommandStatus.storageKey)
-        NotificationCenter.default.post(name: .vehicleCommandStatusDidChange, object: nil)
+        // `object: defaults`: testlerde paralel koşan başka suite'lerin
+        // yazımları bu gözlemciye sızmasın (kaynak: flaky sayaç testi).
+        NotificationCenter.default.post(name: .vehicleCommandStatusDidChange, object: defaults)
     }
 
     /// Widget tarafı okuma noktası; kayıt yok/bozuk ise nil döner ve
